@@ -57,3 +57,4 @@ void draw_hud(float fps);
 void process_keyboard_movement(const Uint8* key_state, Player* player, float delta_time);
 void bake_chunk(Chunk* chunk);
 void draw_hud();
+void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z);
