@@ -2,7 +2,7 @@
 #define STB_PERLIN_IMPLEMENTATION
 #include "stb_perlin.h"
 
-void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z) {
+void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z) {
 	float scale = 0.05f;  // Adjust this to change the "roughness" of the terrain
 	float height_scale = 16.0f;  // Maximum height variation
 
