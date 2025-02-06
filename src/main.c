@@ -39,8 +39,7 @@ int main(int argc, char* argv[]) {
 				generate_chunk_terrain(&chunks[cx][cy][cz], cx, cy, cz);
 			}
 		}
-	}	// Keyboard state tracking
-	const Uint8* keyState = NULL;
+	}
 
 	// Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -54,12 +53,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	// Load font
-	font = TTF_OpenFont("/usr/share/fonts/liberation/LiberationMono-Regular.ttf", 16);
-	if (!font) {
-		printf("Failed to load font! SDL_ttf Error: %s\n", TTF_GetError());
-		return 1;
-	}
+	glutInit(&argc, argv);
 
 	// Set OpenGL attributes
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -112,15 +106,41 @@ int main(int argc, char* argv[]) {
 
 	Uint32 lastTime = SDL_GetTicks();
 	float deltaTime = 0.0f;
-	float fps = 0.0f;
+	
+	// FPS tracking variables
+	#define FPS_UPDATE_INTERVAL 500  // Update FPS every 500ms
+	#define FPS_HISTORY_SIZE 10      // Store 10 samples for averaging
+	float fpsHistory[FPS_HISTORY_SIZE] = {0};
+	int fpsIndex = 0;
+	float averageFps = 0.0f;
+	Uint32 lastFpsUpdate = SDL_GetTicks();
+	int frameCount = 0;
 
 	// Main game loop
 	while (!quit) {
-		// Calculate delta time and FPS
+		// Calculate delta time
 		Uint32 currentTime = SDL_GetTicks();
 		deltaTime = (currentTime - lastTime) / 1000.0f;
-		fps = 1.0f / deltaTime;
 		lastTime = currentTime;
+		
+		frameCount++;
+
+		// Update FPS calculation every FPS_UPDATE_INTERVAL milliseconds
+		if (currentTime - lastFpsUpdate >= FPS_UPDATE_INTERVAL) {
+			float currentFps = frameCount / ((currentTime - lastFpsUpdate) / 1000.0f);
+			fpsHistory[fpsIndex] = currentFps;
+			fpsIndex = (fpsIndex + 1) % FPS_HISTORY_SIZE;
+
+			// Calculate average FPS
+			averageFps = 0.0f;
+			for (int i = 0; i < FPS_HISTORY_SIZE; i++) {
+				averageFps += fpsHistory[i];
+			}
+			averageFps /= FPS_HISTORY_SIZE;
+
+			frameCount = 0;
+			lastFpsUpdate = currentTime;
+		}
 
 		// Handle events
 		while (SDL_PollEvent(&event) != 0) {
@@ -139,8 +159,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		// Get keyboard state
-		keyState = SDL_GetKeyboardState(NULL);
-		process_keyboard_movement(keyState, &player, deltaTime);
+		process_keyboard_movement(SDL_GetKeyboardState(NULL), &player, deltaTime);
 
 		// Clear the screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -186,7 +205,10 @@ int main(int argc, char* argv[]) {
 				}
 			}
 		}
-		
+
+		// Draw HUD with average FPS
+		draw_hud(averageFps);
+
 		// Swap buffers
 		SDL_GL_SwapWindow(window);
 	}
@@ -209,7 +231,9 @@ int main(int argc, char* argv[]) {
 				}
 			}
 		}
-	}	SDL_GL_DeleteContext(glContext);
+	}
+
+	SDL_GL_DeleteContext(glContext);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 

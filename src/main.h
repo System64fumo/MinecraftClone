@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <math.h>
+#include <GL/glut.h>
 
 #define CHUNK_SIZE 16
 #define MAX_VERTICES 65536
@@ -34,16 +35,14 @@ typedef struct {
 
 // Block struct
 typedef struct {
-	int id;
-	int metadata;
-	float x;
-	float y;
-	float z;
+	unsigned char id;
+	unsigned char metadata;
+	unsigned char x, y, z;
 } Block;
 
 typedef struct {
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
-	float x, y, z;
+	unsigned char x, y, z;
 	GLuint vbo;
 	GLuint color_vbo;
 	int vertex_count;
@@ -57,4 +56,4 @@ void draw_hud(float fps);
 void process_keyboard_movement(const Uint8* key_state, Player* player, float delta_time);
 void bake_chunk(Chunk* chunk);
 void draw_hud();
-void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z);
+void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z);

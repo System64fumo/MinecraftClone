@@ -1,7 +1,7 @@
 #include "main.h"
 
 // Helper function to check if a block face should be rendered
-bool should_render_face(Chunk* chunk, int x, int y, int z, int face) {
+bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned char z, unsigned char face) {
 	if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE || z >= CHUNK_SIZE) {
 		return false;
 	}
