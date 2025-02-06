@@ -18,42 +18,28 @@ int main(int argc, char* argv[]) {
 
 	// Initialize chunks array
 	#define CHUNKS_X 4
+	#define CHUNKS_Y 4
 	#define CHUNKS_Z 4
-	Chunk chunks[CHUNKS_X][CHUNKS_Z];
+	Chunk chunks[CHUNKS_X][CHUNKS_Y][CHUNKS_Z];
 
 	// Initialize all chunks
 	for(int cx = 0; cx < CHUNKS_X; cx++) {
-		for(int cz = 0; cz < CHUNKS_Z; cz++) {
-			chunks[cx][cz] = (Chunk){0};  // Initialize all blocks to 0
-			chunks[cx][cz].x = cx * CHUNK_SIZE / 2;
-			chunks[cx][cz].y = 0.0f;
-			chunks[cx][cz].z = cz * CHUNK_SIZE / 2;
-			chunks[cx][cz].needs_update = true;
-			chunks[cx][cz].vbo = 0;
-			chunks[cx][cz].color_vbo = 0;
-			chunks[cx][cz].vertices = NULL;
-			chunks[cx][cz].colors = NULL;
+		for(int cy = 0; cy < CHUNKS_Y; cy++) {
+			for(int cz = 0; cz < CHUNKS_Z; cz++) {
+				chunks[cx][cy][cz] = (Chunk){0};
+				chunks[cx][cy][cz].x = cx * CHUNK_SIZE / 2;
+				chunks[cx][cy][cz].y = cy * CHUNK_SIZE / 2;
+				chunks[cx][cy][cz].z = cz * CHUNK_SIZE / 2;
+				chunks[cx][cy][cz].needs_update = true;
+				chunks[cx][cy][cz].vbo = 0;
+				chunks[cx][cy][cz].color_vbo = 0;
+				chunks[cx][cy][cz].vertices = NULL;
+				chunks[cx][cy][cz].colors = NULL;
 
-			// Fill chunk with blocks - stone base, dirt middle, grass top
-			for(int x = 0; x < 16; x++) {
-				for(int y = 0; y < 16; y++) {
-					for(int z = 0; z < 16; z++) {
-						if(y == 15) {
-							chunks[cx][cz].blocks[x][y][z] = (Block){.id = 2, .metadata = 0};  // Grass on top
-						}
-						else if(y >= 13) {
-							chunks[cx][cz].blocks[x][y][z] = (Block){.id = 1, .metadata = 0};  // Dirt layers
-						}
-						else {
-							chunks[cx][cz].blocks[x][y][z] = (Block){.id = 3, .metadata = 0};  // Stone base
-						}
-					}
-				}
+				generate_chunk_terrain(&chunks[cx][cy][cz], cx, cy, cz);
 			}
 		}
-	}
-
-	// Keyboard state tracking
+	}	// Keyboard state tracking
 	const Uint8* keyState = NULL;
 
 	// Initialize SDL
@@ -124,13 +110,6 @@ int main(int argc, char* argv[]) {
 	// Hide and capture mouse
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
-	// Bake all chunks
-	for(int cx = 0; cx < CHUNKS_X; cx++) {
-		for(int cz = 0; cz < CHUNKS_Z; cz++) {
-			bake_chunk(&chunks[cx][cz]);
-		}
-	}
-
 	Uint32 lastTime = SDL_GetTicks();
 	float deltaTime = 0.0f;
 	float fps = 0.0f;
@@ -180,29 +159,31 @@ int main(int argc, char* argv[]) {
 
 		// Render all chunks
 		for(int cx = 0; cx < CHUNKS_X; cx++) {
-			for(int cz = 0; cz < CHUNKS_Z; cz++) {
-				if (chunks[cx][cz].needs_update) {
-					bake_chunk(&chunks[cx][cz]);
+			for(int cy = 0; cy < CHUNKS_Y; cy++) {
+				for(int cz = 0; cz < CHUNKS_Z; cz++) {
+					if (chunks[cx][cy][cz].needs_update) {
+						bake_chunk(&chunks[cx][cy][cz]);
+					}
+
+					glPushMatrix();
+					glTranslatef(chunks[cx][cy][cz].x, chunks[cx][cy][cz].y, chunks[cx][cy][cz].z);
+
+					glEnableClientState(GL_VERTEX_ARRAY);
+					glEnableClientState(GL_COLOR_ARRAY);
+
+					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].vbo);
+					glVertexPointer(3, GL_FLOAT, 0, 0);
+
+					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].color_vbo);
+					glColorPointer(3, GL_FLOAT, 0, 0);
+
+					glDrawArrays(GL_QUADS, 0, chunks[cx][cy][cz].vertex_count);
+					
+					glDisableClientState(GL_COLOR_ARRAY);
+					glDisableClientState(GL_VERTEX_ARRAY);
+					
+					glPopMatrix();
 				}
-
-				glPushMatrix();
-				glTranslatef(chunks[cx][cz].x, chunks[cx][cz].y, chunks[cx][cz].z);
-
-				glEnableClientState(GL_VERTEX_ARRAY);
-				glEnableClientState(GL_COLOR_ARRAY);
-
-				gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cz].vbo);
-				glVertexPointer(3, GL_FLOAT, 0, 0);
-
-				gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cz].color_vbo);
-				glColorPointer(3, GL_FLOAT, 0, 0);
-
-				glDrawArrays(GL_QUADS, 0, chunks[cx][cz].vertex_count);
-				
-				glDisableClientState(GL_COLOR_ARRAY);
-				glDisableClientState(GL_VERTEX_ARRAY);
-				
-				glPopMatrix();
 			}
 		}
 		
@@ -212,22 +193,23 @@ int main(int argc, char* argv[]) {
 
 	// Cleanup
 	for(int cx = 0; cx < CHUNKS_X; cx++) {
-		for(int cz = 0; cz < CHUNKS_Z; cz++) {
-			if (chunks[cx][cz].vertices) {
-				free(chunks[cx][cz].vertices);
-			}
-			if (chunks[cx][cz].colors) {
-				free(chunks[cx][cz].colors);
-			}
-			if (chunks[cx][cz].vbo) {
-				gl_delete_buffers(1, &chunks[cx][cz].vbo);
-			}
-			if (chunks[cx][cz].color_vbo) {
-				gl_delete_buffers(1, &chunks[cx][cz].color_vbo);
+		for(int cy = 0; cy < CHUNKS_Y; cy++) {
+			for(int cz = 0; cz < CHUNKS_Z; cz++) {
+				if (chunks[cx][cy][cz].vertices) {
+					free(chunks[cx][cy][cz].vertices);
+				}
+				if (chunks[cx][cy][cz].colors) {
+					free(chunks[cx][cy][cz].colors);
+				}
+				if (chunks[cx][cy][cz].vbo) {
+					gl_delete_buffers(1, &chunks[cx][cy][cz].vbo);
+				}
+				if (chunks[cx][cy][cz].color_vbo) {
+					gl_delete_buffers(1, &chunks[cx][cy][cz].color_vbo);
+				}
 			}
 		}
-	}
-	SDL_GL_DeleteContext(glContext);
+	}	SDL_GL_DeleteContext(glContext);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 
