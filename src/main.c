@@ -36,6 +36,14 @@ int main(int argc, char* argv[]) {
 				chunks[cx][cy][cz].vertices = NULL;
 				chunks[cx][cy][cz].colors = NULL;
 
+				// Initialize neighbors
+				chunks[cx][cy][cz].neighbors[0] = (cz < CHUNKS_Z - 1) ? &chunks[cx][cy][cz + 1] : NULL; // north
+				chunks[cx][cy][cz].neighbors[1] = (cz > 0) ? &chunks[cx][cy][cz - 1] : NULL; // south
+				chunks[cx][cy][cz].neighbors[2] = (cx < CHUNKS_X - 1) ? &chunks[cx + 1][cy][cz] : NULL; // east
+				chunks[cx][cy][cz].neighbors[3] = (cx > 0) ? &chunks[cx - 1][cy][cz] : NULL; // west
+				chunks[cx][cy][cz].neighbors[4] = (cy < CHUNKS_Y - 1) ? &chunks[cx][cy + 1][cz] : NULL; // up
+				chunks[cx][cy][cz].neighbors[5] = (cy > 0) ? &chunks[cx][cy - 1][cz] : NULL; // down
+
 				generate_chunk_terrain(&chunks[cx][cy][cz], cx, cy, cz);
 			}
 		}

@@ -40,7 +40,7 @@ typedef struct {
 	unsigned char x, y, z;
 } Block;
 
-typedef struct {
+typedef struct Chunk {
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
 	unsigned char x, y, z;
 	GLuint vbo;
@@ -49,6 +49,7 @@ typedef struct {
 	float* vertices;
 	float* colors;
 	bool needs_update;
+	struct Chunk* neighbors[6]; // north, south, east, west, up, down
 } Chunk;
 
 // Function prototypes
