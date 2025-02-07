@@ -9,6 +9,9 @@
 #include <GL/glut.h>
 
 #define CHUNK_SIZE 16
+#define CHUNKS_X 4
+#define CHUNKS_Y 4
+#define CHUNKS_Z 4
 #define MAX_VERTICES 65536
 
 inline int screen_width = 1280;
@@ -52,9 +55,10 @@ typedef struct Chunk {
 	struct Chunk* neighbors[6]; // north, south, east, west, up, down
 } Chunk;
 
+inline Chunk chunks[CHUNKS_X][CHUNKS_Y][CHUNKS_Z];
+
 // Function prototypes
-void draw_hud(float fps);
+void draw_hud(float fps, Player* player);
 void process_keyboard_movement(const Uint8* key_state, Player* player, float delta_time);
 void bake_chunk(Chunk* chunk);
-void draw_hud();
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z);
