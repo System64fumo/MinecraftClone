@@ -2,6 +2,43 @@
 #define STB_PERLIN_IMPLEMENTATION
 #include "stb_perlin.h"
 
+void generate_chunk(unsigned char cx, unsigned char cy, unsigned char cz) {
+	chunks[cx][cy][cz] = (Chunk){0};
+	chunks[cx][cy][cz].x = cx * CHUNK_SIZE / 2;
+	chunks[cx][cy][cz].y = cy * CHUNK_SIZE / 2;
+	chunks[cx][cy][cz].z = cz * CHUNK_SIZE / 2;
+	chunks[cx][cy][cz].needs_update = true;
+	chunks[cx][cy][cz].vbo = 0;
+	chunks[cx][cy][cz].color_vbo = 0;
+	chunks[cx][cy][cz].vertices = NULL;
+	chunks[cx][cy][cz].colors = NULL;
+
+	// Initialize neighbors
+	int dx[] = {0, 0, 1, -1, 0, 0};
+	int dy[] = {0, 0, 0, 0, 1, -1};
+	int dz[] = {1, -1, 0, 0, 0, 0};
+	
+	for (int i = 0; i < 6; i++) {
+		int nx = cx + dx[i];
+		int ny = cy + dy[i];
+		int nz = cz + dz[i];
+		
+		bool valid = nx >= 0 && nx < CHUNKS_X && 
+					 ny >= 0 && ny < CHUNKS_Y && 
+					 nz >= 0 && nz < CHUNKS_Z;
+		
+		chunks[cx][cy][cz].neighbors[i] = valid ? &chunks[nx][ny][nz] : NULL;
+		
+		// Only mark neighbor for update if it already exists (has a VBO)
+		if (valid && chunks[nx][ny][nz].vbo != 0) {
+			chunks[nx][ny][nz].needs_update = true;
+		}
+	}
+
+	generate_chunk_terrain(&chunks[cx][cy][cz], cx, cy, cz);
+}
+
+
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z) {
 	float scale = 0.05f;  // Adjust this to change the "roughness" of the terrain
 	float height_scale = 16.0f;  // Maximum height variation

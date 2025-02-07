@@ -63,4 +63,5 @@ inline Chunk chunks[CHUNKS_X][CHUNKS_Y][CHUNKS_Z];
 void draw_hud(float fps, Player* player);
 void process_keyboard_movement(const Uint8* key_state, Player* player, float delta_time);
 void bake_chunk(Chunk* chunk);
+void generate_chunk(unsigned char cx, unsigned char cy, unsigned char cz);
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z);
