@@ -56,7 +56,11 @@ void draw_hud(float fps, Player* player) {
 	
 	glDisable(GL_COLOR_LOGIC_OP);
 
-	snprintf(debug_text, sizeof(debug_text), "FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Pitch: %.1f, Yaw: %.1f", fps, player->x, player->y, player->z, player->pitch, player->yaw);
+	if (DEBUG)
+		snprintf(debug_text, sizeof(debug_text), "FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Yaw: %.1f, Pitch: %.1f", fps, player->x, player->y, player->z, player->yaw, player->pitch);
+	else
+		snprintf(debug_text, sizeof(debug_text), "FPS: %.1f", fps);
+
 	draw_text(debug_text, strlen(debug_text), 10, 20);
 
 	glMatrixMode(GL_PROJECTION);

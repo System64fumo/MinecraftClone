@@ -8,11 +8,11 @@ int main(int argc, char* argv[]) {
 
 	// Initialize player
 	Player player = {
-		.x = 0.0f,
-		.y = 0.0f,
-		.z = -5.0f,
-		.yaw = 0.0f,
-		.pitch = 0.0f,
+		.x = -16.0f,
+		.y = 32.0f,
+		.z = -16.0f,
+		.yaw = 135.0f,
+		.pitch = 20.0f,
 		.speed = 5.0f
 	};
 
@@ -171,12 +171,10 @@ int main(int argc, char* argv[]) {
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 
-		// Apply camera rotation
+		// Apply player position and rotation
 		glRotatef(player.pitch, 1.0f, 0.0f, 0.0f);
 		glRotatef(player.yaw, 0.0f, 1.0f, 0.0f);
-
-		// Apply camera translation
-		glTranslatef(player.x, player.y, player.z);
+		glTranslatef(-player.x, -player.y, -player.z);
 
 		// Render all chunks
 		for(int cx = 0; cx < CHUNKS_X; cx++) {

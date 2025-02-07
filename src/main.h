@@ -13,6 +13,7 @@
 #define CHUNKS_Y 4
 #define CHUNKS_Z 4
 #define MAX_VERTICES 65536
+#define DEBUG 0
 
 inline int screen_width = 1280;
 inline int screen_height = 720;
