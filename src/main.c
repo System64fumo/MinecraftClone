@@ -8,40 +8,13 @@ int main(int argc, char* argv[]) {
 
 	// Initialize player
 	Player player = {
-		.x = -16.0f,
+		.x = 16.0f,
 		.y = 32.0f,
-		.z = -16.0f,
+		.z = 16.0f,
 		.yaw = 135.0f,
 		.pitch = 20.0f,
-		.speed = 5.0f
+		.speed = 20.0f
 	};
-
-	// Initialize all chunks
-	for(int cx = 0; cx < CHUNKS_X; cx++) {
-		for(int cy = 0; cy < CHUNKS_Y; cy++) {
-			for(int cz = 0; cz < CHUNKS_Z; cz++) {
-				chunks[cx][cy][cz] = (Chunk){0};
-				chunks[cx][cy][cz].x = cx * CHUNK_SIZE / 2;
-				chunks[cx][cy][cz].y = cy * CHUNK_SIZE / 2;
-				chunks[cx][cy][cz].z = cz * CHUNK_SIZE / 2;
-				chunks[cx][cy][cz].needs_update = true;
-				chunks[cx][cy][cz].vbo = 0;
-				chunks[cx][cy][cz].color_vbo = 0;
-				chunks[cx][cy][cz].vertices = NULL;
-				chunks[cx][cy][cz].colors = NULL;
-
-				// Initialize neighbors
-				chunks[cx][cy][cz].neighbors[0] = (cz < CHUNKS_Z - 1) ? &chunks[cx][cy][cz + 1] : NULL; // north
-				chunks[cx][cy][cz].neighbors[1] = (cz > 0) ? &chunks[cx][cy][cz - 1] : NULL; // south
-				chunks[cx][cy][cz].neighbors[2] = (cx < CHUNKS_X - 1) ? &chunks[cx + 1][cy][cz] : NULL; // east
-				chunks[cx][cy][cz].neighbors[3] = (cx > 0) ? &chunks[cx - 1][cy][cz] : NULL; // west
-				chunks[cx][cy][cz].neighbors[4] = (cy < CHUNKS_Y - 1) ? &chunks[cx][cy + 1][cz] : NULL; // up
-				chunks[cx][cy][cz].neighbors[5] = (cy > 0) ? &chunks[cx][cy - 1][cz] : NULL; // down
-
-				generate_chunk_terrain(&chunks[cx][cy][cz], cx, cy, cz);
-			}
-		}
-	}
 
 	// Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -92,7 +65,7 @@ int main(int argc, char* argv[]) {
 	glViewport(0, 0, screen_width, screen_height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glFrustum(-1.0, 1.0, -0.5625, 0.5625, 1.5, 100.0);
+	glFrustum(-1.0, 1.0, -0.5625, 0.5625, 1.5, 200.0);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -161,7 +134,66 @@ int main(int argc, char* argv[]) {
 		}
 
 		// Get keyboard state
-		process_keyboard_movement(SDL_GetKeyboardState(NULL), &player, deltaTime);
+		const Uint8* keyboard = SDL_GetKeyboardState(NULL);
+		process_keyboard_movement(keyboard, &player, deltaTime);
+
+		// Check for R key to mark all chunks for update
+		if (keyboard[SDL_SCANCODE_R]) {
+			printf("Re-rendering all chunks\n");
+			for(int cx = 0; cx < CHUNKS_X; cx++) {
+				for(int cy = 0; cy < CHUNKS_Y; cy++) {
+					for(int cz = 0; cz < CHUNKS_Z; cz++) {
+						if (chunks[cx][cy][cz].vbo) {
+							chunks[cx][cy][cz].needs_update = true;
+						}
+					}
+				}
+			}
+		}
+
+		// Check player position and generate new chunks if needed
+		int center_cx = (int)floorf(player.x / (CHUNK_SIZE * 1.0f));
+		int center_cy = (int)floorf(player.y / (CHUNK_SIZE * 1.0f));
+		int center_cz = (int)floorf(player.z / (CHUNK_SIZE * 1.0f));
+
+		// Loop through NxNxN chunk area around player
+		for(int dx = -chunk_radius; dx <= chunk_radius; dx++) {
+			for(int dy = -chunk_radius; dy <= chunk_radius; dy++) {
+				for(int dz = -chunk_radius; dz <= chunk_radius; dz++) {
+					int cx = center_cx + dx;
+					int cy = center_cy + dy;
+					int cz = center_cz + dz;
+
+					// Ensure chunk coordinates are within bounds without wrapping
+					cx = cx < 0 ? 0 : (cx >= CHUNKS_X ? CHUNKS_X - 1 : cx);
+					cy = cy < 0 ? 0 : (cy >= CHUNKS_Y ? CHUNKS_Y - 1 : cy);
+					cz = cz < 0 ? 0 : (cz >= CHUNKS_Z ? CHUNKS_Z - 1 : cz);
+
+					// Generate chunk if it doesn't exist
+					if (!chunks[cx][cy][cz].vbo) {
+							chunks[cx][cy][cz] = (Chunk){0};
+							chunks[cx][cy][cz].x = cx * CHUNK_SIZE / 2;
+							chunks[cx][cy][cz].y = cy * CHUNK_SIZE / 2;
+							chunks[cx][cy][cz].z = cz * CHUNK_SIZE / 2;
+							chunks[cx][cy][cz].needs_update = true;
+							chunks[cx][cy][cz].vbo = 0;
+							chunks[cx][cy][cz].color_vbo = 0;
+							chunks[cx][cy][cz].vertices = NULL;
+							chunks[cx][cy][cz].colors = NULL;
+
+							// Initialize neighbors
+							chunks[cx][cy][cz].neighbors[0] = (cz < CHUNKS_Z - 1) ? &chunks[cx][cy][cz + 1] : NULL; // north
+							chunks[cx][cy][cz].neighbors[1] = (cz > 0) ? &chunks[cx][cy][cz - 1] : NULL; // south
+							chunks[cx][cy][cz].neighbors[2] = (cx < CHUNKS_X - 1) ? &chunks[cx + 1][cy][cz] : NULL; // east
+							chunks[cx][cy][cz].neighbors[3] = (cx > 0) ? &chunks[cx - 1][cy][cz] : NULL; // west
+							chunks[cx][cy][cz].neighbors[4] = (cy < CHUNKS_Y - 1) ? &chunks[cx][cy + 1][cz] : NULL; // up
+							chunks[cx][cy][cz].neighbors[5] = (cy > 0) ? &chunks[cx][cy - 1][cz] : NULL; // down
+
+							generate_chunk_terrain(&chunks[cx][cy][cz], cx, cy, cz);
+					}
+				}
+			}
+		}
 
 		// Clear the screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -212,7 +244,6 @@ int main(int argc, char* argv[]) {
 		// Swap buffers
 		SDL_GL_SwapWindow(window);
 	}
-
 	// Cleanup
 	for(int cx = 0; cx < CHUNKS_X; cx++) {
 		for(int cy = 0; cy < CHUNKS_Y; cy++) {
