@@ -159,12 +159,8 @@ void bake_chunk(Chunk* chunk) {
 	chunk->vertex_count = vertex_count;
 
 	// Update VBOs
-	if (chunk->vbo == 0) {
-		gl_gen_buffers(1, &chunk->vbo);
-	}
-	if (chunk->color_vbo == 0) {
-		gl_gen_buffers(1, &chunk->color_vbo);
-	}
+	gl_gen_buffers(1, &chunk->vbo);
+	gl_gen_buffers(1, &chunk->color_vbo);
 
 	gl_bind_buffer(GL_ARRAY_BUFFER, chunk->vbo);
 	gl_buffer_data(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), chunk->vertices, GL_STATIC_DRAW);

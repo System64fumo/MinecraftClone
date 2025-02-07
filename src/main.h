@@ -9,14 +9,15 @@
 #include <GL/glut.h>
 
 #define CHUNK_SIZE 16
-#define CHUNKS_X 4
+#define CHUNKS_X 16
 #define CHUNKS_Y 4
-#define CHUNKS_Z 4
+#define CHUNKS_Z 16
 #define MAX_VERTICES 65536
 #define DEBUG 0
 
 inline int screen_width = 1280;
 inline int screen_height = 720;
+inline int chunk_radius = 5;
 
 inline GLuint block_vbo;
 inline TTF_Font* font = NULL;
