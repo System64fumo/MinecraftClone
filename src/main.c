@@ -16,12 +16,6 @@ int main(int argc, char* argv[]) {
 		.speed = 5.0f
 	};
 
-	// Initialize chunks array
-	#define CHUNKS_X 4
-	#define CHUNKS_Y 4
-	#define CHUNKS_Z 4
-	Chunk chunks[CHUNKS_X][CHUNKS_Y][CHUNKS_Z];
-
 	// Initialize all chunks
 	for(int cx = 0; cx < CHUNKS_X; cx++) {
 		for(int cy = 0; cy < CHUNKS_Y; cy++) {
@@ -215,7 +209,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		// Draw HUD with average FPS
-		draw_hud(averageFps);
+		draw_hud(averageFps, &player);
 
 		// Swap buffers
 		SDL_GL_SwapWindow(window);

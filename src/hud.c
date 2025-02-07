@@ -25,8 +25,8 @@ void draw_text(const char* text, int length, int x, int y) {
 	glPopAttrib();
 }
 
-void draw_hud(float fps) {
-	static char fps_text[32];
+void draw_hud(float fps, Player* player) {
+	static char debug_text[64];
 	
 	glPushMatrix();
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -56,8 +56,8 @@ void draw_hud(float fps) {
 	
 	glDisable(GL_COLOR_LOGIC_OP);
 
-	snprintf(fps_text, sizeof(fps_text), "FPS: %.1f", fps);
-	draw_text(fps_text, strlen(fps_text), 10, 20);
+	snprintf(debug_text, sizeof(debug_text), "FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Pitch: %.1f, Yaw: %.1f", fps, player->x, player->y, player->z, player->pitch, player->yaw);
+	draw_text(debug_text, strlen(debug_text), 10, 20);
 
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
