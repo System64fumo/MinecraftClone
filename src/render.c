@@ -1,18 +1,41 @@
 #include "main.h"
 
-// Helper function to check if a block face should be rendered
 bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned char z, unsigned char face) {
 	if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE || z >= CHUNK_SIZE) {
 		return false;
 	}
 
 	switch(face) {
-		case 0: return z == 0            || chunk->blocks[x][y][z-1].id == 0;	// Front
-		case 1: return z == CHUNK_SIZE-1 || chunk->blocks[x][y][z+1].id == 0;	// Back
-		case 2: return x == 0            || chunk->blocks[x-1][y][z].id == 0;	// Left
-		case 3: return x == CHUNK_SIZE-1 || chunk->blocks[x+1][y][z].id == 0;	// Right
-		case 4: return y == CHUNK_SIZE-1 || chunk->blocks[x][y+1][z].id == 0;	// Top
-		case 5: return y == 0            || chunk->blocks[x][y-1][z].id == 0;	// Bottom
+		case 0: // Front (Z-)
+			if (z == 0) {
+				return chunk->neighbors[1] ? chunk->neighbors[1]->blocks[x][y][CHUNK_SIZE-1].id == 0 : true;
+			}
+			return chunk->blocks[x][y][z-1].id == 0;
+		case 1: // Back (Z+)
+			if (z == CHUNK_SIZE-1) {
+				return chunk->neighbors[0] ? chunk->neighbors[0]->blocks[x][y][0].id == 0 : true;
+			}
+			return chunk->blocks[x][y][z+1].id == 0;
+		case 2: // Left (X-)
+			if (x == 0) {
+				return chunk->neighbors[3] ? chunk->neighbors[3]->blocks[CHUNK_SIZE-1][y][z].id == 0 : true;
+			}
+			return chunk->blocks[x-1][y][z].id == 0;
+		case 3: // Right (X+)
+			if (x == CHUNK_SIZE-1) {
+				return chunk->neighbors[2] ? chunk->neighbors[2]->blocks[0][y][z].id == 0 : true;
+			}
+			return chunk->blocks[x+1][y][z].id == 0;
+		case 4: // Top (Y+)
+			if (y == CHUNK_SIZE-1) {
+				return chunk->neighbors[4] ? chunk->neighbors[4]->blocks[x][0][z].id == 0 : true;
+			}
+			return chunk->blocks[x][y+1][z].id == 0;
+		case 5: // Bottom (Y-)
+			if (y == 0) {
+				return chunk->neighbors[5] ? chunk->neighbors[5]->blocks[x][CHUNK_SIZE-1][z].id == 0 : true;
+			}
+			return chunk->blocks[x][y-1][z].id == 0;
 	}
 	return false;
 }
