@@ -1,5 +1,64 @@
 #include "main.h"
 
+// Raycast function to find block player is looking at
+bool raycast(Player* player, float max_distance, int* out_x, int* out_y, int* out_z, Chunk** out_chunk, float* out_distance) {
+	float px = player->x;
+	float py = player->y;
+	float pz = player->z;
+	
+	// Convert yaw/pitch to direction vector
+	const float PI = 3.14159265358979323846f;
+	float dx = sin(player->yaw * PI / 180.0f) * cos(player->pitch * PI / 180.0f);
+	float dy = -sin(player->pitch * PI / 180.0f);
+	float dz = -cos(player->yaw * PI / 180.0f) * cos(player->pitch * PI / 180.0f);
+	
+	// Ray step size
+	float step = 0.1f;
+	float distance = 0;
+	
+	while (distance < max_distance) {
+		// Move along ray
+		px += dx * step;
+		py += dy * step;
+		pz += dz * step;
+		
+		// Get chunk coordinates
+		int chunk_x = floor(px / CHUNK_SIZE);
+		int chunk_y = floor(py / CHUNK_SIZE); 
+		int chunk_z = floor(pz / CHUNK_SIZE);
+		
+		// Get block coordinates within chunk
+		int block_x = ((int)floor(px)) % CHUNK_SIZE;
+		int block_y = ((int)floor(py)) % CHUNK_SIZE;
+		int block_z = ((int)floor(pz)) % CHUNK_SIZE;
+		
+		if (block_x < 0) block_x += CHUNK_SIZE;
+		if (block_y < 0) block_y += CHUNK_SIZE;
+		if (block_z < 0) block_z += CHUNK_SIZE;
+		
+		// Check if chunk coordinates are valid
+		if (chunk_x >= 0 && chunk_x < CHUNKS_X &&
+			chunk_y >= 0 && chunk_y < CHUNKS_Y &&
+			chunk_z >= 0 && chunk_z < CHUNKS_Z) {
+			
+			Chunk* chunk = &chunks[chunk_x][chunk_y][chunk_z];
+			// Check if block exists
+			if (chunk->blocks[block_x][block_y][block_z].id != 0) {
+				*out_x = block_x;
+				*out_y = block_y;
+				*out_z = block_z;
+				*out_chunk = chunk;
+				*out_distance = distance;
+				return true;
+			}
+		}
+		
+		distance += step;
+	}
+	
+	return false;
+}
+
 void process_keyboard_movement(const Uint8* key_state, Player* player, float delta_time) {
 	const float PI = 3.14159265358979323846f;
 	if (key_state[SDL_SCANCODE_W]) {

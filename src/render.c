@@ -1,5 +1,78 @@
 #include "main.h"
 
+void draw_block_highlight(float x, float y, float z) {
+	static const float vertices_template[] = {
+		// Front face (Z-)
+		-1.01f, -1.01f, -1.01f,
+		0.01f, -1.01f, -1.01f,
+		0.01f, 0.01f, -1.01f,
+		-1.01f, 0.01f, -1.01f,
+		
+		// Back face (Z+)
+		-1.01f, -1.01f, 0.01f,
+		-1.01f, 0.01f, 0.01f,
+		0.01f, 0.01f, 0.01f,
+		0.01f, -1.01f, 0.01f,
+		
+		// Left face (X-)
+		-1.01f, -1.01f, -1.01f,
+		-1.01f, 0.01f, -1.01f,
+		-1.01f, 0.01f, 0.01f,
+		-1.01f, -1.01f, 0.01f,
+		
+		// Right face (X+)
+		0.01f, -1.01f, -1.01f,
+		0.01f, -1.01f, 0.01f,
+		0.01f, 0.01f, 0.01f,
+		0.01f, 0.01f, -1.01f,
+		
+		// Top face (Y+)
+		-1.01f, 0.01f, -1.01f,
+		0.01f, 0.01f, -1.01f,
+		0.01f, 0.01f, 0.01f,
+		-1.01f, 0.01f, 0.01f,
+		
+		// Bottom face (Y-)
+		-1.01f, -1.01f, -1.01f,
+		-1.01f, -1.01f, 0.01f,
+		0.01f, -1.01f, 0.01f,
+		0.01f, -1.01f, -1.01f
+	};
+
+	static unsigned int vbo = 0;
+	float vertices[72];
+
+	if (!vbo) {
+		gl_gen_buffers(1, &vbo);
+		gl_bind_buffer(GL_ARRAY_BUFFER, vbo);
+		gl_buffer_data(GL_ARRAY_BUFFER, sizeof(vertices_template), vertices_template, GL_STATIC_DRAW);
+	}
+
+	// Translate vertices
+	for (int i = 0; i < 72; i += 3) {
+		vertices[i] = vertices_template[i] + x;
+		vertices[i + 1] = vertices_template[i + 1] + y;
+		vertices[i + 2] = vertices_template[i + 2] + z;
+	}
+
+	gl_bind_buffer(GL_ARRAY_BUFFER, vbo);
+	gl_buffer_data(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+	glEnableClientState(GL_VERTEX_ARRAY);
+
+	glDrawArrays(GL_QUADS, 0, 24);
+
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glDisable(GL_BLEND);
+}
+
 bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned char z, unsigned char face) {
 	if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE || z >= CHUNK_SIZE) {
 		return false;
