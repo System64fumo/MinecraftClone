@@ -74,44 +74,73 @@ void draw_block_highlight(float x, float y, float z) {
 }
 
 bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned char z, unsigned char face) {
-	if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE || y >= CHUNK_SIZE || z >= CHUNK_SIZE) {
+	if (x >= CHUNK_SIZE || y >= CHUNK_SIZE || z >= CHUNK_SIZE) {
 		return false;
 	}
+
+	// Get current chunk coordinates
+	int cx = chunk->x / (CHUNK_SIZE/2);
+	int cy = chunk->y / (CHUNK_SIZE/2);
+	int cz = chunk->z / (CHUNK_SIZE/2);
 
 	switch(face) {
 		case 0: // Front (Z-)
 			if (z == 0) {
-				return chunk->neighbors[1] ? chunk->neighbors[1]->blocks[x][y][CHUNK_SIZE-1].id == 0 : true;
+				if (cz > 0 && chunks[cx][cy][cz-1].vbo != 0) {
+					return chunks[cx][cy][cz-1].blocks[x][y][CHUNK_SIZE-1].id == 0;
+				}
+				return true;
 			}
 			return chunk->blocks[x][y][z-1].id == 0;
+			
 		case 1: // Back (Z+)
 			if (z == CHUNK_SIZE-1) {
-				return chunk->neighbors[0] ? chunk->neighbors[0]->blocks[x][y][0].id == 0 : true;
+				if (cz < CHUNKS_Z-1 && chunks[cx][cy][cz+1].vbo != 0) {
+					return chunks[cx][cy][cz+1].blocks[x][y][0].id == 0;
+				}
+				return true;
 			}
 			return chunk->blocks[x][y][z+1].id == 0;
+			
 		case 2: // Left (X-)
 			if (x == 0) {
-				return chunk->neighbors[3] ? chunk->neighbors[3]->blocks[CHUNK_SIZE-1][y][z].id == 0 : true;
+				if (cx > 0 && chunks[cx-1][cy][cz].vbo != 0) {
+					return chunks[cx-1][cy][cz].blocks[CHUNK_SIZE-1][y][z].id == 0;
+				}
+				return true;
 			}
 			return chunk->blocks[x-1][y][z].id == 0;
+			
 		case 3: // Right (X+)
 			if (x == CHUNK_SIZE-1) {
-				return chunk->neighbors[2] ? chunk->neighbors[2]->blocks[0][y][z].id == 0 : true;
+				if (cx < CHUNKS_X-1 && chunks[cx+1][cy][cz].vbo != 0) {
+					return chunks[cx+1][cy][cz].blocks[0][y][z].id == 0;
+				}
+				return true;
 			}
 			return chunk->blocks[x+1][y][z].id == 0;
+			
 		case 4: // Top (Y+)
 			if (y == CHUNK_SIZE-1) {
-				return chunk->neighbors[4] ? chunk->neighbors[4]->blocks[x][0][z].id == 0 : true;
+				if (cy < CHUNKS_Y-1 && chunks[cx][cy+1][cz].vbo != 0) {
+					return chunks[cx][cy+1][cz].blocks[x][0][z].id == 0;
+				}
+				return true;
 			}
 			return chunk->blocks[x][y+1][z].id == 0;
+			
 		case 5: // Bottom (Y-)
 			if (y == 0) {
-				return chunk->neighbors[5] ? chunk->neighbors[5]->blocks[x][CHUNK_SIZE-1][z].id == 0 : true;
+				if (cy > 0 && chunks[cx][cy-1][cz].vbo != 0) {
+					return chunks[cx][cy-1][cz].blocks[x][CHUNK_SIZE-1][z].id == 0;
+				}
+				return true;
 			}
 			return chunk->blocks[x][y-1][z].id == 0;
 	}
 	return false;
 }
+
 
 void bake_chunk(Chunk* chunk) {
 	if (!chunk->vertices) {

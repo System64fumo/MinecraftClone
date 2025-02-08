@@ -63,7 +63,6 @@ typedef struct Chunk {
 	float* vertices;
 	float* colors;
 	bool needs_update;
-	struct Chunk* neighbors[6]; // north, south, east, west, up, down
 } Chunk;
 
 inline Chunk chunks[CHUNKS_X][CHUNKS_Y][CHUNKS_Z];
