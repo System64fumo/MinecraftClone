@@ -2,7 +2,7 @@
 #define STB_PERLIN_IMPLEMENTATION
 #include "stb_perlin.h"
 
-void generate_chunk(unsigned char cx, unsigned char cy, unsigned char cz) {
+void load_chunk(unsigned char cx, unsigned char cy, unsigned char cz) {
 	chunks[cx][cy][cz] = (Chunk){0};
 	chunks[cx][cy][cz].x = cx * CHUNK_SIZE / 2;
 	chunks[cx][cy][cz].y = cy * CHUNK_SIZE / 2;
@@ -38,7 +38,37 @@ void generate_chunk(unsigned char cx, unsigned char cy, unsigned char cz) {
 	generate_chunk_terrain(&chunks[cx][cy][cz], cx, cy, cz);
 }
 
+void unload_chunk(Chunk* chunk) {
+	if (chunk->vbo) {
+		gl_delete_buffers(1, &chunk->vbo);
+		chunk->vbo = 0;
+	}
+	if (chunk->color_vbo) {
+		gl_delete_buffers(1, &chunk->color_vbo);
+		chunk->color_vbo = 0;
+	}
+	if (chunk->vertices) {
+		free(chunk->vertices);
+		chunk->vertices = NULL;
+	}
+	if (chunk->colors) {
+		free(chunk->colors);
+		chunk->colors = NULL;
+	}
+	chunk->vertex_count = 0;
+	chunk->needs_update = false;
 
+	// Clear neighbor references
+	for (int i = 0; i < 6; i++) {
+		if (chunk->neighbors[i]) {
+			chunk->neighbors[i]->neighbors[(i + 1) % 2] = NULL;
+			chunk->neighbors[i] = NULL;
+		}
+	}
+
+	// Clear block data
+	memset(chunk->blocks, 0, sizeof(chunk->blocks));
+}
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z) {
 	float scale = 0.05f;  // Adjust this to change the "roughness" of the terrain
 	float height_scale = 16.0f;  // Maximum height variation
