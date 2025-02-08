@@ -142,11 +142,13 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 }
 
 void bake_chunk(Chunk* chunk) {
-	if (!chunk->vertices) {
-		chunk->vertices = (float*)malloc(MAX_VERTICES * 3 * sizeof(float));
-	}
-	if (!chunk->colors) {
-		chunk->colors = (float*)malloc(MAX_VERTICES * 3 * sizeof(float));
+	float* new_vertices = (float*)malloc(MAX_VERTICES * 3 * sizeof(float));
+	float* new_colors = (float*)malloc(MAX_VERTICES * 3 * sizeof(float));
+
+	if (!new_vertices || !new_colors) {
+		free(new_vertices);
+		free(new_colors);
+		return;
 	}
 
 	int vertex_count = 0;
@@ -265,13 +267,13 @@ void bake_chunk(Chunk* chunk) {
 
 						// Add vertices and colors
 						for(int i = 0; i < 4; i++) {
-							chunk->vertices[vertex_count*3] = vertices[i*3];
-							chunk->vertices[vertex_count*3+1] = vertices[i*3+1];
-							chunk->vertices[vertex_count*3+2] = vertices[i*3+2];
+							new_vertices[vertex_count*3] = vertices[i*3];
+							new_vertices[vertex_count*3+1] = vertices[i*3+1];
+							new_vertices[vertex_count*3+2] = vertices[i*3+2];
 							
-							chunk->colors[vertex_count*3] = cr;
-							chunk->colors[vertex_count*3+1] = cg;
-							chunk->colors[vertex_count*3+2] = cb;
+							new_colors[vertex_count*3] = cr;
+							new_colors[vertex_count*3+1] = cg;
+							new_colors[vertex_count*3+2] = cb;
 							
 							vertex_count++;
 						}
@@ -283,15 +285,46 @@ void bake_chunk(Chunk* chunk) {
 
 	chunk->vertex_count = vertex_count;
 
-	// Update VBOs
-	gl_gen_buffers(1, &chunk->vbo);
-	gl_gen_buffers(1, &chunk->color_vbo);
+	// Free old buffers if they exist
+	if (chunk->vertices) {
+		free(chunk->vertices);
+	}
+	if (chunk->colors) {
+		free(chunk->colors);
+	}
+	if (chunk->vbo) {
+		gl_delete_buffers(1, &chunk->vbo);
+	}
+	if (chunk->color_vbo) {
+		gl_delete_buffers(1, &chunk->color_vbo);
+	}
+	if (chunk->vao) {
+		gl_delete_vertex_arrays(1, &chunk->vao);
+	}
 
+	chunk->vertices = new_vertices;
+	chunk->colors = new_colors;
+
+	// Create and bind VAO
+	gl_gen_vertex_arrays(1, &chunk->vao);
+	gl_bind_vertex_array(chunk->vao);
+
+	// Create and bind vertex VBO
+	gl_gen_buffers(1, &chunk->vbo);
 	gl_bind_buffer(GL_ARRAY_BUFFER, chunk->vbo);
 	gl_buffer_data(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), chunk->vertices, GL_STATIC_DRAW);
+	glVertexPointer(3, GL_FLOAT, 0, 0);
+	glEnableClientState(GL_VERTEX_ARRAY);
 
+	// Create and bind color VBO
+	gl_gen_buffers(1, &chunk->color_vbo);
 	gl_bind_buffer(GL_ARRAY_BUFFER, chunk->color_vbo);
 	gl_buffer_data(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), chunk->colors, GL_STATIC_DRAW);
+	glColorPointer(3, GL_FLOAT, 0, 0);
+	glEnableClientState(GL_COLOR_ARRAY);
+
+	// Unbind VAO
+	gl_bind_vertex_array(0);
 
 	chunk->needs_update = false;
 }

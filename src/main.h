@@ -42,6 +42,13 @@ inline PFNGLBINDBUFFERPROC gl_bind_buffer = NULL;
 inline PFNGLBUFFERDATAPROC gl_buffer_data = NULL;
 inline PFNGLDELETEBUFFERSPROC gl_delete_buffers = NULL;
 
+// VAIO function pointers
+inline PFNGLGENVERTEXARRAYSPROC gl_gen_vertex_arrays = NULL;
+inline PFNGLBINDVERTEXARRAYPROC gl_bind_vertex_array = NULL;
+inline PFNGLDELETEVERTEXARRAYSPROC gl_delete_vertex_arrays = NULL;
+inline PFNGLVERTEXATTRIBPOINTERPROC gl_vertex_attrib_pointer = NULL;
+inline PFNGLENABLEVERTEXATTRIBARRAYPROC gl_enable_vertex_attrib_array = NULL;
+
 // Player struct
 typedef struct {
 	float x, y, z;
@@ -58,6 +65,7 @@ typedef struct {
 typedef struct Chunk {
 	unsigned char x, y, z;
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+	GLuint vao;
 	GLuint vbo;
 	GLuint color_vbo;
 	int vertex_count;
@@ -65,7 +73,6 @@ typedef struct Chunk {
 	float* colors;
 	bool needs_update;
 } Chunk;
-
 inline Chunk chunks[CHUNKS_X][CHUNKS_Y][CHUNKS_Z];
 
 // Function prototypes

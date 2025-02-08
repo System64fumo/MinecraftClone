@@ -50,6 +50,13 @@ int main(int argc, char* argv[]) {
 	gl_buffer_data = (PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData");
 	gl_delete_buffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers");
 
+	// Load VAO function pointers
+	gl_gen_vertex_arrays = (PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays");
+	gl_bind_vertex_array = (PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray");
+	gl_delete_vertex_arrays = (PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays");
+	gl_vertex_attrib_pointer = (PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer");
+	gl_enable_vertex_attrib_array = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray");
+
 	// Set up OpenGL viewport and projection
 	change_resolution();
 
@@ -229,19 +236,9 @@ int main_loop(Player* player) {
 					glPushMatrix();
 					glTranslatef(chunks[cx][cy][cz].x, chunks[cx][cy][cz].y, chunks[cx][cy][cz].z);
 
-					glEnableClientState(GL_VERTEX_ARRAY);
-					glEnableClientState(GL_COLOR_ARRAY);
-
-					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].vbo);
-					glVertexPointer(3, GL_FLOAT, 0, 0);
-
-					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].color_vbo);
-					glColorPointer(3, GL_FLOAT, 0, 0);
-
+					gl_bind_vertex_array(chunks[cx][cy][cz].vao);
 					glDrawArrays(GL_QUADS, 0, chunks[cx][cy][cz].vertex_count);
-					
-					glDisableClientState(GL_COLOR_ARRAY);
-					glDisableClientState(GL_VERTEX_ARRAY);
+					gl_bind_vertex_array(0);
 					
 					glPopMatrix();
 				}
