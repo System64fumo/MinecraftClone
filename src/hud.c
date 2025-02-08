@@ -26,7 +26,7 @@ void draw_text(const char* text, int length, int x, int y) {
 }
 
 void draw_hud(float fps, Player* player) {
-	static char debug_text[64];
+	static char debug_text[128];
 	
 	glPushMatrix();
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -44,9 +44,16 @@ void draw_hud(float fps, Player* player) {
 	glEnable(GL_COLOR_LOGIC_OP);
 	glLogicOp(GL_INVERT);
 	
-	const float center_x = screen_width/2;
-	const float center_y = screen_height/2;
+	const float center_x = screen_width / 2;
+	const float center_y = screen_height / 2;
 	
+	// Raycast to find block player is looking at
+	int block_x, block_y, block_z;
+	Chunk* chunk;
+	float hit_distance;
+	bool hit = raycast(player, 15.0f, &block_x, &block_y, &block_z, &chunk, &hit_distance);
+
+	// Draw crosshair lines
 	glBegin(GL_LINES);
 	glVertex2f(center_x - 10, center_y);
 	glVertex2f(center_x + 10, center_y);
@@ -55,12 +62,25 @@ void draw_hud(float fps, Player* player) {
 	glEnd();
 	
 	glDisable(GL_COLOR_LOGIC_OP);
+	
+	glEnable(GL_TEXTURE_2D);
+	glPopMatrix();
 
-	if (DEBUG)
-		snprintf(debug_text, sizeof(debug_text), "FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Yaw: %.1f, Pitch: %.1f", fps, player->x, player->y, player->z, player->yaw, player->pitch);
-	else
+	if (DEBUG) {
+		if (hit) {
+			snprintf(debug_text, sizeof(debug_text), 
+				"FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Yaw: %.1f, Pitch: %.1f, Looking at block: %d,%d,%d (ID: %d)", 
+				fps, player->x, player->y, player->z, player->yaw, player->pitch,
+				block_x, block_y, block_z, chunk->blocks[block_x][block_y][block_z].id);
+		} else {
+			snprintf(debug_text, sizeof(debug_text), 
+				"FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Yaw: %.1f, Pitch: %.1f, No block in range", 
+				fps, player->x, player->y, player->z, player->yaw, player->pitch);
+		}
+	}
+	else {
 		snprintf(debug_text, sizeof(debug_text), "FPS: %.1f", fps);
-
+	}
 	draw_text(debug_text, strlen(debug_text), 10, 20);
 
 	glMatrixMode(GL_PROJECTION);
@@ -68,4 +88,8 @@ void draw_hud(float fps, Player* player) {
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
 	glPopAttrib();
+
+	if (hit) {
+		draw_block_highlight((chunk->x * 2) + block_x + 1, (chunk->y * 2) + block_y + 1, (chunk->z * 2) + block_z + 1);
+	}
 }
