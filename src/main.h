@@ -1,8 +1,6 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_ttf.h>
 #include <GL/gl.h>
-#include <GL/glext.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <math.h>
@@ -21,6 +19,10 @@ inline int screen_width = 1280;
 inline int screen_height = 720;
 inline int chunk_radius = 10;
 
+inline float fov = 70.0f;
+inline float near = 0.1f;
+inline float far = 200.0f;
+
 inline Uint32 lastTime;
 inline Uint32 lastFpsUpdate;
 inline float deltaTime = 0.0f;
@@ -31,7 +33,6 @@ inline float fpsHistory[FPS_HISTORY_SIZE];
 
 inline SDL_Event event;
 inline GLuint block_vbo;
-inline TTF_Font* font = NULL;
 inline SDL_Window* window = NULL;
 inline SDL_GLContext glContext;
 
@@ -69,6 +70,7 @@ inline Chunk chunks[CHUNKS_X][CHUNKS_Y][CHUNKS_Z];
 
 // Function prototypes
 int main_loop(Player* player);
+void change_resolution();
 void cleanup();
 void draw_hud(float fps, Player* player);
 void process_keyboard_movement(const Uint8* key_state, Player* player, float delta_time);
