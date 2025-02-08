@@ -1,10 +1,6 @@
 #include "main.h"
 
 int main(int argc, char* argv[]) {
-	SDL_Window* window = NULL;
-	SDL_GLContext glContext;
-	bool quit = false;
-	SDL_Event event;
 
 	// Initialize player
 	Player player = {
@@ -13,7 +9,7 @@ int main(int argc, char* argv[]) {
 		.z = 16.0f,
 		.yaw = 135.0f,
 		.pitch = 20.0f,
-		.speed = 20.0f
+		.speed = 20
 	};
 
 	// Initialize SDL
@@ -79,20 +75,27 @@ int main(int argc, char* argv[]) {
 	// Hide and capture mouse
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
-	Uint32 lastTime = SDL_GetTicks();
-	float deltaTime = 0.0f;
+	lastTime = SDL_GetTicks();
 	
 	// FPS tracking variables
-	#define FPS_UPDATE_INTERVAL 500  // Update FPS every 500ms
-	#define FPS_HISTORY_SIZE 10      // Store 10 samples for averaging
-	float fpsHistory[FPS_HISTORY_SIZE] = {0};
-	int fpsIndex = 0;
-	float averageFps = 0.0f;
-	Uint32 lastFpsUpdate = SDL_GetTicks();
-	int frameCount = 0;
+	for(int i = 0; i < FPS_HISTORY_SIZE; i++) {
+		fpsHistory[i] = 0.0f;
+	}
+	fpsIndex = 0;
+	averageFps = 0.0f;
+	lastFpsUpdate = SDL_GetTicks();
+	frameCount = 0;
 
 	// Main game loop
-	while (!quit) {
+	while (main_loop(&player) == 1) {
+		// Empty loop body - processing happens in main_loop
+	}
+
+	cleanup();
+	return 0;
+}
+
+int main_loop(Player* player) {
 		// Calculate delta time
 		Uint32 currentTime = SDL_GetTicks();
 		deltaTime = (currentTime - lastTime) / 1000.0f;
@@ -120,22 +123,22 @@ int main(int argc, char* argv[]) {
 		// Handle events
 		while (SDL_PollEvent(&event) != 0) {
 			if (event.type == SDL_QUIT) {
-				quit = true;
+				return 0;
 			}
 
 			// Mouse movement
 			if (event.type == SDL_MOUSEMOTION) {
-				player.yaw += event.motion.xrel * 0.2f;
-				player.pitch += event.motion.yrel * 0.2f;
+				player->yaw += event.motion.xrel * 0.2f;
+				player->pitch += event.motion.yrel * 0.2f;
 
 				// Clamp pitch to prevent camera flipping
-				player.pitch = fmaxf(-89.0f, fminf(89.0f, player.pitch));
+				player->pitch = fmaxf(-89.0f, fminf(89.0f, player->pitch));
 			}
 		}
 
 		// Get keyboard state
 		const Uint8* keyboard = SDL_GetKeyboardState(NULL);
-		process_keyboard_movement(keyboard, &player, deltaTime);
+		process_keyboard_movement(keyboard, player, deltaTime);
 
 		// Check for R key to mark all chunks for update
 		static int rKeyWasPressed = 0;
@@ -156,9 +159,25 @@ int main(int argc, char* argv[]) {
 		// Check player position and generate new chunks if needed - once every 3 seconds
 		static Uint32 lastChunkCheck = 0;
 		if (currentTime - lastChunkCheck >= 3000) {
-			int center_cx = (int)floorf(player.x / (CHUNK_SIZE * 1.0f));
-			int center_cy = (int)floorf(player.y / (CHUNK_SIZE * 1.0f));
-			int center_cz = (int)floorf(player.z / (CHUNK_SIZE * 1.0f));
+			int center_cx = (int)floorf(player->x / (CHUNK_SIZE * 1.0f));
+			int center_cy = (int)floorf(player->y / (CHUNK_SIZE * 1.0f));
+			int center_cz = (int)floorf(player->z / (CHUNK_SIZE * 1.0f));
+
+			// First, unload chunks that are too far from the player
+			for(int cx = 0; cx < CHUNKS_X; cx++) {
+				for(int cy = 0; cy < CHUNKS_Y; cy++) {
+					for(int cz = 0; cz < CHUNKS_Z; cz++) {
+						if (chunks[cx][cy][cz].vbo) {
+							// Check if chunk is outside the radius
+							if (abs(cx - center_cx) > chunk_radius ||
+								abs(cy - center_cy) > chunk_radius ||
+								abs(cz - center_cz) > chunk_radius) {
+								unload_chunk(&chunks[cx][cy][cz]);
+							}
+						}
+					}
+				}
+			}
 
 			// Loop through NxNxN chunk area around player
 			for(int dx = -chunk_radius; dx <= chunk_radius; dx++) {
@@ -173,9 +192,9 @@ int main(int argc, char* argv[]) {
 						cy = cy < 0 ? 0 : (cy >= CHUNKS_Y ? CHUNKS_Y - 1 : cy);
 						cz = cz < 0 ? 0 : (cz >= CHUNKS_Z ? CHUNKS_Z - 1 : cz);
 
-						// Generate chunk if it doesn't exist
+						// Load chunk if it's not already loaded
 						if (!chunks[cx][cy][cz].vbo) {
-							generate_chunk(cx, cy, cz);
+							load_chunk(cx, cy, cz);
 						}
 					}
 				}
@@ -192,9 +211,9 @@ int main(int argc, char* argv[]) {
 		glLoadIdentity();
 
 		// Apply player position and rotation
-		glRotatef(player.pitch, 1.0f, 0.0f, 0.0f);
-		glRotatef(player.yaw, 0.0f, 1.0f, 0.0f);
-		glTranslatef(-player.x, -player.y, -player.z);
+		glRotatef(player->pitch, 1.0f, 0.0f, 0.0f);
+		glRotatef(player->yaw, 0.0f, 1.0f, 0.0f);
+		glTranslatef(-player->x, -player->y, -player->z);
 
 		// Render all chunks
 		for(int cx = 0; cx < CHUNKS_X; cx++) {
@@ -227,27 +246,18 @@ int main(int argc, char* argv[]) {
 		}
 
 		// Draw HUD with average FPS
-		draw_hud(averageFps, &player);
+		draw_hud(averageFps, player);
 
 		// Swap buffers
 		SDL_GL_SwapWindow(window);
-	}
-	// Cleanup
+	return 1;
+}
+
+void cleanup() {
 	for(int cx = 0; cx < CHUNKS_X; cx++) {
 		for(int cy = 0; cy < CHUNKS_Y; cy++) {
 			for(int cz = 0; cz < CHUNKS_Z; cz++) {
-				if (chunks[cx][cy][cz].vertices) {
-					free(chunks[cx][cy][cz].vertices);
-				}
-				if (chunks[cx][cy][cz].colors) {
-					free(chunks[cx][cy][cz].colors);
-				}
-				if (chunks[cx][cy][cz].vbo) {
-					gl_delete_buffers(1, &chunks[cx][cy][cz].vbo);
-				}
-				if (chunks[cx][cy][cz].color_vbo) {
-					gl_delete_buffers(1, &chunks[cx][cy][cz].color_vbo);
-				}
+				unload_chunk(&chunks[cx][cy][cz]);
 			}
 		}
 	}
@@ -255,6 +265,4 @@ int main(int argc, char* argv[]) {
 	SDL_GL_DeleteContext(glContext);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
-
-	return 0;
 }

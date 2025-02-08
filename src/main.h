@@ -13,14 +13,27 @@
 #define CHUNKS_Y 4
 #define CHUNKS_Z 16
 #define MAX_VERTICES 65536
-#define DEBUG 0
+#define DEBUG 1
+#define FPS_UPDATE_INTERVAL 500
+#define FPS_HISTORY_SIZE 10
 
 inline int screen_width = 1280;
 inline int screen_height = 720;
-inline int chunk_radius = 5;
+inline int chunk_radius = 10;
 
+inline Uint32 lastTime;
+inline Uint32 lastFpsUpdate;
+inline float deltaTime = 0.0f;
+inline int frameCount = 0;
+inline float averageFps = 0.0f;
+inline int fpsIndex = 0;
+inline float fpsHistory[FPS_HISTORY_SIZE];
+
+inline SDL_Event event;
 inline GLuint block_vbo;
 inline TTF_Font* font = NULL;
+inline SDL_Window* window = NULL;
+inline SDL_GLContext glContext;
 
 // VBO function pointers
 inline PFNGLGENBUFFERSPROC gl_gen_buffers = NULL;
@@ -30,24 +43,20 @@ inline PFNGLDELETEBUFFERSPROC gl_delete_buffers = NULL;
 
 // Player struct
 typedef struct {
-	float x;
-	float y;
-	float z;
-	float yaw;
-	float pitch;
-	float speed;
+	float x, y, z;
+	float yaw, pitch;
+	unsigned char speed;
 } Player;
 
 // Block struct
 typedef struct {
 	unsigned char id;
 	unsigned char metadata;
-	unsigned char x, y, z;
 } Block;
 
 typedef struct Chunk {
-	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
 	unsigned char x, y, z;
+	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
 	GLuint vbo;
 	GLuint color_vbo;
 	int vertex_count;
@@ -60,8 +69,11 @@ typedef struct Chunk {
 inline Chunk chunks[CHUNKS_X][CHUNKS_Y][CHUNKS_Z];
 
 // Function prototypes
+int main_loop(Player* player);
+void cleanup();
 void draw_hud(float fps, Player* player);
 void process_keyboard_movement(const Uint8* key_state, Player* player, float delta_time);
 void bake_chunk(Chunk* chunk);
-void generate_chunk(unsigned char cx, unsigned char cy, unsigned char cz);
+void load_chunk(unsigned char cx, unsigned char cy, unsigned char cz);
+void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z);
