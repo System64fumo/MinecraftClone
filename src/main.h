@@ -13,7 +13,7 @@
 #define CHUNKS_Y 4
 #define CHUNKS_Z 16
 #define MAX_VERTICES 65536
-#define DEBUG 1
+#define DEBUG 0
 #define FPS_UPDATE_INTERVAL 500
 #define FPS_HISTORY_SIZE 10
 
