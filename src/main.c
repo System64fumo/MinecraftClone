@@ -1,7 +1,6 @@
 #include "main.h"
 
 int main(int argc, char* argv[]) {
-
 	// Initialize player
 	Player player = {
 		.x = -16.0f,
@@ -15,12 +14,6 @@ int main(int argc, char* argv[]) {
 	// Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-		return 1;
-	}
-
-	// Initialize SDL_ttf
-	if (TTF_Init() == -1) {
-		printf("SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError());
 		return 1;
 	}
 
@@ -39,14 +32,14 @@ int main(int argc, char* argv[]) {
 							screen_width, screen_height, 
 							SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
-	if (window == NULL) {
+	if (!window) {
 		printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
 		return 1;
 	}
 
 	// Create OpenGL context
 	glContext = SDL_GL_CreateContext(window);
-	if (glContext == NULL) {
+	if (!glContext) {
 		printf("OpenGL context could not be created! SDL Error: %s\n", SDL_GetError());
 		return 1;
 	}
@@ -58,13 +51,7 @@ int main(int argc, char* argv[]) {
 	gl_delete_buffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers");
 
 	// Set up OpenGL viewport and projection
-	glViewport(0, 0, screen_width, screen_height);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glFrustum(-1.0, 1.0, -0.5625, 0.5625, 1.5, 200.0);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	change_resolution();
 
 	// Enable depth test and face culling
 	glEnable(GL_DEPTH_TEST);
@@ -72,24 +59,18 @@ int main(int argc, char* argv[]) {
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CW);
 
-	// Hide and capture mouse
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	lastTime = SDL_GetTicks();
 	
-	// FPS tracking variables
-	for(int i = 0; i < FPS_HISTORY_SIZE; i++) {
-		fpsHistory[i] = 0.0f;
-	}
+	// Initialize FPS tracking
+	memset(fpsHistory, 0, sizeof(fpsHistory));
 	fpsIndex = 0;
 	averageFps = 0.0f;
-	lastFpsUpdate = SDL_GetTicks();
+	lastFpsUpdate = lastTime;
 	frameCount = 0;
 
-	// Main game loop
-	while (main_loop(&player) == 1) {
-		// Empty loop body - processing happens in main_loop
-	}
+	while (main_loop(&player) == 1);
 
 	cleanup();
 	return 0;
@@ -126,6 +107,11 @@ int main_loop(Player* player) {
 				return 0;
 			}
 
+			// Handle window resize event
+			if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
+				screen_width = event.window.data1;
+				screen_height = event.window.data2;
+			}
 			// Mouse movement
 			if (event.type == SDL_MOUSEMOTION) {
 				player->yaw += event.motion.xrel * 0.2f;
@@ -238,7 +224,7 @@ int main_loop(Player* player) {
 							bake_chunk(&chunks[cx][cy-1][cz]);
 						if (cy < CHUNKS_Y-1 && chunks[cx][cy+1][cz].vbo != 0)
 							bake_chunk(&chunks[cx][cy+1][cz]);
-						}
+					}
 
 					glPushMatrix();
 					glTranslatef(chunks[cx][cy][cz].x, chunks[cx][cy][cz].y, chunks[cx][cy][cz].z);
@@ -268,6 +254,17 @@ int main_loop(Player* player) {
 		// Swap buffers
 		SDL_GL_SwapWindow(window);
 	return 1;
+}
+
+void change_resolution() {
+	float aspect = (float)screen_width / (float)screen_height;
+	float fovRad = fovRad = (fov * M_PI) / 180.0f;
+	float tanHalf = tanf(fovRad / 2.0f);
+	glViewport(0, 0, screen_width, screen_height);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glFrustum(-near * aspect * tanHalf, near * aspect * tanHalf, -near * tanHalf, near * tanHalf, near, far);
+	glMatrixMode(GL_MODELVIEW);
 }
 
 void cleanup() {

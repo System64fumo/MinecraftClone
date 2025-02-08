@@ -11,7 +11,7 @@ clean:
 	rm -rf $(BUILDDIR)
 
 game: $(OBJS)
-	$(CC) -o $(BUILDDIR)/game $(OBJS) $(CFLAGS) -lSDL2 -lSDL2_image -lSDL2_ttf -lGL -lGLU -lglut -Wall -lm
+	$(CC) -o $(BUILDDIR)/game $(OBJS) $(CFLAGS) -lSDL2 -lGL -lGLU -lglut -Wall -lm
 
 $(BUILDDIR)/%.o: src/%.c
 	$(CXX) -c $< -o $@ $(CFLAGS)
