@@ -221,7 +221,24 @@ int main_loop(Player* player) {
 				for(int cz = 0; cz < CHUNKS_Z; cz++) {
 					if (chunks[cx][cy][cz].needs_update) {
 						bake_chunk(&chunks[cx][cy][cz]);
-					}
+
+						// TODO: This causes lag, Should probably be done in a separate thread
+						// Re-Render neighboring chunks
+						if (cz > 0 && chunks[cx][cy][cz-1].vbo != 0)
+							bake_chunk(&chunks[cx][cy][cz-1]);
+						if (cz < CHUNKS_Z-1 && chunks[cx][cy][cz+1].vbo != 0)
+							bake_chunk(&chunks[cx][cy][cz+1]);
+							
+						if (cx > 0 && chunks[cx-1][cy][cz].vbo != 0)
+							bake_chunk(&chunks[cx-1][cy][cz]);
+						if (cx < CHUNKS_X-1 && chunks[cx+1][cy][cz].vbo != 0)
+							bake_chunk(&chunks[cx+1][cy][cz]);
+
+						if (cy > 0 && chunks[cx][cy-1][cz].vbo != 0)
+							bake_chunk(&chunks[cx][cy-1][cz]);
+						if (cy < CHUNKS_Y-1 && chunks[cx][cy+1][cz].vbo != 0)
+							bake_chunk(&chunks[cx][cy+1][cz]);
+						}
 
 					glPushMatrix();
 					glTranslatef(chunks[cx][cy][cz].x, chunks[cx][cy][cz].y, chunks[cx][cy][cz].z);
