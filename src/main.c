@@ -4,9 +4,9 @@ int main(int argc, char* argv[]) {
 
 	// Initialize player
 	Player player = {
-		.x = 16.0f,
-		.y = 32.0f,
-		.z = 16.0f,
+		.x = -16.0f,
+		.y = 64.0f,
+		.z = -16.0f,
 		.yaw = 135.0f,
 		.pitch = 20.0f,
 		.speed = 20
