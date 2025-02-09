@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
 		.z = (WORLD_SIZE_UNSIGNED * CHUNK_SIZE) / 2,
 		.yaw = 135.0f,
 		.pitch = 20.0f,
-		.speed = 100
+		.speed = 20
 	};
 
 	// Initialize SDL
@@ -136,6 +136,10 @@ int main_loop(Player* player) {
 			}
 		}
 
+		int center_cx = (int)floorf(player->x / (CHUNK_SIZE * 1.0f));
+		int center_cy = (int)floorf(player->y / (CHUNK_SIZE * 1.0f));
+		int center_cz = (int)floorf(player->z / (CHUNK_SIZE * 1.0f));
+
 		// Get keyboard state
 		const Uint8* keyboard = SDL_GetKeyboardState(NULL);
 		process_keyboard_movement(keyboard, player, deltaTime);
@@ -159,27 +163,30 @@ int main_loop(Player* player) {
 		// Check player position and generate new chunks if needed - once every 3 seconds
 		static Uint32 lastChunkCheck = 0;
 		if (currentTime - lastChunkCheck >= 3000) {
-			int center_cx = (int)floorf(player->x / (CHUNK_SIZE * 1.0f));
-			int center_cy = (int)floorf(player->y / (CHUNK_SIZE * 1.0f));
-			int center_cz = (int)floorf(player->z / (CHUNK_SIZE * 1.0f));
-
 			// First, unload chunks that are too far from the player
-			for(int cx = 0; cx < WORLD_SIZE_UNSIGNED; cx++) {
-				for(int cy = 0; cy < WORLD_SIZE_Y; cy++) {
-					for(int cz = 0; cz < WORLD_SIZE_UNSIGNED; cz++) {
-						if (chunks[cx][cy][cz].vbo) {
-							// Check if chunk is outside the radius
-							if (abs(cx - center_cx) > chunk_radius ||
-								abs(cy - center_cy) > chunk_radius ||
-								abs(cz - center_cz) > chunk_radius) {
-								unload_chunk(&chunks[cx][cy][cz]);
+			for(int dx = -chunk_radius-1; dx <= chunk_radius+1; dx++) {
+				for(int dy = -chunk_radius-1; dy <= chunk_radius+1; dy++) {
+					for(int dz = -chunk_radius-1; dz <= chunk_radius+1; dz++) {
+						int cx = center_cx + dx;
+						int cy = center_cy + dy;
+						int cz = center_cz + dz;
+
+						if (cx >= 0 && cx < WORLD_SIZE_UNSIGNED &&
+							cy >= 0 && cy < WORLD_SIZE_Y &&
+							cz >= 0 && cz < WORLD_SIZE_UNSIGNED) {
+							if (chunks[cx][cy][cz].vbo) {
+								if (abs(dx) > chunk_radius ||
+									abs(dy) > chunk_radius ||
+									abs(dz) > chunk_radius) {
+									unload_chunk(&chunks[cx][cy][cz]);
+								}
 							}
 						}
 					}
 				}
 			}
 
-			// Loop through NxNxN chunk area around player
+			// Load new chunks within radius
 			for(int dx = -chunk_radius; dx <= chunk_radius; dx++) {
 				for(int dy = -chunk_radius; dy <= chunk_radius; dy++) {
 					for(int dz = -chunk_radius; dz <= chunk_radius; dz++) {
@@ -188,13 +195,13 @@ int main_loop(Player* player) {
 						int cz = center_cz + dz;
 
 						// Ensure chunk coordinates are within bounds without wrapping
-						cx = cx < 0 ? 0 : (cx >= WORLD_SIZE_UNSIGNED ? WORLD_SIZE_UNSIGNED - 1 : cx);
-						cy = cy < 0 ? 0 : (cy >= WORLD_SIZE_Y ? WORLD_SIZE_Y - 1 : cy);
-						cz = cz < 0 ? 0 : (cz >= WORLD_SIZE_UNSIGNED ? WORLD_SIZE_UNSIGNED - 1 : cz);
-
-						// Load chunk if it's not already loaded
-						if (!chunks[cx][cy][cz].vbo) {
-							load_chunk(cx, cy, cz);
+						if (cx >= 0 && cx < WORLD_SIZE_UNSIGNED &&
+							cy >= 0 && cy < WORLD_SIZE_Y &&
+							cz >= 0 && cz < WORLD_SIZE_UNSIGNED) {
+							// Load chunk if it's not already loaded
+							if (!chunks[cx][cy][cz].vbo) {
+								load_chunk(cx, cy, cz);
+							}
 						}
 					}
 				}
@@ -215,39 +222,47 @@ int main_loop(Player* player) {
 		glRotatef(player->yaw, 0.0f, 1.0f, 0.0f);
 		glTranslatef(-player->x, -player->y, -player->z);
 
-		// Render all chunks
-		for(int cx = 0; cx < WORLD_SIZE_UNSIGNED; cx++) {
-			for(int cy = 0; cy < WORLD_SIZE_Y; cy++) {
-				for(int cz = 0; cz < WORLD_SIZE_UNSIGNED; cz++) {
-					if (chunks[cx][cy][cz].needs_update) {
-						bake_chunk(&chunks[cx][cy][cz]);
+		// Render visible chunks
+		for(int dx = -chunk_radius; dx <= chunk_radius; dx++) {
+			for(int dy = -chunk_radius; dy <= chunk_radius; dy++) {
+				for(int dz = -chunk_radius; dz <= chunk_radius; dz++) {
+					int cx = center_cx + dx;
+					int cy = center_cy + dy;
+					int cz = center_cz + dz;
 
-						// TODO: This causes lag, Should probably be done in a separate thread
-						// Re-Render neighboring chunks
-						if (cz > 0 && chunks[cx][cy][cz-1].vbo != 0)
-							bake_chunk(&chunks[cx][cy][cz-1]);
-						if (cz < WORLD_SIZE_UNSIGNED-1 && chunks[cx][cy][cz+1].vbo != 0)
-							bake_chunk(&chunks[cx][cy][cz+1]);
-							
-						if (cx > 0 && chunks[cx-1][cy][cz].vbo != 0)
-							bake_chunk(&chunks[cx-1][cy][cz]);
-						if (cx < WORLD_SIZE_UNSIGNED-1 && chunks[cx+1][cy][cz].vbo != 0)
-							bake_chunk(&chunks[cx+1][cy][cz]);
+					if (cx >= 0 && cx < WORLD_SIZE_UNSIGNED &&
+						cy >= 0 && cy < WORLD_SIZE_Y &&
+						cz >= 0 && cz < WORLD_SIZE_UNSIGNED) {
+						
+						if (chunks[cx][cy][cz].needs_update) {
+							bake_chunk(&chunks[cx][cy][cz]);
 
-						if (cy > 0 && chunks[cx][cy-1][cz].vbo != 0)
-							bake_chunk(&chunks[cx][cy-1][cz]);
-						if (cy < WORLD_SIZE_Y-1 && chunks[cx][cy+1][cz].vbo != 0)
-							bake_chunk(&chunks[cx][cy+1][cz]);
+							// Re-Render neighboring chunks
+							if (cz > 0 && chunks[cx][cy][cz-1].vbo != 0)
+								bake_chunk(&chunks[cx][cy][cz-1]);
+							if (cz < WORLD_SIZE_UNSIGNED-1 && chunks[cx][cy][cz+1].vbo != 0)
+								bake_chunk(&chunks[cx][cy][cz+1]);
+								
+							if (cx > 0 && chunks[cx-1][cy][cz].vbo != 0)
+								bake_chunk(&chunks[cx-1][cy][cz]);
+							if (cx < WORLD_SIZE_UNSIGNED-1 && chunks[cx+1][cy][cz].vbo != 0)
+								bake_chunk(&chunks[cx+1][cy][cz]);
+
+							if (cy > 0 && chunks[cx][cy-1][cz].vbo != 0)
+								bake_chunk(&chunks[cx][cy-1][cz]);
+							if (cy < WORLD_SIZE_Y-1 && chunks[cx][cy+1][cz].vbo != 0)
+								bake_chunk(&chunks[cx][cy+1][cz]);
+						}
+
+						glPushMatrix();
+						glTranslatef(chunks[cx][cy][cz].x * (CHUNK_SIZE - 1), chunks[cx][cy][cz].y * (CHUNK_SIZE - 1), chunks[cx][cy][cz].z * (CHUNK_SIZE - 1));
+
+						gl_bind_vertex_array(chunks[cx][cy][cz].vao);
+						glDrawArrays(GL_QUADS, 0, chunks[cx][cy][cz].vertex_count);
+						gl_bind_vertex_array(0);
+						
+						glPopMatrix();
 					}
-
-					glPushMatrix();
-					glTranslatef(chunks[cx][cy][cz].x * (CHUNK_SIZE - 1), chunks[cx][cy][cz].y * (CHUNK_SIZE - 1), chunks[cx][cy][cz].z * (CHUNK_SIZE - 1));
-
-					gl_bind_vertex_array(chunks[cx][cy][cz].vao);
-					glDrawArrays(GL_QUADS, 0, chunks[cx][cy][cz].vertex_count);
-					gl_bind_vertex_array(0);
-					
-					glPopMatrix();
 				}
 			}
 		}
@@ -262,7 +277,7 @@ int main_loop(Player* player) {
 
 void change_resolution() {
 	float aspect = (float)screen_width / (float)screen_height;
-	float fovRad = fovRad = (fov * M_PI) / 180.0f;
+	float fovRad = (fov * M_PI) / 180.0f;
 	float tanHalf = tanf(fovRad / 2.0f);
 	screen_center_x = screen_width / 2.0f;
 	screen_center_y = screen_height / 2.0f;
