@@ -7,9 +7,10 @@
 #include <GL/glut.h>
 
 #define CHUNK_SIZE 16
-#define CHUNKS_X 16
-#define CHUNKS_Y 4
-#define CHUNKS_Z 16
+
+#define WORLD_SIZE_UNSIGNED UINT8_MAX
+#define WORLD_SIZE_Y 4
+
 #define MAX_VERTICES 65536
 //#define DEBUG
 #define FPS_UPDATE_INTERVAL 500
@@ -76,7 +77,7 @@ typedef struct Chunk {
 	float* colors;
 	bool needs_update;
 } Chunk;
-inline Chunk chunks[CHUNKS_X][CHUNKS_Y][CHUNKS_Z];
+inline Chunk chunks[WORLD_SIZE_UNSIGNED][WORLD_SIZE_Y][WORLD_SIZE_UNSIGNED];
 
 // Function prototypes
 int main_loop(Player* player);

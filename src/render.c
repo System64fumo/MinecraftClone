@@ -95,7 +95,7 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 			
 		case 1: // Back (Z+)
 			if (z == CHUNK_SIZE-1) {
-				if (cz < CHUNKS_Z-1 && chunks[cx][cy][cz+1].vbo != 0) {
+				if (cz < WORLD_SIZE_UNSIGNED-1 && chunks[cx][cy][cz+1].vbo != 0) {
 					return chunks[cx][cy][cz+1].blocks[x][y][0].id == 0;
 				}
 				return true;
@@ -113,7 +113,7 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 			
 		case 3: // Right (X+)
 			if (x == CHUNK_SIZE-1) {
-				if (cx < CHUNKS_X-1 && chunks[cx+1][cy][cz].vbo != 0) {
+				if (cx < WORLD_SIZE_UNSIGNED-1 && chunks[cx+1][cy][cz].vbo != 0) {
 					return chunks[cx+1][cy][cz].blocks[0][y][z].id == 0;
 				}
 				return true;
@@ -122,7 +122,7 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 			
 		case 4: // Top (Y+)
 			if (y == CHUNK_SIZE-1) {
-				if (cy < CHUNKS_Y-1 && chunks[cx][cy+1][cz].vbo != 0) {
+				if (cy < WORLD_SIZE_Y-1 && chunks[cx][cy+1][cz].vbo != 0) {
 					return chunks[cx][cy+1][cz].blocks[x][0][z].id == 0;
 				}
 				return true;

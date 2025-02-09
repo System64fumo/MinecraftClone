@@ -3,12 +3,12 @@
 int main(int argc, char* argv[]) {
 	// Initialize player
 	Player player = {
-		.x = -16.0f,
+		.x = (WORLD_SIZE_UNSIGNED * CHUNK_SIZE) / 2,
 		.y = 64.0f,
-		.z = -16.0f,
+		.z = (WORLD_SIZE_UNSIGNED * CHUNK_SIZE) / 2,
 		.yaw = 135.0f,
 		.pitch = 20.0f,
-		.speed = 20
+		.speed = 100
 	};
 
 	// Initialize SDL
@@ -144,9 +144,9 @@ int main_loop(Player* player) {
 		static int rKeyWasPressed = 0;
 		if (keyboard[SDL_SCANCODE_R] && !rKeyWasPressed) {
 			printf("Re-rendering all chunks\n");
-			for(int cx = 0; cx < CHUNKS_X; cx++) {
-				for(int cy = 0; cy < CHUNKS_Y; cy++) {
-					for(int cz = 0; cz < CHUNKS_Z; cz++) {
+			for(int cx = 0; cx < WORLD_SIZE_UNSIGNED; cx++) {
+				for(int cy = 0; cy < WORLD_SIZE_Y; cy++) {
+					for(int cz = 0; cz < WORLD_SIZE_UNSIGNED; cz++) {
 						if (chunks[cx][cy][cz].vbo) {
 							chunks[cx][cy][cz].needs_update = true;
 						}
@@ -164,9 +164,9 @@ int main_loop(Player* player) {
 			int center_cz = (int)floorf(player->z / (CHUNK_SIZE * 1.0f));
 
 			// First, unload chunks that are too far from the player
-			for(int cx = 0; cx < CHUNKS_X; cx++) {
-				for(int cy = 0; cy < CHUNKS_Y; cy++) {
-					for(int cz = 0; cz < CHUNKS_Z; cz++) {
+			for(int cx = 0; cx < WORLD_SIZE_UNSIGNED; cx++) {
+				for(int cy = 0; cy < WORLD_SIZE_Y; cy++) {
+					for(int cz = 0; cz < WORLD_SIZE_UNSIGNED; cz++) {
 						if (chunks[cx][cy][cz].vbo) {
 							// Check if chunk is outside the radius
 							if (abs(cx - center_cx) > chunk_radius ||
@@ -188,9 +188,9 @@ int main_loop(Player* player) {
 						int cz = center_cz + dz;
 
 						// Ensure chunk coordinates are within bounds without wrapping
-						cx = cx < 0 ? 0 : (cx >= CHUNKS_X ? CHUNKS_X - 1 : cx);
-						cy = cy < 0 ? 0 : (cy >= CHUNKS_Y ? CHUNKS_Y - 1 : cy);
-						cz = cz < 0 ? 0 : (cz >= CHUNKS_Z ? CHUNKS_Z - 1 : cz);
+						cx = cx < 0 ? 0 : (cx >= WORLD_SIZE_UNSIGNED ? WORLD_SIZE_UNSIGNED - 1 : cx);
+						cy = cy < 0 ? 0 : (cy >= WORLD_SIZE_Y ? WORLD_SIZE_Y - 1 : cy);
+						cz = cz < 0 ? 0 : (cz >= WORLD_SIZE_UNSIGNED ? WORLD_SIZE_UNSIGNED - 1 : cz);
 
 						// Load chunk if it's not already loaded
 						if (!chunks[cx][cy][cz].vbo) {
@@ -216,9 +216,9 @@ int main_loop(Player* player) {
 		glTranslatef(-player->x, -player->y, -player->z);
 
 		// Render all chunks
-		for(int cx = 0; cx < CHUNKS_X; cx++) {
-			for(int cy = 0; cy < CHUNKS_Y; cy++) {
-				for(int cz = 0; cz < CHUNKS_Z; cz++) {
+		for(int cx = 0; cx < WORLD_SIZE_UNSIGNED; cx++) {
+			for(int cy = 0; cy < WORLD_SIZE_Y; cy++) {
+				for(int cz = 0; cz < WORLD_SIZE_UNSIGNED; cz++) {
 					if (chunks[cx][cy][cz].needs_update) {
 						bake_chunk(&chunks[cx][cy][cz]);
 
@@ -226,17 +226,17 @@ int main_loop(Player* player) {
 						// Re-Render neighboring chunks
 						if (cz > 0 && chunks[cx][cy][cz-1].vbo != 0)
 							bake_chunk(&chunks[cx][cy][cz-1]);
-						if (cz < CHUNKS_Z-1 && chunks[cx][cy][cz+1].vbo != 0)
+						if (cz < WORLD_SIZE_UNSIGNED-1 && chunks[cx][cy][cz+1].vbo != 0)
 							bake_chunk(&chunks[cx][cy][cz+1]);
 							
 						if (cx > 0 && chunks[cx-1][cy][cz].vbo != 0)
 							bake_chunk(&chunks[cx-1][cy][cz]);
-						if (cx < CHUNKS_X-1 && chunks[cx+1][cy][cz].vbo != 0)
+						if (cx < WORLD_SIZE_UNSIGNED-1 && chunks[cx+1][cy][cz].vbo != 0)
 							bake_chunk(&chunks[cx+1][cy][cz]);
 
 						if (cy > 0 && chunks[cx][cy-1][cz].vbo != 0)
 							bake_chunk(&chunks[cx][cy-1][cz]);
-						if (cy < CHUNKS_Y-1 && chunks[cx][cy+1][cz].vbo != 0)
+						if (cy < WORLD_SIZE_Y-1 && chunks[cx][cy+1][cz].vbo != 0)
 							bake_chunk(&chunks[cx][cy+1][cz]);
 					}
 
@@ -275,9 +275,9 @@ void change_resolution() {
 }
 
 void cleanup() {
-	for(int cx = 0; cx < CHUNKS_X; cx++) {
-		for(int cy = 0; cy < CHUNKS_Y; cy++) {
-			for(int cz = 0; cz < CHUNKS_Z; cz++) {
+	for(int cx = 0; cx < WORLD_SIZE_UNSIGNED; cx++) {
+		for(int cy = 0; cy < WORLD_SIZE_Y; cy++) {
+			for(int cz = 0; cz < WORLD_SIZE_UNSIGNED; cz++) {
 				unload_chunk(&chunks[cx][cy][cz]);
 			}
 		}

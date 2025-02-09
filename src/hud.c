@@ -74,10 +74,8 @@ void draw_hud(float fps, Player* player) {
 			(player->pitch < -45) ? "Up" : "";
 			
 		snprintf(debug_text, sizeof(debug_text), 
-			"FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Direction: %s %s%s%s", 
-			fps, player->x, player->y, player->z, direction, pitch,
-			hit ? ", Looking at block: " : ", No block in range",
-			hit ? chunk->blocks[block_x][block_y][block_z].id : 0);
+			"FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Direction: %s %s", 
+			fps, -(((WORLD_SIZE_UNSIGNED * CHUNK_SIZE) / 2) - player->x), player->y, -(((WORLD_SIZE_UNSIGNED * CHUNK_SIZE) / 2) - player->z), direction, pitch);
 	#else
 		snprintf(debug_text, sizeof(debug_text), "FPS: %.1f", fps);
 	#endif
