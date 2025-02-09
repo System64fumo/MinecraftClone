@@ -44,9 +44,6 @@ void draw_hud(float fps, Player* player) {
 	glEnable(GL_COLOR_LOGIC_OP);
 	glLogicOp(GL_INVERT);
 	
-	const float center_x = screen_width / 2;
-	const float center_y = screen_height / 2;
-	
 	// Raycast to find block player is looking at
 	int block_x, block_y, block_z;
 	Chunk* chunk;
@@ -55,10 +52,10 @@ void draw_hud(float fps, Player* player) {
 
 	// Draw crosshair lines
 	glBegin(GL_LINES);
-	glVertex2f(center_x - 10, center_y);
-	glVertex2f(center_x + 10, center_y);
-	glVertex2f(center_x, center_y - 10);
-	glVertex2f(center_x, center_y + 10);
+	glVertex2f(screen_center_x - 10, screen_center_y);
+	glVertex2f(screen_center_x + 10, screen_center_y);
+	glVertex2f(screen_center_x, screen_center_y - 10);
+	glVertex2f(screen_center_x, screen_center_y + 10);
 	glEnd();
 	
 	glDisable(GL_COLOR_LOGIC_OP);
@@ -66,21 +63,25 @@ void draw_hud(float fps, Player* player) {
 	glEnable(GL_TEXTURE_2D);
 	glPopMatrix();
 
-	if (DEBUG) {
-		if (hit) {
-			snprintf(debug_text, sizeof(debug_text), 
-				"FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Yaw: %.1f, Pitch: %.1f, Looking at block: %d,%d,%d (ID: %d)", 
-				fps, player->x, player->y, player->z, player->yaw, player->pitch,
-				block_x, block_y, block_z, chunk->blocks[block_x][block_y][block_z].id);
-		} else {
-			snprintf(debug_text, sizeof(debug_text), 
-				"FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Yaw: %.1f, Pitch: %.1f, No block in range", 
-				fps, player->x, player->y, player->z, player->yaw, player->pitch);
-		}
-	}
-	else {
+	#ifdef DEBUG
+		const char* direction = 
+			(player->yaw < 45 || player->yaw >= 315) ? "North" :
+			(player->yaw < 135) ? "East" :
+			(player->yaw < 225) ? "South" : "West";
+			
+		const char* pitch = 
+			(player->pitch > 45) ? "Down" :
+			(player->pitch < -45) ? "Up" : "";
+			
+		snprintf(debug_text, sizeof(debug_text), 
+			"FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Direction: %s %s%s%s", 
+			fps, player->x, player->y, player->z, direction, pitch,
+			hit ? ", Looking at block: " : ", No block in range",
+			hit ? chunk->blocks[block_x][block_y][block_z].id : 0);
+	#else
 		snprintf(debug_text, sizeof(debug_text), "FPS: %.1f", fps);
-	}
+	#endif
+
 	draw_text(debug_text, strlen(debug_text), 10, 20);
 
 	glMatrixMode(GL_PROJECTION);

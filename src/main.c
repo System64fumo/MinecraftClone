@@ -119,9 +119,16 @@ int main_loop(Player* player) {
 				screen_width = event.window.data1;
 				screen_height = event.window.data2;
 			}
+
 			// Mouse movement
 			if (event.type == SDL_MOUSEMOTION) {
 				player->yaw += event.motion.xrel * 0.2f;
+				if (player->yaw >= 360.0f) {
+					player->yaw -= 360.0f;
+				}
+				else if (player->yaw < 0.0f) {
+					player->yaw += 360.0f;
+				}
 				player->pitch += event.motion.yrel * 0.2f;
 
 				// Clamp pitch to prevent camera flipping
@@ -257,6 +264,9 @@ void change_resolution() {
 	float aspect = (float)screen_width / (float)screen_height;
 	float fovRad = fovRad = (fov * M_PI) / 180.0f;
 	float tanHalf = tanf(fovRad / 2.0f);
+	screen_center_x = screen_width / 2.0f;
+	screen_center_y = screen_height / 2.0f;
+
 	glViewport(0, 0, screen_width, screen_height);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
