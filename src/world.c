@@ -4,9 +4,9 @@
 
 void load_chunk(unsigned char cx, unsigned char cy, unsigned char cz) {
 	chunks[cx][cy][cz] = (Chunk){0};
-	chunks[cx][cy][cz].x = cx * CHUNK_SIZE / 2;
-	chunks[cx][cy][cz].y = cy * CHUNK_SIZE / 2;
-	chunks[cx][cy][cz].z = cz * CHUNK_SIZE / 2;
+	chunks[cx][cy][cz].x = cx;
+	chunks[cx][cy][cz].y = cy;
+	chunks[cx][cy][cz].z = cz;
 	chunks[cx][cy][cz].needs_update = true;
 	chunks[cx][cy][cz].vbo = 0;
 	chunks[cx][cy][cz].color_vbo = 0;

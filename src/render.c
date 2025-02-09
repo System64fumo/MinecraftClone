@@ -79,9 +79,9 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 	}
 
 	// Get current chunk coordinates
-	int cx = chunk->x / (CHUNK_SIZE/2);
-	int cy = chunk->y / (CHUNK_SIZE/2);
-	int cz = chunk->z / (CHUNK_SIZE/2);
+	int cx = chunk->x;
+	int cy = chunk->y;
+	int cz = chunk->z;
 
 	switch(face) {
 		case 0: // Front (Z-)
