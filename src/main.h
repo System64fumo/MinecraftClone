@@ -11,7 +11,7 @@
 #define CHUNKS_Y 4
 #define CHUNKS_Z 16
 #define MAX_VERTICES 65536
-#define DEBUG 0
+//#define DEBUG
 #define FPS_UPDATE_INTERVAL 500
 #define FPS_HISTORY_SIZE 10
 
@@ -22,6 +22,9 @@ inline int chunk_radius = 10;
 inline float fov = 70.0f;
 inline float near = 0.1f;
 inline float far = 200.0f;
+
+inline float screen_center_x;
+inline float screen_center_y;
 
 inline Uint32 lastTime;
 inline Uint32 lastFpsUpdate;
