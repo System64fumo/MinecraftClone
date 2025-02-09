@@ -90,6 +90,6 @@ void draw_hud(float fps, Player* player) {
 	glPopAttrib();
 
 	if (hit) {
-		draw_block_highlight((chunk->x * 2) + block_x + 1, (chunk->y * 2) + block_y + 1, (chunk->z * 2) + block_z + 1);
+		draw_block_highlight((chunk->x * CHUNK_SIZE) + block_x + 1, (chunk->y * CHUNK_SIZE) + block_y + 1, (chunk->z * CHUNK_SIZE) + block_z + 1);
 	}
 }

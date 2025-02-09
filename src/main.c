@@ -234,7 +234,7 @@ int main_loop(Player* player) {
 					}
 
 					glPushMatrix();
-					glTranslatef(chunks[cx][cy][cz].x, chunks[cx][cy][cz].y, chunks[cx][cy][cz].z);
+					glTranslatef(chunks[cx][cy][cz].x * (CHUNK_SIZE - 1), chunks[cx][cy][cz].y * (CHUNK_SIZE - 1), chunks[cx][cy][cz].z * (CHUNK_SIZE - 1));
 
 					gl_bind_vertex_array(chunks[cx][cy][cz].vao);
 					glDrawArrays(GL_QUADS, 0, chunks[cx][cy][cz].vertex_count);
