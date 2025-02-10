@@ -1,49 +1,16 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
-#include <GL/gl.h>
 #include <stdbool.h>
-#include <stdlib.h>
-#include <math.h>
-#include <GL/glut.h>
 
 #define CHUNK_SIZE 16
 #define WORLD_HEIGHT 4
 #define WORLD_SIZE UINT8_MAX
 #define MAX_VERTICES 65536
 #define MAX_ENTITIES_PER_CHUNK 1024
+#define RENDERR_DISTANCE 10
 
-//#define DEBUG
 #define FPS_UPDATE_INTERVAL 500
 #define FPS_HISTORY_SIZE 10
-
-inline int screen_width = 1280;
-inline int screen_height = 720;
-inline const unsigned char render_distance = 10;
-
-inline float fov = 70.0f;
-inline float near = 0.1f;
-inline float far = 200.0f;
-
-inline float screen_center_x;
-inline float screen_center_y;
-
-inline Uint32 lastTime;
-inline Uint32 lastFpsUpdate;
-inline float deltaTime;
-inline int frameCount;
-inline float averageFps;
-inline int fpsIndex;
-inline float fpsHistory[FPS_HISTORY_SIZE];
-
-inline SDL_Event event;
-inline SDL_Window* window = NULL;
-inline SDL_GLContext glContext;
-
-// VBO function pointers
-inline PFNGLGENBUFFERSPROC gl_gen_buffers = NULL;
-inline PFNGLBINDBUFFERPROC gl_bind_buffer = NULL;
-inline PFNGLBUFFERDATAPROC gl_buffer_data = NULL;
-inline PFNGLDELETEBUFFERSPROC gl_delete_buffers = NULL;
 
 // Entity struct
 typedef struct {
@@ -70,8 +37,37 @@ typedef struct Chunk {
 	bool needs_update;
 } Chunk;
 
-inline Chunk chunks[render_distance][WORLD_HEIGHT][render_distance];
-inline Entity global_entities[MAX_ENTITIES_PER_CHUNK * render_distance * CHUNK_SIZE];
+// Externs
+extern int screen_width;
+extern int screen_height;
+
+extern float fov;
+extern float near;
+extern float far;
+
+extern float screen_center_x;
+extern float screen_center_y;
+
+extern Uint32 lastTime;
+extern Uint32 lastFpsUpdate;
+extern float deltaTime;
+extern int frameCount;
+extern float averageFps;
+extern int fpsIndex;
+extern float fpsHistory[FPS_HISTORY_SIZE];
+
+extern SDL_Event event;
+extern SDL_Window* window;
+extern SDL_GLContext glContext;
+
+// VBO function pointers
+extern PFNGLGENBUFFERSPROC gl_gen_buffers;
+extern PFNGLBINDBUFFERPROC gl_bind_buffer;
+extern PFNGLBUFFERDATAPROC gl_buffer_data;
+extern PFNGLDELETEBUFFERSPROC gl_delete_buffers;
+
+extern Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
+extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
 
 // Function prototypes
 int main_loop(Entity* player);

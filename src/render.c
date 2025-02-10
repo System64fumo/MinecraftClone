@@ -95,7 +95,7 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 			
 		case 1: // Back (Z+)
 			if (z == CHUNK_SIZE-1) {
-				if (cz < render_distance-1 && chunks[cx][cy][cz+1].vbo != 0) {
+				if (cz < RENDERR_DISTANCE-1 && chunks[cx][cy][cz+1].vbo != 0) {
 					return chunks[cx][cy][cz+1].blocks[x][y][0].id == 0;
 				}
 				return true;
@@ -113,7 +113,7 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 			
 		case 3: // Right (X+)
 			if (x == CHUNK_SIZE-1) {
-				if (cx < render_distance-1 && chunks[cx+1][cy][cz].vbo != 0) {
+				if (cx < RENDERR_DISTANCE-1 && chunks[cx+1][cy][cz].vbo != 0) {
 					return chunks[cx+1][cy][cz].blocks[0][y][z].id == 0;
 				}
 				return true;
@@ -289,9 +289,9 @@ void bake_chunk(Chunk* chunk) {
 
 void render_chunks() {
 	// First pass: bake any chunks that need updating
-	for(int cx = 0; cx < render_distance; cx++) {
+	for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
 		for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-			for(int cz = 0; cz < render_distance; cz++) {
+			for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
 				if (chunks[cx][cy][cz].needs_update) {
 					bake_chunk(&chunks[cx][cy][cz]);
 
@@ -299,14 +299,14 @@ void render_chunks() {
 					if (cz > 0 && chunks[cx][cy][cz-1].vbo != 0) {
 						bake_chunk(&chunks[cx][cy][cz-1]);
 					}
-					if (cz < render_distance-1 && chunks[cx][cy][cz+1].vbo != 0) {
+					if (cz < RENDERR_DISTANCE-1 && chunks[cx][cy][cz+1].vbo != 0) {
 						bake_chunk(&chunks[cx][cy][cz+1]);
 					}
 							
 					if (cx > 0 && chunks[cx-1][cy][cz].vbo != 0) {
 						bake_chunk(&chunks[cx-1][cy][cz]);
 					}
-					if (cx < render_distance-1 && chunks[cx+1][cy][cz].vbo != 0) {
+					if (cx < RENDERR_DISTANCE-1 && chunks[cx+1][cy][cz].vbo != 0) {
 						bake_chunk(&chunks[cx+1][cy][cz]);
 					}
 
@@ -325,9 +325,9 @@ void render_chunks() {
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 
-	for(int cx = 0; cx < render_distance; cx++) {
+	for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
 		for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-			for(int cz = 0; cz < render_distance; cz++) {
+			for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
 				if (chunks[cx][cy][cz].vertex_count > 0) {
 					glPushMatrix();
 					glTranslatef(chunks[cx][cy][cz].x * (CHUNK_SIZE - 1), 
