@@ -93,6 +93,15 @@ int main(int argc, char* argv[]) {
 	lastFpsUpdate = lastTime;
 	frameCount = 0;
 
+	// Debugging
+	#ifdef DEBUG
+	profiler_init();
+	profiler_create("HUD");
+	profiler_create("Baking");
+	profiler_create("Rendering");
+	profiler_create("World Gen");
+	#endif
+
 	// Initialize player
 	Entity player = {
 		.x = (WORLD_SIZE * CHUNK_SIZE) / 2,
@@ -147,6 +156,10 @@ int main_loop(Entity* player) {
 
 			frameCount = 0;
 			lastFpsUpdate = currentTime;
+
+			#ifdef DEBUG
+			profiler_print_all();
+			#endif
 		}
 
 		// Handle events
@@ -186,19 +199,32 @@ int main_loop(Entity* player) {
 		const Uint8* keyboard = SDL_GetKeyboardState(NULL);
 		process_keyboard_movement(keyboard, player, deltaTime);
 
-		// Check for R key to mark all chunks for update
+		// Check for R key to update chunk data
 		static int rKeyWasPressed = 0;
 		if (keyboard[SDL_SCANCODE_R] && !rKeyWasPressed) {
-			printf("Re-rendering all chunks\n");
+			#ifdef DEBUG
+			profiler_start(PROFILER_ID_WORLD_GEN);
+			#endif
 			for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
 				for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
 					for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
 						if (chunks[cx][cy][cz].vbo) {
-							chunks[cx][cy][cz].needs_update = true;
+							unload_chunk(&chunks[cx][cy][cz]);
 						}
 					}
 				}
 			}
+
+			for(int x = 0; x < RENDERR_DISTANCE; x++) {
+				for(int y = 0; y < WORLD_HEIGHT; y++) {
+					for(int z = 0; z < RENDERR_DISTANCE; z++) {
+						load_chunk(x, y, z, x + center_cx, y, z + center_cz);
+					}
+				}
+			}
+			#ifdef DEBUG
+			profiler_stop(PROFILER_ID_WORLD_GEN);
+			#endif
 		}
 		rKeyWasPressed = keyboard[SDL_SCANCODE_R];
 
@@ -210,7 +236,7 @@ int main_loop(Entity* player) {
 		}
 		escKeyWasPressed = keyboard[SDL_SCANCODE_ESCAPE];
 
-		static Uint32 lastChunkCheck = 0;
+		/*static Uint32 lastChunkCheck = 0;
 		if (currentTime - lastChunkCheck >= 3000) {
 			for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
 				for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
@@ -230,7 +256,7 @@ int main_loop(Entity* player) {
 				}
 			}
 			lastChunkCheck = currentTime;
-		}
+		}*/
 
 		// Clear the screen
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -249,7 +275,13 @@ int main_loop(Entity* player) {
 		render_chunks();
 
 		// Draw HUD with average FPS
+		#ifdef DEBUG
+		profiler_start(PROFILER_ID_HUD);
+		#endif
 		draw_hud(averageFps, player);
+		#ifdef DEBUG
+		profiler_stop(PROFILER_ID_HUD);
+		#endif
 
 		// Swap buffers
 		SDL_GL_SwapWindow(window);
@@ -279,7 +311,12 @@ void cleanup() {
 		}
 	}
 
+	#ifdef DEBUG
+	profiler_cleanup();
+	#endif
+
 	SDL_GL_DeleteContext(glContext);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 }
+
