@@ -7,18 +7,17 @@
 #include <GL/glut.h>
 
 #define CHUNK_SIZE 16
-
-#define WORLD_SIZE_UNSIGNED UINT8_MAX
-#define WORLD_SIZE_Y 4
-
+#define WORLD_HEIGHT 4
+#define WORLD_SIZE UINT8_MAX
 #define MAX_VERTICES 65536
+
 //#define DEBUG
 #define FPS_UPDATE_INTERVAL 500
 #define FPS_HISTORY_SIZE 10
 
 inline int screen_width = 1280;
 inline int screen_height = 720;
-inline int chunk_radius = 10;
+inline const unsigned char render_distance = 10;
 
 inline float fov = 70.0f;
 inline float near = 0.1f;
@@ -46,13 +45,6 @@ inline PFNGLBINDBUFFERPROC gl_bind_buffer = NULL;
 inline PFNGLBUFFERDATAPROC gl_buffer_data = NULL;
 inline PFNGLDELETEBUFFERSPROC gl_delete_buffers = NULL;
 
-// VAIO function pointers
-inline PFNGLGENVERTEXARRAYSPROC gl_gen_vertex_arrays = NULL;
-inline PFNGLBINDVERTEXARRAYPROC gl_bind_vertex_array = NULL;
-inline PFNGLDELETEVERTEXARRAYSPROC gl_delete_vertex_arrays = NULL;
-inline PFNGLVERTEXATTRIBPOINTERPROC gl_vertex_attrib_pointer = NULL;
-inline PFNGLENABLEVERTEXATTRIBARRAYPROC gl_enable_vertex_attrib_array = NULL;
-
 // Player struct
 typedef struct {
 	float x, y, z;
@@ -68,8 +60,8 @@ typedef struct {
 
 typedef struct Chunk {
 	unsigned char x, y, z;
+	unsigned char ci_x, ci_y, ci_z;
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
-	GLuint vao;
 	GLuint vbo;
 	GLuint color_vbo;
 	int vertex_count;
@@ -77,7 +69,8 @@ typedef struct Chunk {
 	float* colors;
 	bool needs_update;
 } Chunk;
-inline Chunk chunks[WORLD_SIZE_UNSIGNED][WORLD_SIZE_Y][WORLD_SIZE_UNSIGNED];
+
+inline Chunk chunks[render_distance][WORLD_HEIGHT][render_distance];
 
 // Function prototypes
 int main_loop(Player* player);
@@ -86,7 +79,7 @@ void cleanup();
 void draw_hud(float fps, Player* player);
 void process_keyboard_movement(const Uint8* key_state, Player* player, float delta_time);
 void bake_chunk(Chunk* chunk);
-void load_chunk(unsigned char cx, unsigned char cy, unsigned char cz);
+void load_chunk(unsigned char x, unsigned char y, unsigned char z, unsigned char cx, unsigned char cy, unsigned char cz);
 void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z);
 bool raycast(Player* player, float max_distance, int* out_x, int* out_y, int* out_z, Chunk** out_chunk, float* out_distance);

@@ -37,9 +37,9 @@ bool raycast(Player* player, float max_distance, int* out_x, int* out_y, int* ou
 		if (block_z < 0) block_z += CHUNK_SIZE;
 		
 		// Check if chunk coordinates are valid
-		if (chunk_x >= 0 && chunk_x < WORLD_SIZE_UNSIGNED &&
-			chunk_y >= 0 && chunk_y < WORLD_SIZE_Y &&
-			chunk_z >= 0 && chunk_z < WORLD_SIZE_UNSIGNED) {
+		if (chunk_x >= 0 && chunk_x < WORLD_SIZE &&
+			chunk_y >= 0 && chunk_y < WORLD_HEIGHT &&
+			chunk_z >= 0 && chunk_z < WORLD_SIZE) {
 			
 			Chunk* chunk = &chunks[chunk_x][chunk_y][chunk_z];
 			// Check if block exists

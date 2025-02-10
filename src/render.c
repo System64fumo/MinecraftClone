@@ -79,9 +79,9 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 	}
 
 	// Get current chunk coordinates
-	int cx = chunk->x;
-	int cy = chunk->y;
-	int cz = chunk->z;
+	int cx = chunk->ci_x;
+	int cy = chunk->ci_y;
+	int cz = chunk->ci_z;
 
 	switch(face) {
 		case 0: // Front (Z-)
@@ -95,7 +95,7 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 			
 		case 1: // Back (Z+)
 			if (z == CHUNK_SIZE-1) {
-				if (cz < WORLD_SIZE_UNSIGNED-1 && chunks[cx][cy][cz+1].vbo != 0) {
+				if (cz < render_distance-1 && chunks[cx][cy][cz+1].vbo != 0) {
 					return chunks[cx][cy][cz+1].blocks[x][y][0].id == 0;
 				}
 				return true;
@@ -113,7 +113,7 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 			
 		case 3: // Right (X+)
 			if (x == CHUNK_SIZE-1) {
-				if (cx < WORLD_SIZE_UNSIGNED-1 && chunks[cx+1][cy][cz].vbo != 0) {
+				if (cx < render_distance-1 && chunks[cx+1][cy][cz].vbo != 0) {
 					return chunks[cx+1][cy][cz].blocks[0][y][z].id == 0;
 				}
 				return true;
@@ -122,7 +122,7 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 			
 		case 4: // Top (Y+)
 			if (y == CHUNK_SIZE-1) {
-				if (cy < WORLD_SIZE_Y-1 && chunks[cx][cy+1][cz].vbo != 0) {
+				if (cy < WORLD_HEIGHT-1 && chunks[cx][cy+1][cz].vbo != 0) {
 					return chunks[cx][cy+1][cz].blocks[x][0][z].id == 0;
 				}
 				return true;
@@ -141,140 +141,115 @@ bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned
 	return false;
 }
 
-void bake_chunk(Chunk* chunk) {
-	float* new_vertices = (float*)malloc(MAX_VERTICES * 3 * sizeof(float));
-	float* new_colors = (float*)malloc(MAX_VERTICES * 3 * sizeof(float));
 
-	if (!new_vertices || !new_colors) {
-		free(new_vertices);
-		free(new_colors);
-		return;
+void bake_chunk(Chunk* chunk) {
+	if (!chunk->vertices) {
+		chunk->vertices = (float*)malloc(MAX_VERTICES * 3 * sizeof(float));	// xyz per vertex
+	}
+	if (!chunk->colors) {
+		chunk->colors = (float*)malloc(MAX_VERTICES * 3 * sizeof(float));	// rgb per vertex
 	}
 
 	int vertex_count = 0;
-	const float face_shading[] = {1.0f, 1.0f, 0.8f, 0.8f, 1.2f, 0.6f};
 
-	// For each face direction
-	for(int face = 0; face < 6; face++) {
-		// Create mask of visible faces
-		bool mask[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE] = {{{false}}};
-		
-		// Fill mask with visible faces
-		for(int x = 0; x < CHUNK_SIZE; x++) {
-			for(int y = 0; y < CHUNK_SIZE; y++) {
-				for(int z = 0; z < CHUNK_SIZE; z++) {
-					if(chunk->blocks[x][y][z].id != 0 && should_render_face(chunk, x, y, z, face)) {
-						mask[x][y][z] = true;
+	for(int x = 0; x < CHUNK_SIZE; x++) {
+		for(int y = 0; y < CHUNK_SIZE; y++) {
+			for(int z = 0; z < CHUNK_SIZE; z++) {
+				if(chunk->blocks[x][y][z].id != 0) {
+					float wx = chunk->x + x;
+					float wy = chunk->y + y;
+					float wz = chunk->z + z;
+
+					// Set color based on block ID
+					float r, g, b;
+					switch(chunk->blocks[x][y][z].id) {
+						case 1: // Dirt
+							r = 0.6f; g = 0.4f; b = 0.2f;
+							break;
+						case 2: // Grass
+							r = 0.2f; g = 0.8f; b = 0.2f;
+							break;
+						case 3: // Stone
+							r = 0.5f; g = 0.5f; b = 0.5f;
+							break;
+						default:
+							r = 1.0f; g = 1.0f; b = 1.0f;
 					}
-				}
-			}
-		}
 
-		// Greedy meshing algorithm
-		for(int x = 0; x < CHUNK_SIZE; x++) {
-			for(int y = 0; y < CHUNK_SIZE; y++) {
-				for(int z = 0; z < CHUNK_SIZE; z++) {
-					if(mask[x][y][z]) {
-						int block_id = chunk->blocks[x][y][z].id;
-						
-						// Set base color
-						float r, g, b;
-						switch(block_id) {
-							case 1: r = 0.6f; g = 0.4f; b = 0.2f; break;  // Dirt
-							case 2: r = 0.2f; g = 0.8f; b = 0.2f; break;  // Grass
-							case 3: r = 0.5f; g = 0.5f; b = 0.5f; break;  // Stone
-							default: r = g = b = 1.0f;
-						}
-
-						// Find width
-						int width = 1;
-						while(x + width < CHUNK_SIZE && 
-							  mask[x + width][y][z] && 
-							  chunk->blocks[x + width][y][z].id == block_id) {
-							width++;
-						}
-
-						// Find height
-						int height = 1;
-						bool canExpand = true;
-						while(y + height < CHUNK_SIZE && canExpand) {
-							for(int dx = 0; dx < width; dx++) {
-								if(!mask[x + dx][y + height][z] || 
-								   chunk->blocks[x + dx][y + height][z].id != block_id) {
-									canExpand = false;
-									break;
-								}
-							}
-							if(canExpand) height++;
-						}
-
-						// Clear the mask for merged faces
-						for(int dx = 0; dx < width; dx++) {
-							for(int dy = 0; dy < height; dy++) {
-								mask[x + dx][y + dy][z] = false;
-							}
-						}
-
-						float shade = face_shading[face];
-						float cr = r * shade;
-						float cg = g * shade;
-						float cb = b * shade;
-
-						float wx = chunk->x + x;
-						float wy = chunk->y + y;
-						float wz = chunk->z + z;
-
-						// Generate vertices for merged face
-						float vertices[12];
-						switch(face) {
-							case 0: // Front
-								vertices[0] = wx;        vertices[1] = wy;         vertices[2] = wz;
-								vertices[3] = wx + width;vertices[4] = wy;         vertices[5] = wz;
-								vertices[6] = wx + width;vertices[7] = wy + height;vertices[8] = wz;
-								vertices[9] = wx;        vertices[10]= wy + height;vertices[11]= wz;
-								break;
-							case 1: // Back
-								vertices[0] = wx + width;vertices[1] = wy;         vertices[2] = wz + 1;
-								vertices[3] = wx;        vertices[4] = wy;         vertices[5] = wz + 1;
-								vertices[6] = wx;        vertices[7] = wy + height;vertices[8] = wz + 1;
-								vertices[9] = wx + width;vertices[10]= wy + height;vertices[11]= wz + 1;
-								break;
-							case 2: // Left
-								vertices[0] = wx;        vertices[1] = wy;         vertices[2] = wz + 1;
-								vertices[3] = wx;        vertices[4] = wy;         vertices[5] = wz;
-								vertices[6] = wx;        vertices[7] = wy + height;vertices[8] = wz;
-								vertices[9] = wx;        vertices[10]= wy + height;vertices[11]= wz + 1;
-								break;
-							case 3: // Right
-								vertices[0] = wx + 1;    vertices[1] = wy;         vertices[2] = wz;
-								vertices[3] = wx + 1;    vertices[4] = wy;         vertices[5] = wz + 1;
-								vertices[6] = wx + 1;    vertices[7] = wy + height;vertices[8] = wz + 1;
-								vertices[9] = wx + 1;    vertices[10]= wy + height;vertices[11]= wz;
-								break;
-							case 4: // Top
-								vertices[0] = wx;        vertices[1] = wy + 1;     vertices[2] = wz;
-								vertices[3] = wx + width;vertices[4] = wy + 1;     vertices[5] = wz;
-								vertices[6] = wx + width;vertices[7] = wy + 1;     vertices[8] = wz + 1;
-								vertices[9] = wx;        vertices[10]= wy + 1;     vertices[11]= wz + 1;
-								break;
-							case 5: // Bottom
-								vertices[0] = wx;        vertices[1] = wy;         vertices[2] = wz + 1;
-								vertices[3] = wx + width;vertices[4] = wy;         vertices[5] = wz + 1;
-								vertices[6] = wx + width;vertices[7] = wy;         vertices[8] = wz;
-								vertices[9] = wx;        vertices[10]= wy;         vertices[11]= wz;
-								break;
-						}
-
-						// Add vertices and colors
+					// Front face (Z-)
+					if(should_render_face(chunk, x, y, z, 0)) {
 						for(int i = 0; i < 4; i++) {
-							new_vertices[vertex_count*3] = vertices[i*3];
-							new_vertices[vertex_count*3+1] = vertices[i*3+1];
-							new_vertices[vertex_count*3+2] = vertices[i*3+2];
-							
-							new_colors[vertex_count*3] = cr;
-							new_colors[vertex_count*3+1] = cg;
-							new_colors[vertex_count*3+2] = cb;
-							
+							chunk->colors[vertex_count*3] = r;
+							chunk->colors[vertex_count*3+1] = g;
+							chunk->colors[vertex_count*3+2] = b;
+							chunk->vertices[vertex_count*3] = wx + (i == 1 || i == 2);
+							chunk->vertices[vertex_count*3+1] = wy + (i == 2 || i == 3);
+							chunk->vertices[vertex_count*3+2] = wz;
+							vertex_count++;
+						}
+					}
+
+					// Back face (Z+)
+					if(should_render_face(chunk, x, y, z, 1)) {
+						for(int i = 0; i < 4; i++) {
+							chunk->colors[vertex_count*3] = r;
+							chunk->colors[vertex_count*3+1] = g;
+							chunk->colors[vertex_count*3+2] = b;
+							chunk->vertices[vertex_count*3] = wx + (i == 3 || i == 2);
+							chunk->vertices[vertex_count*3+1] = wy + (i == 1 || i == 2);
+							chunk->vertices[vertex_count*3+2] = wz + 1;
+							vertex_count++;
+						}
+					}
+
+					// Left face (X-)
+					if(should_render_face(chunk, x, y, z, 2)) {
+						for(int i = 0; i < 4; i++) {
+							chunk->colors[vertex_count*3] = r * 0.8f;
+							chunk->colors[vertex_count*3+1] = g * 0.8f;
+							chunk->colors[vertex_count*3+2] = b * 0.8f;
+							chunk->vertices[vertex_count*3] = wx;
+							chunk->vertices[vertex_count*3+1] = wy + (i == 1 || i == 2);
+							chunk->vertices[vertex_count*3+2] = wz + (i == 2 || i == 3);
+							vertex_count++;
+						}
+					}
+
+					// Right face (X+)
+					if(should_render_face(chunk, x, y, z, 3)) {
+						for(int i = 0; i < 4; i++) {
+							chunk->colors[vertex_count*3] = r * 0.8f;
+							chunk->colors[vertex_count*3+1] = g * 0.8f;
+							chunk->colors[vertex_count*3+2] = b * 0.8f;
+							chunk->vertices[vertex_count*3] = wx + 1;
+							chunk->vertices[vertex_count*3+1] = wy + (i == 2 || i == 3);
+							chunk->vertices[vertex_count*3+2] = wz + (i == 1 || i == 2);
+							vertex_count++;
+						}
+					}
+
+					// Top face (Y+)
+					if(should_render_face(chunk, x, y, z, 4)) {
+						for(int i = 0; i < 4; i++) {
+							chunk->colors[vertex_count*3] = r * 1.2f;
+							chunk->colors[vertex_count*3+1] = g * 1.2f;
+							chunk->colors[vertex_count*3+2] = b * 1.2f;
+							chunk->vertices[vertex_count*3] = wx + (i == 1 || i == 2);
+							chunk->vertices[vertex_count*3+1] = wy + 1;
+							chunk->vertices[vertex_count*3+2] = wz + (i == 2 || i == 3);
+							vertex_count++;
+						}
+					}
+
+					// Bottom face (Y-)
+					if(should_render_face(chunk, x, y, z, 5)) {
+						for(int i = 0; i < 4; i++) {
+							chunk->colors[vertex_count*3] = r * 0.6f;
+							chunk->colors[vertex_count*3+1] = g * 0.6f;
+							chunk->colors[vertex_count*3+2] = b * 0.6f;
+							chunk->vertices[vertex_count*3] = wx + (i == 2 || i == 3);
+							chunk->vertices[vertex_count*3+1] = wy;
+							chunk->vertices[vertex_count*3+2] = wz + (i == 1 || i == 2);
 							vertex_count++;
 						}
 					}
@@ -285,46 +260,15 @@ void bake_chunk(Chunk* chunk) {
 
 	chunk->vertex_count = vertex_count;
 
-	// Free old buffers if they exist
-	if (chunk->vertices) {
-		free(chunk->vertices);
-	}
-	if (chunk->colors) {
-		free(chunk->colors);
-	}
-	if (chunk->vbo) {
-		gl_delete_buffers(1, &chunk->vbo);
-	}
-	if (chunk->color_vbo) {
-		gl_delete_buffers(1, &chunk->color_vbo);
-	}
-	if (chunk->vao) {
-		gl_delete_vertex_arrays(1, &chunk->vao);
-	}
-
-	chunk->vertices = new_vertices;
-	chunk->colors = new_colors;
-
-	// Create and bind VAO
-	gl_gen_vertex_arrays(1, &chunk->vao);
-	gl_bind_vertex_array(chunk->vao);
-
-	// Create and bind vertex VBO
+	// Update VBOs
 	gl_gen_buffers(1, &chunk->vbo);
+	gl_gen_buffers(1, &chunk->color_vbo);
+
 	gl_bind_buffer(GL_ARRAY_BUFFER, chunk->vbo);
 	gl_buffer_data(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), chunk->vertices, GL_STATIC_DRAW);
-	glVertexPointer(3, GL_FLOAT, 0, 0);
-	glEnableClientState(GL_VERTEX_ARRAY);
 
-	// Create and bind color VBO
-	gl_gen_buffers(1, &chunk->color_vbo);
 	gl_bind_buffer(GL_ARRAY_BUFFER, chunk->color_vbo);
 	gl_buffer_data(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), chunk->colors, GL_STATIC_DRAW);
-	glColorPointer(3, GL_FLOAT, 0, 0);
-	glEnableClientState(GL_COLOR_ARRAY);
-
-	// Unbind VAO
-	gl_bind_vertex_array(0);
 
 	chunk->needs_update = false;
 }
