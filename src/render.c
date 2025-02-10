@@ -7,40 +7,46 @@ void draw_block_highlight(float x, float y, float z) {
 		0.01f, -1.01f, -1.01f,
 		0.01f, 0.01f, -1.01f,
 		-1.01f, 0.01f, -1.01f,
+		-1.01f, -1.01f, -1.01f,
 		
 		// Back face (Z+)
 		-1.01f, -1.01f, 0.01f,
 		-1.01f, 0.01f, 0.01f,
 		0.01f, 0.01f, 0.01f,
 		0.01f, -1.01f, 0.01f,
+		-1.01f, -1.01f, 0.01f,
 		
 		// Left face (X-)
 		-1.01f, -1.01f, -1.01f,
 		-1.01f, 0.01f, -1.01f,
 		-1.01f, 0.01f, 0.01f,
 		-1.01f, -1.01f, 0.01f,
+		-1.01f, -1.01f, -1.01f,
 		
 		// Right face (X+)
 		0.01f, -1.01f, -1.01f,
 		0.01f, -1.01f, 0.01f,
 		0.01f, 0.01f, 0.01f,
 		0.01f, 0.01f, -1.01f,
+		0.01f, -1.01f, -1.01f,
 		
 		// Top face (Y+)
 		-1.01f, 0.01f, -1.01f,
 		0.01f, 0.01f, -1.01f,
 		0.01f, 0.01f, 0.01f,
 		-1.01f, 0.01f, 0.01f,
+		-1.01f, 0.01f, -1.01f,
 		
 		// Bottom face (Y-)
 		-1.01f, -1.01f, -1.01f,
 		-1.01f, -1.01f, 0.01f,
 		0.01f, -1.01f, 0.01f,
-		0.01f, -1.01f, -1.01f
+		0.01f, -1.01f, -1.01f,
+		-1.01f, -1.01f, -1.01f
 	};
 
 	static unsigned int vbo = 0;
-	float vertices[72];
+	float vertices[90];  // Increased size to accommodate closing vertices
 
 	if (!vbo) {
 		gl_gen_buffers(1, &vbo);
@@ -49,7 +55,7 @@ void draw_block_highlight(float x, float y, float z) {
 	}
 
 	// Translate vertices
-	for (int i = 0; i < 72; i += 3) {
+	for (int i = 0; i < 90; i += 3) {
 		vertices[i] = vertices_template[i] + x;
 		vertices[i + 1] = vertices_template[i + 1] + y;
 		vertices[i + 2] = vertices_template[i + 2] + z;
@@ -58,19 +64,17 @@ void draw_block_highlight(float x, float y, float z) {
 	gl_bind_buffer(GL_ARRAY_BUFFER, vbo);
 	gl_buffer_data(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glColor4f(1.0f, 1.0f, 1.0f, 0.5f);
+	glColor3f(1.0f, 1.0f, 1.0f);
 
 	glVertexPointer(3, GL_FLOAT, 0, 0);
 	glEnableClientState(GL_VERTEX_ARRAY);
 
-	glDrawArrays(GL_QUADS, 0, 24);
+	// Draw each face as a separate line loop
+	for (int i = 0; i < 6; i++) {
+		glDrawArrays(GL_LINE_LOOP, i * 5, 5);
+	}
 
 	glDisableClientState(GL_VERTEX_ARRAY);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glDisable(GL_BLEND);
 }
 
 bool should_render_face(Chunk* chunk, unsigned char x, unsigned char y, unsigned char z, unsigned char face) {
@@ -289,6 +293,9 @@ void bake_chunk(Chunk* chunk) {
 
 void render_chunks() {
 	// First pass: bake any chunks that need updating
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_BAKE);
+	#endif
 	for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
 		for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
 			for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
@@ -320,8 +327,14 @@ void render_chunks() {
 			}
 		}
 	}
+	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_BAKE);
+	#endif
 
 	// Second pass: batch render all chunks
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_RENDER);
+	#endif
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 
@@ -350,4 +363,7 @@ void render_chunks() {
 
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_VERTEX_ARRAY);
+	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_RENDER);
+	#endif
 }
