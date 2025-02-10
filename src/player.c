@@ -1,12 +1,12 @@
 #include "main.h"
 
 // Raycast function to find block player is looking at
-bool raycast(Entity* player, float max_distance, int* out_x, int* out_y, int* out_z, Chunk** out_chunk, float* out_distance) {
+bool raycast(Entity* player, float max_distance, int* out_x, int* out_y, int* out_z, float* out_distance) {
 	float px = player->x;
 	float py = player->y;
 	float pz = player->z;
 	
-	// Convert yaw/pitch to direction vector
+	// Direction vector based on player rotation
 	const float PI = 3.14159265358979323846f;
 	float dx = sin(player->yaw * PI / 180.0f) * cos(player->pitch * PI / 180.0f);
 	float dy = -sin(player->pitch * PI / 180.0f);
@@ -14,41 +14,39 @@ bool raycast(Entity* player, float max_distance, int* out_x, int* out_y, int* ou
 	
 	// Ray step size
 	float step = 0.1f;
-	float distance = 0;
-	
+	float distance = 0.0f;
+
 	while (distance < max_distance) {
-		// Move along ray
+		// Update position along ray
 		px += dx * step;
 		py += dy * step;
 		pz += dz * step;
 		
 		// Get chunk coordinates
-		int chunk_x = floor(px / CHUNK_SIZE);
-		int chunk_y = floor(py / CHUNK_SIZE); 
-		int chunk_z = floor(pz / CHUNK_SIZE);
-		
+		int chunk_x = (int)(floor(px / CHUNK_SIZE)) % RENDERR_DISTANCE;
+		int chunk_y = (int)(floor(py / CHUNK_SIZE)) % WORLD_HEIGHT;
+		int chunk_z = (int)(floor(pz / CHUNK_SIZE)) % RENDERR_DISTANCE;
+
 		// Get block coordinates within chunk
 		int block_x = ((int)floor(px)) % CHUNK_SIZE;
 		int block_y = ((int)floor(py)) % CHUNK_SIZE;
 		int block_z = ((int)floor(pz)) % CHUNK_SIZE;
 		
-		if (block_x < 0) block_x += CHUNK_SIZE;
-		if (block_y < 0) block_y += CHUNK_SIZE;
-		if (block_z < 0) block_z += CHUNK_SIZE;
-		
-		// Check if chunk coordinates are valid
-		if (chunk_x >= 0 && chunk_x < WORLD_SIZE &&
+		// Ensure we're within valid chunk bounds
+		if (chunk_x >= 0 && chunk_x < RENDERR_DISTANCE &&
 			chunk_y >= 0 && chunk_y < WORLD_HEIGHT &&
-			chunk_z >= 0 && chunk_z < WORLD_SIZE) {
+			chunk_z >= 0 && chunk_z < RENDERR_DISTANCE) {
 			
-			Chunk* chunk = &chunks[chunk_x][chunk_y][chunk_z];
+			// Fix negative modulo
+			if (block_x < 0) block_x += CHUNK_SIZE;
+			if (block_y < 0) block_y += CHUNK_SIZE;
+			if (block_z < 0) block_z += CHUNK_SIZE;
+
 			// Check if block exists
-			if (chunk->blocks[block_x][block_y][block_z].id != 0) {
-				*out_x = block_x;
-				*out_y = block_y;
-				*out_z = block_z;
-				*out_chunk = chunk;
-				*out_distance = distance;
+			if (chunks[chunk_x][chunk_y][chunk_z].blocks[block_x][block_y][block_z].id != 0) {
+				*out_x = (int)floor(px);
+				*out_y = (int)floor(py);
+				*out_z = (int)floor(pz);
 				return true;
 			}
 		}

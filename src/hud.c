@@ -46,10 +46,10 @@ void draw_hud(float fps, Entity* player) {
 	glLogicOp(GL_INVERT);
 	
 	// Raycast to find block player is looking at
-	/*int block_x, block_y, block_z;
+	int block_x, block_y, block_z;
 	Chunk* chunk;
 	float hit_distance;
-	bool hit = raycast(player, 15.0f, &block_x, &block_y, &block_z, &chunk, &hit_distance);*/
+	bool hit = raycast(player, 15.0f, &block_x, &block_y, &block_z, &hit_distance);
 
 	// Draw crosshair lines
 	glBegin(GL_LINES);
@@ -89,7 +89,7 @@ void draw_hud(float fps, Entity* player) {
 	glPopMatrix();
 	glPopAttrib();
 
-	/*if (hit) {
-		draw_block_highlight((chunk->ci_x * CHUNK_SIZE) + block_x + 1, (chunk->ci_y * CHUNK_SIZE) + block_y + 1, (chunk->ci_z * CHUNK_SIZE) + block_z + 1);
-	}*/
+	if (hit) {
+		draw_block_highlight(block_x + 1, block_y + 1, block_z + 1);
+	}
 }

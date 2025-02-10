@@ -123,6 +123,8 @@ int main(int argc, char* argv[]) {
 }
 
 int main_loop(Entity* player) {
+		static int mouseCaptured = 1;
+
 		// Calculate delta time
 		Uint32 currentTime = SDL_GetTicks();
 		deltaTime = (currentTime - lastTime) / 1000.0f;
@@ -161,7 +163,7 @@ int main_loop(Entity* player) {
 			}
 
 			// Mouse movement
-			if (event.type == SDL_MOUSEMOTION) {
+			if (event.type == SDL_MOUSEMOTION && mouseCaptured) {
 				player->yaw += event.motion.xrel * 0.2f;
 				if (player->yaw >= 360.0f) {
 					player->yaw -= 360.0f;
@@ -177,7 +179,7 @@ int main_loop(Entity* player) {
 		}
 
 		int center_cx = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player->x / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
-		int center_cy = fmaxf(0, fminf(WORLD_HEIGHT, (int)floorf(player->y / (CHUNK_SIZE * 1.0f))));
+		int center_cy = fmaxf(0, fminf(WORLD_HEIGHT, -((int)floorf(player->y / (CHUNK_SIZE * 1.0f)) - WORLD_HEIGHT)));
 		int center_cz = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player->z / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
 
 		// Get keyboard state
@@ -199,6 +201,14 @@ int main_loop(Entity* player) {
 			}
 		}
 		rKeyWasPressed = keyboard[SDL_SCANCODE_R];
+
+		// Handle escape key for mouse capture toggle
+		static int escKeyWasPressed = 0;
+		if (keyboard[SDL_SCANCODE_ESCAPE] && !escKeyWasPressed) {
+			mouseCaptured = !mouseCaptured;
+			SDL_SetRelativeMouseMode(mouseCaptured ? SDL_TRUE : SDL_FALSE);
+		}
+		escKeyWasPressed = keyboard[SDL_SCANCODE_ESCAPE];
 
 		static Uint32 lastChunkCheck = 0;
 		if (currentTime - lastChunkCheck >= 3000) {
