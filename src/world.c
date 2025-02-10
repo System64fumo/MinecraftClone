@@ -2,18 +2,21 @@
 #define STB_PERLIN_IMPLEMENTATION
 #include "stb_perlin.h"
 
-void load_chunk(unsigned char cx, unsigned char cy, unsigned char cz) {
-	chunks[cx][cy][cz] = (Chunk){0};
-	chunks[cx][cy][cz].x = cx;
-	chunks[cx][cy][cz].y = cy;
-	chunks[cx][cy][cz].z = cz;
-	chunks[cx][cy][cz].needs_update = true;
-	chunks[cx][cy][cz].vbo = 0;
-	chunks[cx][cy][cz].color_vbo = 0;
-	chunks[cx][cy][cz].vertices = NULL;
-	chunks[cx][cy][cz].colors = NULL;
+void load_chunk(unsigned char x, unsigned char y, unsigned char z, unsigned char cx, unsigned char cy, unsigned char cz) {
+	chunks[x][y][z] = (Chunk){0};
+	chunks[x][y][z].ci_x = x;
+	chunks[x][y][z].ci_y = y;
+	chunks[x][y][z].ci_z = z;
+	chunks[x][y][z].x = cx;
+	chunks[x][y][z].y = cy;
+	chunks[x][y][z].z = cz;
+	chunks[x][y][z].needs_update = true;
+	chunks[x][y][z].vbo = 0;
+	chunks[x][y][z].color_vbo = 0;
+	chunks[x][y][z].vertices = NULL;
+	chunks[x][y][z].colors = NULL;
 
-	generate_chunk_terrain(&chunks[cx][cy][cz], cx, cy, cz);
+	generate_chunk_terrain(&chunks[x][y][z], cx, cy, cz);
 }
 
 void unload_chunk(Chunk* chunk) {

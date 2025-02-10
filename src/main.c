@@ -3,9 +3,9 @@
 int main(int argc, char* argv[]) {
 	// Initialize player
 	Player player = {
-		.x = (WORLD_SIZE_UNSIGNED * CHUNK_SIZE) / 2,
+		.x = (WORLD_SIZE * CHUNK_SIZE) / 2,
 		.y = 64.0f,
-		.z = (WORLD_SIZE_UNSIGNED * CHUNK_SIZE) / 2,
+		.z = (WORLD_SIZE * CHUNK_SIZE) / 2,
 		.yaw = 135.0f,
 		.pitch = 20.0f,
 		.speed = 20
@@ -49,13 +49,6 @@ int main(int argc, char* argv[]) {
 	gl_bind_buffer = (PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer");
 	gl_buffer_data = (PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData");
 	gl_delete_buffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers");
-
-	// Load VAO function pointers
-	gl_gen_vertex_arrays = (PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays");
-	gl_bind_vertex_array = (PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray");
-	gl_delete_vertex_arrays = (PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays");
-	gl_vertex_attrib_pointer = (PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer");
-	gl_enable_vertex_attrib_array = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray");
 
 	// Set up OpenGL viewport and projection
 	change_resolution();
@@ -136,9 +129,9 @@ int main_loop(Player* player) {
 			}
 		}
 
-		int center_cx = (int)floorf(player->x / (CHUNK_SIZE * 1.0f));
-		int center_cy = (int)floorf(player->y / (CHUNK_SIZE * 1.0f));
-		int center_cz = (int)floorf(player->z / (CHUNK_SIZE * 1.0f));
+		int center_cx = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player->x / (CHUNK_SIZE * 1.0f)) - (render_distance / 2)));
+		int center_cy = fmaxf(0, fminf(WORLD_HEIGHT, (int)floorf(player->y / (CHUNK_SIZE * 1.0f))));
+		int center_cz = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player->z / (CHUNK_SIZE * 1.0f)) - (render_distance / 2)));
 
 		// Get keyboard state
 		const Uint8* keyboard = SDL_GetKeyboardState(NULL);
@@ -148,9 +141,9 @@ int main_loop(Player* player) {
 		static int rKeyWasPressed = 0;
 		if (keyboard[SDL_SCANCODE_R] && !rKeyWasPressed) {
 			printf("Re-rendering all chunks\n");
-			for(int cx = 0; cx < WORLD_SIZE_UNSIGNED; cx++) {
-				for(int cy = 0; cy < WORLD_SIZE_Y; cy++) {
-					for(int cz = 0; cz < WORLD_SIZE_UNSIGNED; cz++) {
+			for(int cx = 0; cx < render_distance; cx++) {
+				for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
+					for(int cz = 0; cz < render_distance; cz++) {
 						if (chunks[cx][cy][cz].vbo) {
 							chunks[cx][cy][cz].needs_update = true;
 						}
@@ -160,49 +153,22 @@ int main_loop(Player* player) {
 		}
 		rKeyWasPressed = keyboard[SDL_SCANCODE_R];
 
-		// Check player position and generate new chunks if needed - once every 3 seconds
 		static Uint32 lastChunkCheck = 0;
 		if (currentTime - lastChunkCheck >= 3000) {
-			// First, unload chunks that are too far from the player
-			for(int dx = -chunk_radius-1; dx <= chunk_radius+1; dx++) {
-				for(int dy = -chunk_radius-1; dy <= chunk_radius+1; dy++) {
-					for(int dz = -chunk_radius-1; dz <= chunk_radius+1; dz++) {
-						int cx = center_cx + dx;
-						int cy = center_cy + dy;
-						int cz = center_cz + dz;
-
-						if (cx >= 0 && cx < WORLD_SIZE_UNSIGNED &&
-							cy >= 0 && cy < WORLD_SIZE_Y &&
-							cz >= 0 && cz < WORLD_SIZE_UNSIGNED) {
-							if (chunks[cx][cy][cz].vbo) {
-								if (abs(dx) > chunk_radius ||
-									abs(dy) > chunk_radius ||
-									abs(dz) > chunk_radius) {
-									unload_chunk(&chunks[cx][cy][cz]);
-								}
-							}
+			for(int cx = 0; cx < render_distance; cx++) {
+				for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
+					for(int cz = 0; cz < render_distance; cz++) {
+						if (chunks[cx][cy][cz].vbo) {
+							unload_chunk(&chunks[cx][cy][cz]);
 						}
 					}
 				}
 			}
 
-			// Load new chunks within radius
-			for(int dx = -chunk_radius; dx <= chunk_radius; dx++) {
-				for(int dy = -chunk_radius; dy <= chunk_radius; dy++) {
-					for(int dz = -chunk_radius; dz <= chunk_radius; dz++) {
-						int cx = center_cx + dx;
-						int cy = center_cy + dy;
-						int cz = center_cz + dz;
-
-						// Ensure chunk coordinates are within bounds without wrapping
-						if (cx >= 0 && cx < WORLD_SIZE_UNSIGNED &&
-							cy >= 0 && cy < WORLD_SIZE_Y &&
-							cz >= 0 && cz < WORLD_SIZE_UNSIGNED) {
-							// Load chunk if it's not already loaded
-							if (!chunks[cx][cy][cz].vbo) {
-								load_chunk(cx, cy, cz);
-							}
-						}
+			for(int x = 0; x < render_distance; x++) {
+				for(int y = 0; y < WORLD_HEIGHT; y++) {
+					for(int z = 0; z < render_distance; z++) {
+						load_chunk(x, y, z, x + center_cx, y, z + center_cz);
 					}
 				}
 			}
@@ -222,47 +188,49 @@ int main_loop(Player* player) {
 		glRotatef(player->yaw, 0.0f, 1.0f, 0.0f);
 		glTranslatef(-player->x, -player->y, -player->z);
 
-		// Render visible chunks
-		for(int dx = -chunk_radius; dx <= chunk_radius; dx++) {
-			for(int dy = -chunk_radius; dy <= chunk_radius; dy++) {
-				for(int dz = -chunk_radius; dz <= chunk_radius; dz++) {
-					int cx = center_cx + dx;
-					int cy = center_cy + dy;
-					int cz = center_cz + dz;
+		// Render all chunks
+		for(int cx = 0; cx < render_distance; cx++) {
+			for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
+				for(int cz = 0; cz < render_distance; cz++) {
+					if (chunks[cx][cy][cz].needs_update) {
+						bake_chunk(&chunks[cx][cy][cz]);
 
-					if (cx >= 0 && cx < WORLD_SIZE_UNSIGNED &&
-						cy >= 0 && cy < WORLD_SIZE_Y &&
-						cz >= 0 && cz < WORLD_SIZE_UNSIGNED) {
-						
-						if (chunks[cx][cy][cz].needs_update) {
-							bake_chunk(&chunks[cx][cy][cz]);
+						// TODO: This causes lag, Should probably be done in a separate thread
+						// Re-Render neighboring chunks
+						if (cz > 0 && chunks[cx][cy][cz-1].vbo != 0)
+							bake_chunk(&chunks[cx][cy][cz-1]);
+						if (cz < render_distance-1 && chunks[cx][cy][cz+1].vbo != 0)
+							bake_chunk(&chunks[cx][cy][cz+1]);
+							
+						if (cx > 0 && chunks[cx-1][cy][cz].vbo != 0)
+							bake_chunk(&chunks[cx-1][cy][cz]);
+						if (cx < render_distance-1 && chunks[cx+1][cy][cz].vbo != 0)
+							bake_chunk(&chunks[cx+1][cy][cz]);
 
-							// Re-Render neighboring chunks
-							if (cz > 0 && chunks[cx][cy][cz-1].vbo != 0)
-								bake_chunk(&chunks[cx][cy][cz-1]);
-							if (cz < WORLD_SIZE_UNSIGNED-1 && chunks[cx][cy][cz+1].vbo != 0)
-								bake_chunk(&chunks[cx][cy][cz+1]);
-								
-							if (cx > 0 && chunks[cx-1][cy][cz].vbo != 0)
-								bake_chunk(&chunks[cx-1][cy][cz]);
-							if (cx < WORLD_SIZE_UNSIGNED-1 && chunks[cx+1][cy][cz].vbo != 0)
-								bake_chunk(&chunks[cx+1][cy][cz]);
-
-							if (cy > 0 && chunks[cx][cy-1][cz].vbo != 0)
-								bake_chunk(&chunks[cx][cy-1][cz]);
-							if (cy < WORLD_SIZE_Y-1 && chunks[cx][cy+1][cz].vbo != 0)
-								bake_chunk(&chunks[cx][cy+1][cz]);
+						if (cy > 0 && chunks[cx][cy-1][cz].vbo != 0)
+							bake_chunk(&chunks[cx][cy-1][cz]);
+						if (cy < WORLD_HEIGHT-1 && chunks[cx][cy+1][cz].vbo != 0)
+							bake_chunk(&chunks[cx][cy+1][cz]);
 						}
 
-						glPushMatrix();
-						glTranslatef(chunks[cx][cy][cz].x * (CHUNK_SIZE - 1), chunks[cx][cy][cz].y * (CHUNK_SIZE - 1), chunks[cx][cy][cz].z * (CHUNK_SIZE - 1));
+					glPushMatrix();
+					glTranslatef(chunks[cx][cy][cz].x * (CHUNK_SIZE - 1), chunks[cx][cy][cz].y * (CHUNK_SIZE - 1), chunks[cx][cy][cz].z * (CHUNK_SIZE - 1));
 
-						gl_bind_vertex_array(chunks[cx][cy][cz].vao);
-						glDrawArrays(GL_QUADS, 0, chunks[cx][cy][cz].vertex_count);
-						gl_bind_vertex_array(0);
-						
-						glPopMatrix();
-					}
+					glEnableClientState(GL_VERTEX_ARRAY);
+					glEnableClientState(GL_COLOR_ARRAY);
+
+					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].vbo);
+					glVertexPointer(3, GL_FLOAT, 0, 0);
+
+					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].color_vbo);
+					glColorPointer(3, GL_FLOAT, 0, 0);
+
+					glDrawArrays(GL_QUADS, 0, chunks[cx][cy][cz].vertex_count);
+					
+					glDisableClientState(GL_COLOR_ARRAY);
+					glDisableClientState(GL_VERTEX_ARRAY);
+					
+					glPopMatrix();
 				}
 			}
 		}
@@ -290,9 +258,9 @@ void change_resolution() {
 }
 
 void cleanup() {
-	for(int cx = 0; cx < WORLD_SIZE_UNSIGNED; cx++) {
-		for(int cy = 0; cy < WORLD_SIZE_Y; cy++) {
-			for(int cz = 0; cz < WORLD_SIZE_UNSIGNED; cz++) {
+	for(int cx = 0; cx < render_distance; cx++) {
+		for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
+			for(int cz = 0; cz < render_distance; cz++) {
 				unload_chunk(&chunks[cx][cy][cz]);
 			}
 		}
