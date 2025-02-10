@@ -1,7 +1,7 @@
 #include "main.h"
 
 // Raycast function to find block player is looking at
-bool raycast(Player* player, float max_distance, int* out_x, int* out_y, int* out_z, Chunk** out_chunk, float* out_distance) {
+bool raycast(Entity* player, float max_distance, int* out_x, int* out_y, int* out_z, Chunk** out_chunk, float* out_distance) {
 	float px = player->x;
 	float py = player->y;
 	float pz = player->z;
@@ -59,7 +59,7 @@ bool raycast(Player* player, float max_distance, int* out_x, int* out_y, int* ou
 	return false;
 }
 
-void process_keyboard_movement(const Uint8* key_state, Player* player, float delta_time) {
+void process_keyboard_movement(const Uint8* key_state, Entity* player, float delta_time) {
 	const float PI = 3.14159265358979323846f;
 	if (key_state[SDL_SCANCODE_W]) {
 		player->z -= cos(player->yaw * PI / 180.0f) * player->speed * delta_time;

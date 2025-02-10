@@ -1,16 +1,6 @@
 #include "main.h"
 
 int main(int argc, char* argv[]) {
-	// Initialize player
-	Player player = {
-		.x = (WORLD_SIZE * CHUNK_SIZE) / 2,
-		.y = 64.0f,
-		.z = (WORLD_SIZE * CHUNK_SIZE) / 2,
-		.yaw = 135.0f,
-		.pitch = 20.0f,
-		.speed = 20
-	};
-
 	// Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
@@ -70,13 +60,36 @@ int main(int argc, char* argv[]) {
 	lastFpsUpdate = lastTime;
 	frameCount = 0;
 
+	// Initialize player
+	Entity player = {
+		.x = (WORLD_SIZE * CHUNK_SIZE) / 2,
+		.y = 35.0f,
+		.z = (WORLD_SIZE * CHUNK_SIZE) / 2,
+		.yaw = 0.0f,
+		.pitch = 0.0f,
+		.speed = 20
+	};
+	global_entities[0] = player;
+
+	int center_cx = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player.x / (CHUNK_SIZE * 1.0f)) - (render_distance / 2)));
+	int center_cy = fmaxf(0, fminf(WORLD_HEIGHT, (int)floorf(player.y / (CHUNK_SIZE * 1.0f))));
+	int center_cz = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player.z / (CHUNK_SIZE * 1.0f)) - (render_distance / 2)));
+
+	int x = (render_distance / 2);
+	int y = (render_distance / 2);
+	int z = (render_distance / 2);
+
+	// Load spawn chunk
+	load_chunk(x, 2, y, center_cx + x, 2, center_cz + y);
+
+	// Run the game
 	while (main_loop(&player) == 1);
 
 	cleanup();
 	return 0;
 }
 
-int main_loop(Player* player) {
+int main_loop(Entity* player) {
 		// Calculate delta time
 		Uint32 currentTime = SDL_GetTicks();
 		deltaTime = (currentTime - lastTime) / 1000.0f;
@@ -111,6 +124,7 @@ int main_loop(Player* player) {
 			if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
 				screen_width = event.window.data1;
 				screen_height = event.window.data2;
+				change_resolution();
 			}
 
 			// Mouse movement
@@ -188,52 +202,8 @@ int main_loop(Player* player) {
 		glRotatef(player->yaw, 0.0f, 1.0f, 0.0f);
 		glTranslatef(-player->x, -player->y, -player->z);
 
-		// Render all chunks
-		for(int cx = 0; cx < render_distance; cx++) {
-			for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-				for(int cz = 0; cz < render_distance; cz++) {
-					if (chunks[cx][cy][cz].needs_update) {
-						bake_chunk(&chunks[cx][cy][cz]);
-
-						// TODO: This causes lag, Should probably be done in a separate thread
-						// Re-Render neighboring chunks
-						if (cz > 0 && chunks[cx][cy][cz-1].vbo != 0)
-							bake_chunk(&chunks[cx][cy][cz-1]);
-						if (cz < render_distance-1 && chunks[cx][cy][cz+1].vbo != 0)
-							bake_chunk(&chunks[cx][cy][cz+1]);
-							
-						if (cx > 0 && chunks[cx-1][cy][cz].vbo != 0)
-							bake_chunk(&chunks[cx-1][cy][cz]);
-						if (cx < render_distance-1 && chunks[cx+1][cy][cz].vbo != 0)
-							bake_chunk(&chunks[cx+1][cy][cz]);
-
-						if (cy > 0 && chunks[cx][cy-1][cz].vbo != 0)
-							bake_chunk(&chunks[cx][cy-1][cz]);
-						if (cy < WORLD_HEIGHT-1 && chunks[cx][cy+1][cz].vbo != 0)
-							bake_chunk(&chunks[cx][cy+1][cz]);
-						}
-
-					glPushMatrix();
-					glTranslatef(chunks[cx][cy][cz].x * (CHUNK_SIZE - 1), chunks[cx][cy][cz].y * (CHUNK_SIZE - 1), chunks[cx][cy][cz].z * (CHUNK_SIZE - 1));
-
-					glEnableClientState(GL_VERTEX_ARRAY);
-					glEnableClientState(GL_COLOR_ARRAY);
-
-					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].vbo);
-					glVertexPointer(3, GL_FLOAT, 0, 0);
-
-					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].color_vbo);
-					glColorPointer(3, GL_FLOAT, 0, 0);
-
-					glDrawArrays(GL_QUADS, 0, chunks[cx][cy][cz].vertex_count);
-					
-					glDisableClientState(GL_COLOR_ARRAY);
-					glDisableClientState(GL_VERTEX_ARRAY);
-					
-					glPopMatrix();
-				}
-			}
-		}
+		// Render chunks
+		render_chunks();
 
 		// Draw HUD with average FPS
 		draw_hud(averageFps, player);

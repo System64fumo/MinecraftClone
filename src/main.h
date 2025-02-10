@@ -10,6 +10,7 @@
 #define WORLD_HEIGHT 4
 #define WORLD_SIZE UINT8_MAX
 #define MAX_VERTICES 65536
+#define MAX_ENTITIES_PER_CHUNK 1024
 
 //#define DEBUG
 #define FPS_UPDATE_INTERVAL 500
@@ -28,14 +29,13 @@ inline float screen_center_y;
 
 inline Uint32 lastTime;
 inline Uint32 lastFpsUpdate;
-inline float deltaTime = 0.0f;
-inline int frameCount = 0;
-inline float averageFps = 0.0f;
-inline int fpsIndex = 0;
+inline float deltaTime;
+inline int frameCount;
+inline float averageFps;
+inline int fpsIndex;
 inline float fpsHistory[FPS_HISTORY_SIZE];
 
 inline SDL_Event event;
-inline GLuint block_vbo;
 inline SDL_Window* window = NULL;
 inline SDL_GLContext glContext;
 
@@ -45,12 +45,12 @@ inline PFNGLBINDBUFFERPROC gl_bind_buffer = NULL;
 inline PFNGLBUFFERDATAPROC gl_buffer_data = NULL;
 inline PFNGLDELETEBUFFERSPROC gl_delete_buffers = NULL;
 
-// Player struct
+// Entity struct
 typedef struct {
 	float x, y, z;
 	float yaw, pitch;
 	unsigned char speed;
-} Player;
+} Entity;
 
 // Block struct
 typedef struct {
@@ -71,16 +71,17 @@ typedef struct Chunk {
 } Chunk;
 
 inline Chunk chunks[render_distance][WORLD_HEIGHT][render_distance];
+inline Entity global_entities[MAX_ENTITIES_PER_CHUNK * render_distance * CHUNK_SIZE];
 
 // Function prototypes
-int main_loop(Player* player);
+int main_loop(Entity* player);
 void change_resolution();
 void cleanup();
-void draw_hud(float fps, Player* player);
-void process_keyboard_movement(const Uint8* key_state, Player* player, float delta_time);
-void bake_chunk(Chunk* chunk);
+void draw_hud(float fps, Entity* player);
+void process_keyboard_movement(const Uint8* key_state, Entity* entity, float delta_time);
+void render_chunks();
 void load_chunk(unsigned char x, unsigned char y, unsigned char z, unsigned char cx, unsigned char cy, unsigned char cz);
 void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z);
-bool raycast(Player* player, float max_distance, int* out_x, int* out_y, int* out_z, Chunk** out_chunk, float* out_distance);
+bool raycast(Entity* player, float max_distance, int* out_x, int* out_y, int* out_z, Chunk** out_chunk, float* out_distance);
 void draw_block_highlight(float x, float y, float z);
