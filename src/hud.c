@@ -25,7 +25,7 @@ void draw_text(const char* text, int length, int x, int y) {
 	glPopAttrib();
 }
 
-void draw_hud(float fps, Player* player) {
+void draw_hud(float fps, Entity* player) {
 	static char debug_text[128];
 	
 	glPushMatrix();

@@ -260,6 +260,14 @@ void bake_chunk(Chunk* chunk) {
 
 	chunk->vertex_count = vertex_count;
 
+	// Free old VBOs if they exist
+	if (chunk->vbo != 0) {
+		gl_delete_buffers(1, &chunk->vbo);
+	}
+	if (chunk->color_vbo != 0) {
+		gl_delete_buffers(1, &chunk->color_vbo);
+	}
+
 	// Update VBOs
 	gl_gen_buffers(1, &chunk->vbo);
 	gl_gen_buffers(1, &chunk->color_vbo);
@@ -270,5 +278,76 @@ void bake_chunk(Chunk* chunk) {
 	gl_bind_buffer(GL_ARRAY_BUFFER, chunk->color_vbo);
 	gl_buffer_data(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), chunk->colors, GL_STATIC_DRAW);
 
+	// Free the CPU-side buffers
+	free(chunk->vertices);
+	free(chunk->colors);
+	chunk->vertices = NULL;
+	chunk->colors = NULL;
+
 	chunk->needs_update = false;
+}
+
+void render_chunks() {
+	// First pass: bake any chunks that need updating
+	for(int cx = 0; cx < render_distance; cx++) {
+		for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
+			for(int cz = 0; cz < render_distance; cz++) {
+				if (chunks[cx][cy][cz].needs_update) {
+					bake_chunk(&chunks[cx][cy][cz]);
+
+					// Re-Render neighboring chunks
+					if (cz > 0 && chunks[cx][cy][cz-1].vbo != 0) {
+						bake_chunk(&chunks[cx][cy][cz-1]);
+					}
+					if (cz < render_distance-1 && chunks[cx][cy][cz+1].vbo != 0) {
+						bake_chunk(&chunks[cx][cy][cz+1]);
+					}
+							
+					if (cx > 0 && chunks[cx-1][cy][cz].vbo != 0) {
+						bake_chunk(&chunks[cx-1][cy][cz]);
+					}
+					if (cx < render_distance-1 && chunks[cx+1][cy][cz].vbo != 0) {
+						bake_chunk(&chunks[cx+1][cy][cz]);
+					}
+
+					if (cy > 0 && chunks[cx][cy-1][cz].vbo != 0) {
+						bake_chunk(&chunks[cx][cy-1][cz]);
+					}
+					if (cy < WORLD_HEIGHT-1 && chunks[cx][cy+1][cz].vbo != 0) {
+						bake_chunk(&chunks[cx][cy+1][cz]);
+					}
+				}
+			}
+		}
+	}
+
+	// Second pass: batch render all chunks
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_COLOR_ARRAY);
+
+	for(int cx = 0; cx < render_distance; cx++) {
+		for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
+			for(int cz = 0; cz < render_distance; cz++) {
+				if (chunks[cx][cy][cz].vertex_count > 0) {
+					glPushMatrix();
+					glTranslatef(chunks[cx][cy][cz].x * (CHUNK_SIZE - 1), 
+							    chunks[cx][cy][cz].y * (CHUNK_SIZE - 1), 
+							    chunks[cx][cy][cz].z * (CHUNK_SIZE - 1));
+
+					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].vbo);
+					glVertexPointer(3, GL_FLOAT, 0, 0);
+
+					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].color_vbo);
+					glColorPointer(3, GL_FLOAT, 0, 0);
+
+					glDrawArrays(GL_QUADS, 0, chunks[cx][cy][cz].vertex_count);
+
+					glPopMatrix();
+				}
+			}
+		}
+	}
+
+	glDisableClientState(GL_COLOR_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
 }

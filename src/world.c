@@ -3,7 +3,6 @@
 #include "stb_perlin.h"
 
 void load_chunk(unsigned char x, unsigned char y, unsigned char z, unsigned char cx, unsigned char cy, unsigned char cz) {
-	chunks[x][y][z] = (Chunk){0};
 	chunks[x][y][z].ci_x = x;
 	chunks[x][y][z].ci_y = y;
 	chunks[x][y][z].ci_z = z;
@@ -39,8 +38,7 @@ void unload_chunk(Chunk* chunk) {
 	chunk->vertex_count = 0;
 	chunk->needs_update = false;
 
-	// Clear block data
-	memset(chunk->blocks, 0, sizeof(chunk->blocks));
+	memset(chunk, 0, sizeof(Chunk));
 }
 
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z) {
