@@ -1,4 +1,37 @@
 #include "main.h"
+#include <GL/gl.h>
+#include <GL/glut.h>
+
+int screen_width = 1280;
+int screen_height = 720;
+
+float fov = 70.0f;
+float near = 0.1f;
+float far = 200.0f;
+
+float screen_center_x;
+float screen_center_y;
+
+Uint32 lastTime;
+Uint32 lastFpsUpdate;
+float deltaTime;
+int frameCount;
+float averageFps;
+int fpsIndex;
+float fpsHistory[FPS_HISTORY_SIZE];
+
+SDL_Event event;
+SDL_Window* window = NULL;
+SDL_GLContext glContext;
+
+// VBO function pointers
+PFNGLGENBUFFERSPROC gl_gen_buffers = NULL;
+PFNGLBINDBUFFERPROC gl_bind_buffer = NULL;
+PFNGLBUFFERDATAPROC gl_buffer_data = NULL;
+PFNGLDELETEBUFFERSPROC gl_delete_buffers = NULL;
+
+Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
+Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
 
 int main(int argc, char* argv[]) {
 	// Initialize SDL
@@ -71,13 +104,13 @@ int main(int argc, char* argv[]) {
 	};
 	global_entities[0] = player;
 
-	int center_cx = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player.x / (CHUNK_SIZE * 1.0f)) - (render_distance / 2)));
+	int center_cx = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player.x / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
 	int center_cy = fmaxf(0, fminf(WORLD_HEIGHT, (int)floorf(player.y / (CHUNK_SIZE * 1.0f))));
-	int center_cz = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player.z / (CHUNK_SIZE * 1.0f)) - (render_distance / 2)));
+	int center_cz = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player.z / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
 
-	int x = (render_distance / 2);
-	int y = (render_distance / 2);
-	int z = (render_distance / 2);
+	int x = (RENDERR_DISTANCE / 2);
+	int y = (RENDERR_DISTANCE / 2);
+	int z = (RENDERR_DISTANCE / 2);
 
 	// Load spawn chunk
 	load_chunk(x, 2, y, center_cx + x, 2, center_cz + y);
@@ -143,9 +176,9 @@ int main_loop(Entity* player) {
 			}
 		}
 
-		int center_cx = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player->x / (CHUNK_SIZE * 1.0f)) - (render_distance / 2)));
+		int center_cx = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player->x / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
 		int center_cy = fmaxf(0, fminf(WORLD_HEIGHT, (int)floorf(player->y / (CHUNK_SIZE * 1.0f))));
-		int center_cz = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player->z / (CHUNK_SIZE * 1.0f)) - (render_distance / 2)));
+		int center_cz = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player->z / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
 
 		// Get keyboard state
 		const Uint8* keyboard = SDL_GetKeyboardState(NULL);
@@ -155,9 +188,9 @@ int main_loop(Entity* player) {
 		static int rKeyWasPressed = 0;
 		if (keyboard[SDL_SCANCODE_R] && !rKeyWasPressed) {
 			printf("Re-rendering all chunks\n");
-			for(int cx = 0; cx < render_distance; cx++) {
+			for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
 				for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-					for(int cz = 0; cz < render_distance; cz++) {
+					for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
 						if (chunks[cx][cy][cz].vbo) {
 							chunks[cx][cy][cz].needs_update = true;
 						}
@@ -169,9 +202,9 @@ int main_loop(Entity* player) {
 
 		static Uint32 lastChunkCheck = 0;
 		if (currentTime - lastChunkCheck >= 3000) {
-			for(int cx = 0; cx < render_distance; cx++) {
+			for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
 				for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-					for(int cz = 0; cz < render_distance; cz++) {
+					for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
 						if (chunks[cx][cy][cz].vbo) {
 							unload_chunk(&chunks[cx][cy][cz]);
 						}
@@ -179,9 +212,9 @@ int main_loop(Entity* player) {
 				}
 			}
 
-			for(int x = 0; x < render_distance; x++) {
+			for(int x = 0; x < RENDERR_DISTANCE; x++) {
 				for(int y = 0; y < WORLD_HEIGHT; y++) {
-					for(int z = 0; z < render_distance; z++) {
+					for(int z = 0; z < RENDERR_DISTANCE; z++) {
 						load_chunk(x, y, z, x + center_cx, y, z + center_cz);
 					}
 				}
@@ -228,9 +261,9 @@ void change_resolution() {
 }
 
 void cleanup() {
-	for(int cx = 0; cx < render_distance; cx++) {
+	for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
 		for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-			for(int cz = 0; cz < render_distance; cz++) {
+			for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
 				unload_chunk(&chunks[cx][cy][cz]);
 			}
 		}

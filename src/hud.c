@@ -1,4 +1,5 @@
 #include "main.h"
+#include <GL/glut.h>
 
 void draw_text(const char* text, int length, int x, int y) {
 	glPushMatrix();
