@@ -5,7 +5,7 @@ int screen_height = 720;
 
 float fov = 70.0f;
 float near = 0.1f;
-float far = 200.0f;
+float far = 300.0f;
 
 float screen_center_x;
 float screen_center_y;
@@ -75,16 +75,8 @@ int main(int argc, char* argv[]) {
 	};
 	global_entities[0] = player;
 
-	int center_cx = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player.x / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
-	int center_cy = fmaxf(0, fminf(WORLD_HEIGHT, (int)floorf(player.y / (CHUNK_SIZE * 1.0f))));
-	int center_cz = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player.z / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
-
-	int x = (RENDERR_DISTANCE / 2);
-	int y = (RENDERR_DISTANCE / 2);
-	int z = (RENDERR_DISTANCE / 2);
-
 	// Load spawn chunk
-	load_chunk(x, 2, z, center_cx + x, 2, center_cz + z);
+	load_around_entity(&global_entities[0]);
 
 	// Set up GLUT callbacks
 	glutDisplayFunc(display);

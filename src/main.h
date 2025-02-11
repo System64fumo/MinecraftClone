@@ -16,7 +16,7 @@
 #define WORLD_SIZE UINT8_MAX
 #define MAX_VERTICES 65536
 #define MAX_ENTITIES_PER_CHUNK 1024
-#define RENDERR_DISTANCE 10
+#define RENDERR_DISTANCE 16
 
 #define FPS_UPDATE_INTERVAL 500
 #define FPS_HISTORY_SIZE 10
@@ -38,6 +38,7 @@ typedef struct Chunk {
 	unsigned char x, y, z;
 	unsigned char ci_x, ci_y, ci_z;
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+	GLuint vao;
 	GLuint vbo;
 	GLuint color_vbo;
 	int vertex_count;
@@ -74,6 +75,7 @@ void cleanup();
 void draw_hud(float fps, Entity* player);
 void render_chunks();
 
+void load_around_entity(Entity* entity);
 void load_chunk(unsigned char x, unsigned char y, unsigned char z, unsigned char cx, unsigned char cy, unsigned char cz);
 void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z);
