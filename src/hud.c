@@ -140,13 +140,13 @@ void draw_hud(float fps, Entity* player) {
 
 	#ifdef DEBUG
 		const char* direction = 
-			(player->yaw < 45 || player->yaw >= 315) ? "North" :
-			(player->yaw < 135) ? "East" :
-			(player->yaw < 225) ? "South" : "West";
+			(player->yaw < 45 || player->yaw >= 315) ? "South" :
+			(player->yaw < 135) ? "West" :
+			(player->yaw < 225) ? "North" : "East";
 			
 		const char* pitch = 
-			(player->pitch > 45) ? "Down" :
-			(player->pitch < -45) ? "Up" : "";
+			(player->pitch > 45) ? "Up" :
+			(player->pitch < -45) ? "Down" : "";
 			
 		snprintf(debug_text, sizeof(debug_text), 
 			"FPS: %.1f, X: %.1f, Y: %.1f Z: %.1f, Direction: %s %s", 
@@ -159,8 +159,8 @@ void draw_hud(float fps, Entity* player) {
 	#ifdef DEBUG
 	draw_minimap(player);
 	char block_pos[64];
-	if (world_block_x != 0 && world_block_y != 0 && world_block_z != 0) {
-		snprintf(block_pos, sizeof(block_pos), "Looking at block: %d, %d, %d", (WORLD_SIZE * CHUNK_SIZE) / 2 - world_block_x, world_block_y, (WORLD_SIZE * CHUNK_SIZE) / 2 - world_block_z);
+	if (world_block_x != -1 && world_block_y != -1 && world_block_z != -1) {
+		snprintf(block_pos, sizeof(block_pos), "Looking at block: %d, %d, %d", world_block_x, world_block_y, world_block_z);
 		draw_text(block_pos, strlen(block_pos), 10, 40);
 	}
 	#endif
@@ -171,5 +171,7 @@ void draw_hud(float fps, Entity* player) {
 	glPopMatrix();
 	glPopAttrib();
 
-	draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
+	if (world_block_x != -1 && world_block_y != -1 && world_block_z != -1) {
+		draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
+	}
 }

@@ -192,10 +192,18 @@ void bake_chunk(Chunk* chunk) {
 
 						// Find width
 						int width = 1;
-						while(x + width < CHUNK_SIZE && 
-								mask[x + width][y][z] && 
-								chunk->blocks[x + width][y][z].id == block_id) {
-							width++;
+						if (face == 2 || face == 3) { // Left or Right face
+							while(z + width < CHUNK_SIZE && 
+									mask[x][y][z + width] && 
+									chunk->blocks[x][y][z + width].id == block_id) {
+								width++;
+							}
+						} else {
+							while(x + width < CHUNK_SIZE && 
+									mask[x + width][y][z] && 
+									chunk->blocks[x + width][y][z].id == block_id) {
+								width++;
+							}
 						}
 
 						// Find depth
@@ -223,8 +231,19 @@ void bake_chunk(Chunk* chunk) {
 								}
 								if(canExpand) depth++;
 							}
+						} else if (face == 2 || face == 3) { // Left or Right face
+							while(y + depth < CHUNK_SIZE && canExpand) {
+								for(int dz = 0; dz < width; dz++) {
+									if(!mask[x][y + depth][z + dz] || 
+										chunk->blocks[x][y + depth][z + dz].id != block_id) {
+										canExpand = false;
+										break;
+									}
+								}
+								if(canExpand) depth++;
+							}
 						} else {
-							// Find height for other faces
+							// Find height for front/back faces
 							while(y + depth < CHUNK_SIZE && canExpand) {
 								for(int dx = 0; dx < width; dx++) {
 									if(!mask[x + dx][y + depth][z] || 
@@ -238,12 +257,20 @@ void bake_chunk(Chunk* chunk) {
 						}
 
 						// Clear the mask for merged faces
-						for(int dx = 0; dx < width; dx++) {
-							if (face == 4 || face == 5) {
+						if (face == 2 || face == 3) { // Left or Right face
+							for(int dz = 0; dz < width; dz++) {
+								for(int dy = 0; dy < depth; dy++) {
+									mask[x][y + dy][z + dz] = false;
+								}
+							}
+						} else if (face == 4 || face == 5) { // Top or Bottom face
+							for(int dx = 0; dx < width; dx++) {
 								for(int dz = 0; dz < depth; dz++) {
 									mask[x + dx][y][z + dz] = false;
 								}
-							} else {
+							}
+						} else { // Front or Back face
+							for(int dx = 0; dx < width; dx++) {
 								for(int dy = 0; dy < depth; dy++) {
 									mask[x + dx][y + dy][z] = false;
 								}
@@ -275,15 +302,15 @@ void bake_chunk(Chunk* chunk) {
 								vertices[9] = wx + width;vertices[10]= wy + depth; vertices[11]= wz + 1;
 								break;
 							case 2: // Left
-								vertices[0] = wx;        vertices[1] = wy;         vertices[2] = wz + 1;
+								vertices[0] = wx;        vertices[1] = wy;         vertices[2] = wz + width;
 								vertices[3] = wx;        vertices[4] = wy;         vertices[5] = wz;
 								vertices[6] = wx;        vertices[7] = wy + depth; vertices[8] = wz;
-								vertices[9] = wx;        vertices[10]= wy + depth; vertices[11]= wz + 1;
+								vertices[9] = wx;        vertices[10]= wy + depth; vertices[11]= wz + width;
 								break;
 							case 3: // Right
 								vertices[0] = wx + 1;    vertices[1] = wy;         vertices[2] = wz;
-								vertices[3] = wx + 1;    vertices[4] = wy;         vertices[5] = wz + 1;
-								vertices[6] = wx + 1;    vertices[7] = wy + depth; vertices[8] = wz + 1;
+								vertices[3] = wx + 1;    vertices[4] = wy;         vertices[5] = wz + width;
+								vertices[6] = wx + 1;    vertices[7] = wy + depth; vertices[8] = wz + width;
 								vertices[9] = wx + 1;    vertices[10]= wy + depth; vertices[11]= wz;
 								break;
 							case 4: // Top
@@ -317,7 +344,6 @@ void bake_chunk(Chunk* chunk) {
 			}
 		}
 	}
-
 	chunk->vertex_count = vertex_count;
 
 	// Free old buffers if they exist
@@ -427,7 +453,7 @@ void render_chunks() {
 					glColorPointer(3, GL_FLOAT, 0, 0);
 
 					glDrawArrays(GL_QUADS, 0, chunks[cx][cy][cz].vertex_count);
-
+					//glDrawArrays(GL_TRIANGLES, 0, chunks[cx][cy][cz].vertex_count);
 					glPopMatrix();
 				}
 			}

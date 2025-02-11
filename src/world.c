@@ -12,7 +12,7 @@ void load_around_entity(Entity* entity) {
 	#endif
 	
 	int center_cx = (int)fmaxf(0, fminf(WORLD_SIZE, floorf(entity->x / CHUNK_SIZE) - (RENDERR_DISTANCE / 2)));
-	int center_cy = (int)fmaxf(0, fminf(WORLD_HEIGHT, -(floorf(entity->y / CHUNK_SIZE) - WORLD_HEIGHT)));
+	//int center_cy = (int)fmaxf(0, fminf(WORLD_HEIGHT, -(floorf(entity->y / CHUNK_SIZE) - WORLD_HEIGHT)));
 	int center_cz = (int)fmaxf(0, fminf(WORLD_SIZE, floorf(entity->z / CHUNK_SIZE) - (RENDERR_DISTANCE / 2)));
 
 	int dx = center_cx - last_cx;
