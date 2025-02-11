@@ -3,6 +3,7 @@
 #include <GL/glut.h>
 
 int world_block_x;
+int world_block_y;
 int world_block_z;
 
 void draw_text(const char* text, int length, int x, int y) {
@@ -94,42 +95,6 @@ void draw_minimap(Entity* player) {
 	glBegin(GL_POINTS);
 	glVertex2f(map_x + player_x, map_y + player_z);
 	glEnd();
-	
-	// Calculate direction and endpoint
-	float base_length = chunk_size;  // Length of one grid cell
-	float pitch_factor = cosf(player->pitch * M_PI / 180.0f);
-	float direction_length = base_length * pitch_factor;
-	float dx = sinf(player->yaw * M_PI / 180.0f) * direction_length;
-	float dz = -cosf(player->yaw * M_PI / 180.0f) * direction_length;
-	
-	// Calculate endpoint with block precision
-	float block_size = chunk_size / (float)CHUNK_SIZE;
-	float endpoint_x = player_x + dx;
-	float endpoint_z = player_z + dz;
-	float block_x = roundf(endpoint_x / block_size) * block_size;
-	float block_z = roundf(endpoint_z / block_size) * block_size;
-	
-	// Draw direction line
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glBegin(GL_LINES);
-	glVertex2f(map_x + player_x, map_y + player_z);
-	glVertex2f(map_x + block_x, map_y + block_z);
-	glEnd();
-
-	// Draw endpoint highlight
-	glColor3f(1.0f, 0.0f, 0.0f);
-	glPointSize(4.0f);
-	glBegin(GL_POINTS);
-	glVertex2f(map_x + block_x, map_y + block_z);
-	glEnd();
-
-	// Print block position
-	char block_pos[64];
-	world_block_x = ((int)(block_x / block_size) + chunks[0][0][0].x * CHUNK_SIZE + 1);
-	world_block_z = ((int)(block_z / block_size) + chunks[0][0][0].z * CHUNK_SIZE + 1);
-	snprintf(block_pos, sizeof(block_pos), "Block: %d, %d", world_block_x, world_block_z);
-	glColor3f(0.25f, 0.25f, 0.25f);
-	draw_text(block_pos, strlen(block_pos), map_x, map_y + map_size + 20);
 
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -171,6 +136,8 @@ void draw_hud(float fps, Entity* player) {
 	glEnable(GL_TEXTURE_2D);
 	glPopMatrix();
 
+	get_targeted_block(player, &world_block_x, &world_block_y, &world_block_z);
+
 	#ifdef DEBUG
 		const char* direction = 
 			(player->yaw < 45 || player->yaw >= 315) ? "North" :
@@ -191,6 +158,11 @@ void draw_hud(float fps, Entity* player) {
 	draw_text(debug_text, strlen(debug_text), 10, 20);
 	#ifdef DEBUG
 	draw_minimap(player);
+	char block_pos[64];
+	if (world_block_x != 0 && world_block_y != 0 && world_block_z != 0) {
+		snprintf(block_pos, sizeof(block_pos), "Looking at block: %d, %d, %d", (WORLD_SIZE * CHUNK_SIZE) / 2 - world_block_x, world_block_y, (WORLD_SIZE * CHUNK_SIZE) / 2 - world_block_z);
+		draw_text(block_pos, strlen(block_pos), 10, 40);
+	}
 	#endif
 
 	glMatrixMode(GL_PROJECTION);
@@ -199,8 +171,5 @@ void draw_hud(float fps, Entity* player) {
 	glPopMatrix();
 	glPopAttrib();
 
-	// Temporarily disabled, W.I.P.
-	#ifdef DEBUG
-	draw_block_highlight(world_block_x, 32, world_block_z);
-	#endif
+	draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
 }

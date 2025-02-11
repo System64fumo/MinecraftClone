@@ -73,9 +73,12 @@ extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_
 void cleanup();
 void draw_hud(float fps, Entity* player);
 void render_chunks();
+
 void load_chunk(unsigned char x, unsigned char y, unsigned char z, unsigned char cx, unsigned char cy, unsigned char cz);
 void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z);
+
+void get_targeted_block(Entity* player, int* out_x, int* out_y, int* out_z);
 void draw_block_highlight(float x, float y, float z);
 
 void display();
