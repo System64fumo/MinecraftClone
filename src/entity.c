@@ -9,9 +9,9 @@ void get_targeted_block(Entity* entity, int* out_x, int* out_y, int* out_z) {
 	float yaw_rad = entity->yaw * M_PI / 180.0f;
 	
 	// Direction vector
-	float dx = sinf(yaw_rad) * cosf(pitch_rad);
-	float dy = -sinf(pitch_rad);
-	float dz = -cosf(yaw_rad) * cosf(pitch_rad);
+	float dx = -sinf(yaw_rad) * cosf(pitch_rad);
+	float dy = sinf(pitch_rad);
+	float dz = cosf(yaw_rad) * cosf(pitch_rad);
 	
 	// Ray step size (smaller = more precise but slower)
 	float step = 0.1f;
@@ -58,7 +58,7 @@ void get_targeted_block(Entity* entity, int* out_x, int* out_y, int* out_z) {
 	}
 
 	// No block found
-	*out_x = 0;
-	*out_y = 0;
-	*out_z = 0;
+	*out_x = -1;
+	*out_y = -1;
+	*out_z = -1;
 }

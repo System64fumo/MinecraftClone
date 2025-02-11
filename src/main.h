@@ -1,6 +1,8 @@
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glut.h>
+#include <GLFW/glfw3.h>
+#include <GL/freeglut.h>
 #include <GL/glext.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -58,13 +60,8 @@ extern float far;
 extern float screen_center_x;
 extern float screen_center_y;
 
-extern uint32_t lastTime;
-extern uint32_t lastFpsUpdate;
 extern float deltaTime;
-extern int frameCount;
-extern float averageFps;
-extern int fpsIndex;
-extern float fpsHistory[FPS_HISTORY_SIZE];
+extern short fps_average;
 
 extern GLuint buffer;
 extern Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
@@ -84,10 +81,7 @@ void get_targeted_block(Entity* player, int* out_x, int* out_y, int* out_z);
 void draw_block_highlight(float x, float y, float z);
 
 void display();
-void reshape(int w, int h);
-void keyboard(unsigned char key, int x, int y);
-void keyboardUp(unsigned char key, int x, int y);
-void special(int key, int x, int y);
-void specialUp(int key, int x, int y);
-void idle();
-void mouse(int x, int y);
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void processInput(GLFWwindow* window);
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
