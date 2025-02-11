@@ -1,4 +1,5 @@
 #include "main.h"
+#include <stdio.h>
 #include <GL/glut.h>
 
 void draw_text(const char* text, int length, int x, int y) {
@@ -161,7 +162,7 @@ void draw_hud(float fps, Entity* player) {
 	glPopMatrix();
 	glPopAttrib();
 
-	if (hit) {
-		draw_block_highlight(block_x + 1, block_y + 1, block_z + 1);
-	}
+	// if (hit) {
+	// 	draw_block_highlight(block_x + 1, block_y + 1, block_z + 1);
+	// }
 }

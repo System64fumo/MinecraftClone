@@ -1,7 +1,5 @@
 #ifdef DEBUG
-#include "profiler.h"
-#include <GL/glext.h>
-#include <string.h>
+#include "main.h"
 #include <stdio.h>
 
 static ProfilerInstance timers[MAX_TIMERS];
