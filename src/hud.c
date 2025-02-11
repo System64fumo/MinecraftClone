@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <GL/glut.h>
 
+int world_block_x;
+int world_block_z;
+
 void draw_text(const char* text, int length, int x, int y) {
 	glPushMatrix();
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -28,7 +31,7 @@ void draw_text(const char* text, int length, int x, int y) {
 }
 
 void draw_minimap(Entity* player) {
-	const int map_size = 100;
+	const int map_size = 160;
 	const int map_x = screen_width - map_size - 10;
 	const int map_y = 10;
 	const int chunk_size = map_size / RENDERR_DISTANCE;
@@ -70,27 +73,64 @@ void draw_minimap(Entity* player) {
 		}
 	}
 	
+	// Draw grid
+	glColor3f(0.0f, 0.55f, 0.15f);
+	glBegin(GL_LINES);
+	for(int i = 0; i <= RENDERR_DISTANCE; i++) {
+		// Vertical lines
+		glVertex2f(map_x + i * chunk_size, map_y);
+		glVertex2f(map_x + i * chunk_size, map_y + map_size);
+		// Horizontal lines
+		glVertex2f(map_x, map_y + i * chunk_size);
+		glVertex2f(map_x + map_size, map_y + i * chunk_size);
+	}
+	glEnd();
+	
 	// Draw player position
 	float player_x = ((player->x - chunks[0][0][0].x * CHUNK_SIZE) / (float)(CHUNK_SIZE * RENDERR_DISTANCE)) * map_size;
-	float player_z = ((player->z - chunks[0][0][0].z * CHUNK_SIZE) / (float)(CHUNK_SIZE * RENDERR_DISTANCE)) * map_size;	
-	glColor3f(0.75f, 0.75f, 0.75f);
+	float player_z = ((player->z - chunks[0][0][0].z * CHUNK_SIZE) / (float)(CHUNK_SIZE * RENDERR_DISTANCE)) * map_size;
+	glColor3f(1.0f, 0.75f, 0.25f);
 	glPointSize(6.0f);
 	glBegin(GL_POINTS);
 	glVertex2f(map_x + player_x, map_y + player_z);
 	glEnd();
 	
-	// Draw player direction line
-	float base_length = 15.0f;
-	float pitch_factor = cosf(player->pitch * M_PI / 180.0f);  // Shorter when looking up/down
+	// Calculate direction and endpoint
+	float base_length = chunk_size;  // Length of one grid cell
+	float pitch_factor = cosf(player->pitch * M_PI / 180.0f);
 	float direction_length = base_length * pitch_factor;
 	float dx = sinf(player->yaw * M_PI / 180.0f) * direction_length;
-	float dz = cosf(player->yaw * M_PI / 180.0f) * direction_length;
-	glColor3f(1.0f, 0.0f, 0.0f);  // Red direction line
+	float dz = -cosf(player->yaw * M_PI / 180.0f) * direction_length;
+	
+	// Calculate endpoint with block precision
+	float block_size = chunk_size / (float)CHUNK_SIZE;
+	float endpoint_x = player_x + dx;
+	float endpoint_z = player_z + dz;
+	float block_x = roundf(endpoint_x / block_size) * block_size;
+	float block_z = roundf(endpoint_z / block_size) * block_size;
+	
+	// Draw direction line
+	glColor3f(1.0f, 0.0f, 0.0f);
 	glBegin(GL_LINES);
 	glVertex2f(map_x + player_x, map_y + player_z);
-	glVertex2f(map_x + player_x + dx, map_y + player_z - dz);
+	glVertex2f(map_x + block_x, map_y + block_z);
 	glEnd();
-	
+
+	// Draw endpoint highlight
+	glColor3f(1.0f, 0.0f, 0.0f);
+	glPointSize(4.0f);
+	glBegin(GL_POINTS);
+	glVertex2f(map_x + block_x, map_y + block_z);
+	glEnd();
+
+	// Print block position
+	char block_pos[64];
+	world_block_x = ((int)(block_x / block_size) + chunks[0][0][0].x * CHUNK_SIZE + 1);
+	world_block_z = ((int)(block_z / block_size) + chunks[0][0][0].z * CHUNK_SIZE + 1);
+	snprintf(block_pos, sizeof(block_pos), "Block: %d, %d", world_block_x, world_block_z);
+	glColor3f(0.25f, 0.25f, 0.25f);
+	draw_text(block_pos, strlen(block_pos), map_x, map_y + map_size + 20);
+
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 	glMatrixMode(GL_MODELVIEW);
@@ -116,12 +156,7 @@ void draw_hud(float fps, Entity* player) {
 	// Draw crosshair
 	glEnable(GL_COLOR_LOGIC_OP);
 	glLogicOp(GL_INVERT);
-	
-	// Raycast to find block player is looking at
-	int block_x, block_y, block_z;
-	Chunk* chunk;
-	float hit_distance;
-	bool hit = raycast(player, 64.0f, &block_x, &block_y, &block_z, &hit_distance);
+
 
 	// Draw crosshair lines
 	glBegin(GL_LINES);
@@ -154,7 +189,9 @@ void draw_hud(float fps, Entity* player) {
 	#endif
 
 	draw_text(debug_text, strlen(debug_text), 10, 20);
+	#ifdef DEBUG
 	draw_minimap(player);
+	#endif
 
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
@@ -162,7 +199,8 @@ void draw_hud(float fps, Entity* player) {
 	glPopMatrix();
 	glPopAttrib();
 
-	// if (hit) {
-	// 	draw_block_highlight(block_x + 1, block_y + 1, block_z + 1);
-	// }
+	// Temporarily disabled, W.I.P.
+	#ifdef DEBUG
+	draw_block_highlight(world_block_x, 32, world_block_z);
+	#endif
 }

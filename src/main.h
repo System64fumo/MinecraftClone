@@ -76,7 +76,6 @@ void render_chunks();
 void load_chunk(unsigned char x, unsigned char y, unsigned char z, unsigned char cx, unsigned char cy, unsigned char cz);
 void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z);
-bool raycast(Entity* player, float max_distance, int* out_x, int* out_y, int* out_z, float* out_distance);
 void draw_block_highlight(float x, float y, float z);
 
 void display();

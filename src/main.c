@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
 	int z = (RENDERR_DISTANCE / 2);
 
 	// Load spawn chunk
-	load_chunk(x, 2, y, center_cx + x, 2, center_cz + y);
+	load_chunk(x, 2, z, center_cx + x, 2, center_cz + z);
 
 	// Set up GLUT callbacks
 	glutDisplayFunc(display);
