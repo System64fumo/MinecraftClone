@@ -53,33 +53,7 @@ void keyboard(unsigned char key, int x, int y) {
 		exit(0);
 	}
 	if (keys['r']) {
-		#ifdef DEBUG
-		profiler_start(PROFILER_ID_WORLD_GEN);
-		#endif
-		int center_cx = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(global_entities[0].x / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
-		int center_cy = fmaxf(0, fminf(WORLD_HEIGHT, -((int)floorf(global_entities[0].y / (CHUNK_SIZE * 1.0f)) - WORLD_HEIGHT)));
-		int center_cz = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(global_entities[0].z / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
-
-		for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
-			for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-				for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
-					if (chunks[cx][cy][cz].vbo) {
-						unload_chunk(&chunks[cx][cy][cz]);
-					}
-				}
-			}
-		}
-
-		for(int x = 0; x < RENDERR_DISTANCE; x++) {
-			for(int y = 0; y < WORLD_HEIGHT; y++) {
-				for(int z = 0; z < RENDERR_DISTANCE; z++) {
-					load_chunk(x, y, z, x + center_cx, y, z + center_cz);
-				}
-			}
-		}
-		#ifdef DEBUG
-		profiler_stop(PROFILER_ID_WORLD_GEN);
-		#endif
+		load_around_entity(&global_entities[0]);
 	}
 }
 
