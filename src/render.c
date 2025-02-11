@@ -49,9 +49,9 @@ void draw_block_highlight(float x, float y, float z) {
 	float vertices[90];  // Increased size to accommodate closing vertices
 
 	if (!vbo) {
-		gl_gen_buffers(1, &vbo);
-		gl_bind_buffer(GL_ARRAY_BUFFER, vbo);
-		gl_buffer_data(GL_ARRAY_BUFFER, sizeof(vertices_template), vertices_template, GL_STATIC_DRAW);
+		glGenBuffers(1, &vbo);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_template), vertices_template, GL_STATIC_DRAW);
 	}
 
 	// Translate vertices
@@ -61,8 +61,8 @@ void draw_block_highlight(float x, float y, float z) {
 		vertices[i + 2] = vertices_template[i + 2] + z;
 	}
 
-	gl_bind_buffer(GL_ARRAY_BUFFER, vbo);
-	gl_buffer_data(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	glColor3f(1.0f, 1.0f, 1.0f);
 
@@ -266,21 +266,21 @@ void bake_chunk(Chunk* chunk) {
 
 	// Free old VBOs if they exist
 	if (chunk->vbo != 0) {
-		gl_delete_buffers(1, &chunk->vbo);
+		glDeleteBuffers(1, &chunk->vbo);
 	}
 	if (chunk->color_vbo != 0) {
-		gl_delete_buffers(1, &chunk->color_vbo);
+		glDeleteBuffers(1, &chunk->color_vbo);
 	}
 
 	// Update VBOs
-	gl_gen_buffers(1, &chunk->vbo);
-	gl_gen_buffers(1, &chunk->color_vbo);
+	glGenBuffers(1, &chunk->vbo);
+	glGenBuffers(1, &chunk->color_vbo);
 
-	gl_bind_buffer(GL_ARRAY_BUFFER, chunk->vbo);
-	gl_buffer_data(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), chunk->vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, chunk->vbo);
+	glBufferData(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), chunk->vertices, GL_STATIC_DRAW);
 
-	gl_bind_buffer(GL_ARRAY_BUFFER, chunk->color_vbo);
-	gl_buffer_data(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), chunk->colors, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, chunk->color_vbo);
+	glBufferData(GL_ARRAY_BUFFER, vertex_count * 3 * sizeof(float), chunk->colors, GL_STATIC_DRAW);
 
 	// Free the CPU-side buffers
 	free(chunk->vertices);
@@ -347,10 +347,10 @@ void render_chunks() {
 							    chunks[cx][cy][cz].y * (CHUNK_SIZE - 1), 
 							    chunks[cx][cy][cz].z * (CHUNK_SIZE - 1));
 
-					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].vbo);
+					glBindBuffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].vbo);
 					glVertexPointer(3, GL_FLOAT, 0, 0);
 
-					gl_bind_buffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].color_vbo);
+					glBindBuffer(GL_ARRAY_BUFFER, chunks[cx][cy][cz].color_vbo);
 					glColorPointer(3, GL_FLOAT, 0, 0);
 
 					glDrawArrays(GL_QUADS, 0, chunks[cx][cy][cz].vertex_count);

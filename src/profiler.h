@@ -1,5 +1,3 @@
-#include <GL/glew.h>
-#include <GL/gl.h>
 #include <time.h>
 
 #define MAX_TIMERS 32
@@ -14,9 +12,9 @@ typedef struct {
     char name[MAX_NAME_LENGTH];
     struct timespec cpu_start_time;
     struct timespec cpu_end_time;
-    GLuint gpu_query_start;
-    GLuint gpu_query_end;
-    GLuint64 gpu_time_elapsed;
+    unsigned int gpu_query_start;
+    unsigned int gpu_query_end;
+    unsigned int gpu_time_elapsed;
     double cpu_time;
     double gpu_time;
     int active;

@@ -20,11 +20,11 @@ void load_chunk(unsigned char x, unsigned char y, unsigned char z, unsigned char
 
 void unload_chunk(Chunk* chunk) {
 	if (chunk->vbo) {
-		gl_delete_buffers(1, &chunk->vbo);
+		glDeleteBuffers(1, &chunk->vbo);
 		chunk->vbo = 0;
 	}
 	if (chunk->color_vbo) {
-		gl_delete_buffers(1, &chunk->color_vbo);
+		glDeleteBuffers(1, &chunk->color_vbo);
 		chunk->color_vbo = 0;
 	}
 	if (chunk->vertices) {

@@ -1,6 +1,4 @@
 #include "main.h"
-#include <GL/gl.h>
-#include <GL/glut.h>
 
 int screen_width = 1280;
 int screen_height = 720;
@@ -12,69 +10,30 @@ float far = 200.0f;
 float screen_center_x;
 float screen_center_y;
 
-Uint32 lastTime;
-Uint32 lastFpsUpdate;
+uint32_t lastTime;
+uint32_t lastFpsUpdate;
 float deltaTime;
 int frameCount;
 float averageFps;
 int fpsIndex;
 float fpsHistory[FPS_HISTORY_SIZE];
 
-SDL_Event event;
-SDL_Window* window = NULL;
-SDL_GLContext glContext;
-
-// VBO function pointers
-PFNGLGENBUFFERSPROC gl_gen_buffers = NULL;
-PFNGLBINDBUFFERPROC gl_bind_buffer = NULL;
-PFNGLBUFFERDATAPROC gl_buffer_data = NULL;
-PFNGLDELETEBUFFERSPROC gl_delete_buffers = NULL;
+GLuint buffer;
 
 Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
 Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
 
 int main(int argc, char* argv[]) {
-	// Initialize SDL
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-		return 1;
-	}
-
+	// Initialize GLUT
 	glutInit(&argc, argv);
-
-	// Set OpenGL attributes
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-
-	// Create window
-	window = SDL_CreateWindow("Minecraft Clone", 
-							SDL_WINDOWPOS_UNDEFINED, 
-							SDL_WINDOWPOS_UNDEFINED, 
-							screen_width, screen_height, 
-							SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
-
-	if (!window) {
-		printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
-		return 1;
-	}
-
-	// Create OpenGL context
-	glContext = SDL_GL_CreateContext(window);
-	if (!glContext) {
-		printf("OpenGL context could not be created! SDL Error: %s\n", SDL_GetError());
-		return 1;
-	}
-
-	// Load VBO function pointers
-	gl_gen_buffers = (PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers");
-	gl_bind_buffer = (PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer");
-	gl_buffer_data = (PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData");
-	gl_delete_buffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers");
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitWindowSize(screen_width, screen_height);
+	glutInitWindowPosition(100, 100);
+	glutCreateWindow("Minecraft Clone");
+	glewInit();
 
 	// Set up OpenGL viewport and projection
-	change_resolution();
+	reshape(1280, 720);
 
 	// Enable depth test and face culling
 	glEnable(GL_DEPTH_TEST);
@@ -82,9 +41,12 @@ int main(int argc, char* argv[]) {
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CW);
 
-	SDL_SetRelativeMouseMode(SDL_TRUE);
+	// Initialize mouse capture
+	glutSetCursor(GLUT_CURSOR_NONE);
+	glutWarpPointer(screen_width/2, screen_height/2);
 
-	lastTime = SDL_GetTicks();
+	// Get current time
+	lastTime = glutGet(GLUT_ELAPSED_TIME);
 	
 	// Initialize FPS tracking
 	memset(fpsHistory, 0, sizeof(fpsHistory));
@@ -124,182 +86,21 @@ int main(int argc, char* argv[]) {
 	// Load spawn chunk
 	load_chunk(x, 2, y, center_cx + x, 2, center_cz + y);
 
-	// Run the game
-	while (main_loop(&player) == 1);
+	// Set up GLUT callbacks
+	glutDisplayFunc(display);
+	glutReshapeFunc(reshape);
+	glutSpecialFunc(special);
+	glutSpecialUpFunc(specialUp);
+	glutKeyboardFunc(keyboard);
+	glutKeyboardUpFunc(keyboardUp);
+	glutPassiveMotionFunc(mouse);
+	glutIdleFunc(idle);
+
+	// Start the main loop
+	glutMainLoop();
 
 	cleanup();
 	return 0;
-}
-
-int main_loop(Entity* player) {
-		static int mouseCaptured = 1;
-
-		// Calculate delta time
-		Uint32 currentTime = SDL_GetTicks();
-		deltaTime = (currentTime - lastTime) / 1000.0f;
-		lastTime = currentTime;
-		
-		frameCount++;
-
-		// Update FPS calculation every FPS_UPDATE_INTERVAL milliseconds
-		if (currentTime - lastFpsUpdate >= FPS_UPDATE_INTERVAL) {
-			float currentFps = frameCount / ((currentTime - lastFpsUpdate) / 1000.0f);
-			fpsHistory[fpsIndex] = currentFps;
-			fpsIndex = (fpsIndex + 1) % FPS_HISTORY_SIZE;
-
-			// Calculate average FPS
-			averageFps = 0.0f;
-			for (int i = 0; i < FPS_HISTORY_SIZE; i++) {
-				averageFps += fpsHistory[i];
-			}
-			averageFps /= FPS_HISTORY_SIZE;
-
-			frameCount = 0;
-			lastFpsUpdate = currentTime;
-
-			#ifdef DEBUG
-			profiler_print_all();
-			#endif
-		}
-
-		// Handle events
-		while (SDL_PollEvent(&event) != 0) {
-			if (event.type == SDL_QUIT) {
-				return 0;
-			}
-
-			// Handle window resize event
-			if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {
-				screen_width = event.window.data1;
-				screen_height = event.window.data2;
-				change_resolution();
-			}
-
-			// Mouse movement
-			if (event.type == SDL_MOUSEMOTION && mouseCaptured) {
-				player->yaw += event.motion.xrel * 0.2f;
-				if (player->yaw >= 360.0f) {
-					player->yaw -= 360.0f;
-				}
-				else if (player->yaw < 0.0f) {
-					player->yaw += 360.0f;
-				}
-				player->pitch += event.motion.yrel * 0.2f;
-
-				// Clamp pitch to prevent camera flipping
-				player->pitch = fmaxf(-89.0f, fminf(89.0f, player->pitch));
-			}
-		}
-
-		int center_cx = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player->x / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
-		int center_cy = fmaxf(0, fminf(WORLD_HEIGHT, -((int)floorf(player->y / (CHUNK_SIZE * 1.0f)) - WORLD_HEIGHT)));
-		int center_cz = fmaxf(0, fminf(WORLD_SIZE, (int)floorf(player->z / (CHUNK_SIZE * 1.0f)) - (RENDERR_DISTANCE / 2)));
-
-		// Get keyboard state
-		const Uint8* keyboard = SDL_GetKeyboardState(NULL);
-		process_keyboard_movement(keyboard, player, deltaTime);
-
-		// Check for R key to update chunk data
-		static int rKeyWasPressed = 0;
-		if (keyboard[SDL_SCANCODE_R] && !rKeyWasPressed) {
-			#ifdef DEBUG
-			profiler_start(PROFILER_ID_WORLD_GEN);
-			#endif
-			for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
-				for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-					for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
-						if (chunks[cx][cy][cz].vbo) {
-							unload_chunk(&chunks[cx][cy][cz]);
-						}
-					}
-				}
-			}
-
-			for(int x = 0; x < RENDERR_DISTANCE; x++) {
-				for(int y = 0; y < WORLD_HEIGHT; y++) {
-					for(int z = 0; z < RENDERR_DISTANCE; z++) {
-						load_chunk(x, y, z, x + center_cx, y, z + center_cz);
-					}
-				}
-			}
-			#ifdef DEBUG
-			profiler_stop(PROFILER_ID_WORLD_GEN);
-			#endif
-		}
-		rKeyWasPressed = keyboard[SDL_SCANCODE_R];
-
-		// Handle escape key for mouse capture toggle
-		static int escKeyWasPressed = 0;
-		if (keyboard[SDL_SCANCODE_ESCAPE] && !escKeyWasPressed) {
-			mouseCaptured = !mouseCaptured;
-			SDL_SetRelativeMouseMode(mouseCaptured ? SDL_TRUE : SDL_FALSE);
-		}
-		escKeyWasPressed = keyboard[SDL_SCANCODE_ESCAPE];
-
-		/*static Uint32 lastChunkCheck = 0;
-		if (currentTime - lastChunkCheck >= 3000) {
-			for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
-				for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-					for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
-						if (chunks[cx][cy][cz].vbo) {
-							unload_chunk(&chunks[cx][cy][cz]);
-						}
-					}
-				}
-			}
-
-			for(int x = 0; x < RENDERR_DISTANCE; x++) {
-				for(int y = 0; y < WORLD_HEIGHT; y++) {
-					for(int z = 0; z < RENDERR_DISTANCE; z++) {
-						load_chunk(x, y, z, x + center_cx, y, z + center_cz);
-					}
-				}
-			}
-			lastChunkCheck = currentTime;
-		}*/
-
-		// Clear the screen
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glClearColor(0.5f, 0.6f, 1.0f, 1.0f);
-
-		// Reset modelview matrix
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
-
-		// Apply player position and rotation
-		glRotatef(player->pitch, 1.0f, 0.0f, 0.0f);
-		glRotatef(player->yaw, 0.0f, 1.0f, 0.0f);
-		glTranslatef(-player->x, -player->y, -player->z);
-
-		// Render chunks
-		render_chunks();
-
-		// Draw HUD with average FPS
-		#ifdef DEBUG
-		profiler_start(PROFILER_ID_HUD);
-		#endif
-		draw_hud(averageFps, player);
-		#ifdef DEBUG
-		profiler_stop(PROFILER_ID_HUD);
-		#endif
-
-		// Swap buffers
-		SDL_GL_SwapWindow(window);
-	return 1;
-}
-
-void change_resolution() {
-	float aspect = (float)screen_width / (float)screen_height;
-	float fovRad = (fov * M_PI) / 180.0f;
-	float tanHalf = tanf(fovRad / 2.0f);
-	screen_center_x = screen_width / 2.0f;
-	screen_center_y = screen_height / 2.0f;
-
-	glViewport(0, 0, screen_width, screen_height);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glFrustum(-near * aspect * tanHalf, near * aspect * tanHalf, -near * tanHalf, near * tanHalf, near, far);
-	glMatrixMode(GL_MODELVIEW);
 }
 
 void cleanup() {
@@ -314,9 +115,4 @@ void cleanup() {
 	#ifdef DEBUG
 	profiler_cleanup();
 	#endif
-
-	SDL_GL_DeleteContext(glContext);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
 }
-
