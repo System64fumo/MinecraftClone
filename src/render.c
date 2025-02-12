@@ -1,50 +1,6 @@
 #include "main.h"
 
 void draw_block_highlight(float x, float y, float z) {
-	static const float vertices_template[] = {
-		// Front face (Z-)
-		-1.01f, -1.01f, -1.01f,
-		0.01f, -1.01f, -1.01f,
-		0.01f, 0.01f, -1.01f,
-		-1.01f, 0.01f, -1.01f,
-		-1.01f, -1.01f, -1.01f,
-		
-		// Back face (Z+)
-		-1.01f, -1.01f, 0.01f,
-		-1.01f, 0.01f, 0.01f,
-		0.01f, 0.01f, 0.01f,
-		0.01f, -1.01f, 0.01f,
-		-1.01f, -1.01f, 0.01f,
-		
-		// Left face (X-)
-		-1.01f, -1.01f, -1.01f,
-		-1.01f, 0.01f, -1.01f,
-		-1.01f, 0.01f, 0.01f,
-		-1.01f, -1.01f, 0.01f,
-		-1.01f, -1.01f, -1.01f,
-		
-		// Right face (X+)
-		0.01f, -1.01f, -1.01f,
-		0.01f, -1.01f, 0.01f,
-		0.01f, 0.01f, 0.01f,
-		0.01f, 0.01f, -1.01f,
-		0.01f, -1.01f, -1.01f,
-		
-		// Top face (Y+)
-		-1.01f, 0.01f, -1.01f,
-		0.01f, 0.01f, -1.01f,
-		0.01f, 0.01f, 0.01f,
-		-1.01f, 0.01f, 0.01f,
-		-1.01f, 0.01f, -1.01f,
-		
-		// Bottom face (Y-)
-		-1.01f, -1.01f, -1.01f,
-		-1.01f, -1.01f, 0.01f,
-		0.01f, -1.01f, 0.01f,
-		0.01f, -1.01f, -1.01f,
-		-1.01f, -1.01f, -1.01f
-	};
-
 	static unsigned int vbo = 0;
 	float vertices[90];  // Increased size to accommodate closing vertices
 

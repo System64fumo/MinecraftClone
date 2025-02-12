@@ -49,6 +49,50 @@ typedef struct Chunk {
 	bool needs_update;
 } Chunk;
 
+static const float vertices_template[] = {
+	// Front face (Z-)
+	-1.01f, -1.01f, -1.01f,
+	0.01f, -1.01f, -1.01f,
+	0.01f, 0.01f, -1.01f,
+	-1.01f, 0.01f, -1.01f,
+	-1.01f, -1.01f, -1.01f,
+	
+	// Back face (Z+)
+	-1.01f, -1.01f, 0.01f,
+	-1.01f, 0.01f, 0.01f,
+	0.01f, 0.01f, 0.01f,
+	0.01f, -1.01f, 0.01f,
+	-1.01f, -1.01f, 0.01f,
+	
+	// Left face (X-)
+	-1.01f, -1.01f, -1.01f,
+	-1.01f, 0.01f, -1.01f,
+	-1.01f, 0.01f, 0.01f,
+	-1.01f, -1.01f, 0.01f,
+	-1.01f, -1.01f, -1.01f,
+	
+	// Right face (X+)
+	0.01f, -1.01f, -1.01f,
+	0.01f, -1.01f, 0.01f,
+	0.01f, 0.01f, 0.01f,
+	0.01f, 0.01f, -1.01f,
+	0.01f, -1.01f, -1.01f,
+	
+	// Top face (Y+)
+	-1.01f, 0.01f, -1.01f,
+	0.01f, 0.01f, -1.01f,
+	0.01f, 0.01f, 0.01f,
+	-1.01f, 0.01f, 0.01f,
+	-1.01f, 0.01f, -1.01f,
+	
+	// Bottom face (Y-)
+	-1.01f, -1.01f, -1.01f,
+	-1.01f, -1.01f, 0.01f,
+	0.01f, -1.01f, 0.01f,
+	0.01f, -1.01f, -1.01f,
+	-1.01f, -1.01f, -1.01f
+};
+
 // Externs
 extern int screen_width;
 extern int screen_height;
