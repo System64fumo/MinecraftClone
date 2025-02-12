@@ -100,6 +100,12 @@ int main(int argc, char* argv[]) {
 		
 		fps_average = (int)(fpsSum / 180);
 
+		static float lastPrintTime = 0.0f;
+		if (currentFrame - lastPrintTime >= 1.0f) {
+			profiler_print_all();
+			lastPrintTime = currentFrame;
+		}
+
 		processInput(window);
 		display();
 
