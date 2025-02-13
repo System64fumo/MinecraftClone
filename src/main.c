@@ -14,56 +14,19 @@ float deltaTime = 0.0f;
 float model[16], view[16], projection[16];
 unsigned int shaderProgram;
 
+unsigned char block_textures[MAX_BLOCK_TYPES][6] = {
+	[0] = {0, 0, 0, 0, 0, 0},                    // Air
+	[1] = {3, 3, 3, 3, 3, 3},                    // Dirt
+	[2] = {4, 4, 4, 4, 3, 1},                    // Grass
+	[3] = {2, 2, 2, 2, 2, 2},                    // Stone
+};
 Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
 Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
 
 // Vertex shader source
-const char* vertexShaderSource = "#version 330 core\n"
-	"layout (location = 0) in vec3 aPos;\n"
-	"layout (location = 1) in int inBlockID;\n"
-	"layout (location = 2) in int inFaceID;\n"
-	"uniform mat4 model;\n"
-	"uniform mat4 view;\n"
-	"uniform mat4 projection;\n"
-	"flat out int blockID;\n"
-	"flat out int faceID;\n"
-	"void main() {\n"
-	"    gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
-	"    blockID = inBlockID;\n"
-	"    faceID = inFaceID;\n"
-	"}\0";
-
-
+const char* vertexShaderSource;
 // Fragment shader
-const char* fragmentShaderSource = "#version 330 core\n"
-	"out vec4 FragColor;\n"
-	"flat in int blockID;\n"
-	"flat in int faceID;\n"
-
-	"vec3 getBlockColor(int id) {\n"
-	"    if (id == 1) return vec3(0.6, 0.4, 0.2);  // Dirt\n"
-	"    if (id == 2) return vec3(0.2, 0.8, 0.2);  // Grass\n"
-	"    if (id == 3) return vec3(0.5, 0.5, 0.5);  // Stone\n"
-	"    return vec3(0.5, 0.5, 0.5);  // Default (Gray for unknown)\n"
-	"}\n"
-
-	"vec3 getFaceShade(int id) {\n"
-	"    if (id == 0) return vec3(1.0, 1.0, 1.0); // Front (No shading)\n"
-	"    if (id == 1) return vec3(0.9, 0.9, 0.9); // Left (Slight shading)\n"
-	"    if (id == 2) return vec3(0.85, 0.85, 0.85); // Back (More shading)\n"
-	"    if (id == 3) return vec3(0.95, 0.95, 0.95); // Right (Slight lightening)\n"
-	"    if (id == 4) return vec3(0.8, 0.8, 0.8); // Bottom (More shading)\n"
-	"    if (id == 5) return vec3(1.0, 1.0, 1.0); // Top (No shading)\n"
-	"    return vec3(0.9, 0.9, 0.9);  // Default shade (gray)\n"
-	"}\n"
-
-	"void main() {\n"
-	"    vec3 baseColor = getBlockColor(blockID);\n"
-	"    vec3 faceShade = getFaceShade(faceID);\n"
-	"    FragColor = vec4(baseColor * faceShade, 1.0); // Apply face shading\n"
-	"}\n";
-
-
+const char* fragmentShaderSource;
 
 int main() {
 	// Initialize GLFW
@@ -90,6 +53,9 @@ int main() {
 	glewExperimental = GL_TRUE;
 	glewInit();
 
+	vertexShaderSource = load_file("../shaders/vertex.glsl");
+	fragmentShaderSource = load_file("../shaders/fragment.glsl");
+
 	// Create and compile shaders
 	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -107,6 +73,13 @@ int main() {
 
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
+
+	unsigned int textureAtlas = loadTexture("./atlas.png");
+
+	// Bind the texture atlas to texture unit 0
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureAtlas);
+	glUniform1i(glGetUniformLocation(shaderProgram, "textureAtlas"), 0);
 
 	// Enable depth testing
 	glEnable(GL_DEPTH_TEST);

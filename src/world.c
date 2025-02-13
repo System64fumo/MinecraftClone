@@ -60,20 +60,20 @@ void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, unsi
 }
 
 void unload_chunk(Chunk* chunk) {
-    if (chunk->VBO) {
-        glDeleteBuffers(1, &chunk->VBO);
-        chunk->VBO = 0;
-    }
-    if (chunk->EBO) {
-        glDeleteBuffers(1, &chunk->EBO);
-        chunk->EBO = 0;
-    }
-    if (chunk->VAO) {
-        glDeleteVertexArrays(1, &chunk->VAO);
-        chunk->VAO = 0;
-    }
+	if (chunk->VBO) {
+		glDeleteBuffers(1, &chunk->VBO);
+		chunk->VBO = 0;
+	}
+	if (chunk->EBO) {
+		glDeleteBuffers(1, &chunk->EBO);
+		chunk->EBO = 0;
+	}
+	if (chunk->VAO) {
+		glDeleteVertexArrays(1, &chunk->VAO);
+		chunk->VAO = 0;
+	}
 
-    memset(chunk, 0, sizeof(Chunk));
+	memset(chunk, 0, sizeof(Chunk));
 }
 
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z) {
