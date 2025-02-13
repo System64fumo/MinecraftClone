@@ -1,114 +1,169 @@
 #include "main.h"
-#include <stdio.h>
 
-int screen_width = 1280;
-int screen_height = 720;
+unsigned short screen_width = 1280;
+unsigned short screen_height = 720;
+unsigned short screen_center_x = 640;
+unsigned short screen_center_y = 360;
 
 float fov = 70.0f;
 float near = 0.1f;
 float far = 300.0f;
-
-float screen_center_x = 0.0f;
-float screen_center_y = 0.0f;
+float aspect = 1.7f;
 
 float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-
-short fps_average = 0;
-
-GLuint buffer;
+float model[16], view[16], projection[16];
+unsigned int shaderProgram;
 
 Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
 Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
 
-int main(int argc, char* argv[]) {
+// Vertex shader source
+const char* vertexShaderSource = "#version 330 core\n"
+	"layout (location = 0) in vec3 aPos;\n"
+	"layout (location = 1) in int inBlockID;\n"
+	"layout (location = 2) in int inFaceID;\n"
+	"uniform mat4 model;\n"
+	"uniform mat4 view;\n"
+	"uniform mat4 projection;\n"
+	"flat out int blockID;\n"
+	"flat out int faceID;\n"
+	"void main() {\n"
+	"    gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
+	"    blockID = inBlockID;\n"
+	"    faceID = inFaceID;\n"
+	"}\0";
+
+
+// Fragment shader
+const char* fragmentShaderSource = "#version 330 core\n"
+	"out vec4 FragColor;\n"
+	"flat in int blockID;\n"
+	"flat in int faceID;\n"
+
+	"vec3 getBlockColor(int id) {\n"
+	"    if (id == 1) return vec3(0.6, 0.4, 0.2);  // Dirt\n"
+	"    if (id == 2) return vec3(0.2, 0.8, 0.2);  // Grass\n"
+	"    if (id == 3) return vec3(0.5, 0.5, 0.5);  // Stone\n"
+	"    return vec3(0.5, 0.5, 0.5);  // Default (Gray for unknown)\n"
+	"}\n"
+
+	"vec3 getFaceShade(int id) {\n"
+	"    if (id == 0) return vec3(1.0, 1.0, 1.0); // Front (No shading)\n"
+	"    if (id == 1) return vec3(0.9, 0.9, 0.9); // Left (Slight shading)\n"
+	"    if (id == 2) return vec3(0.85, 0.85, 0.85); // Back (More shading)\n"
+	"    if (id == 3) return vec3(0.95, 0.95, 0.95); // Right (Slight lightening)\n"
+	"    if (id == 4) return vec3(0.8, 0.8, 0.8); // Bottom (More shading)\n"
+	"    if (id == 5) return vec3(1.0, 1.0, 1.0); // Top (No shading)\n"
+	"    return vec3(0.9, 0.9, 0.9);  // Default shade (gray)\n"
+	"}\n"
+
+	"void main() {\n"
+	"    vec3 baseColor = getBlockColor(blockID);\n"
+	"    vec3 faceShade = getFaceShade(faceID);\n"
+	"    FragColor = vec4(baseColor * faceShade, 1.0); // Apply face shading\n"
+	"}\n";
+
+
+
+int main() {
 	// Initialize GLFW
 	if (!glfwInit()) {
+		printf("Failed to initialize GLFW\n");
 		return -1;
 	}
 
 	// Configure GLFW
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-	//glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Create window
 	GLFWwindow* window = glfwCreateWindow(screen_width, screen_height, "Minecraft Clone", NULL, NULL);
 	if (!window) {
+		printf("Failed to create GLFW window\n");
 		glfwTerminate();
 		return -1;
 	}
-
 	glfwMakeContextCurrent(window);
+
+	// Initialize GLEW
 	glewExperimental = GL_TRUE;
 	glewInit();
-	glutInit(&argc, argv);
 
-	// Enable depth test and face culling
+	// Create and compile shaders
+	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+	glCompileShader(vertexShader);
+
+	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+	glCompileShader(fragmentShader);
+
+	// Create shader program
+	shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glLinkProgram(shaderProgram);
+
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
+
+	// Enable depth testing
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
-	glFrontFace(GL_CW);
+	glFrontFace(GL_CCW);
 
-	// Initialize mouse capture
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetCursorPos(window, screen_center_x, screen_center_y);
-
-	// Debugging
-	#ifdef DEBUG
-	profiler_init();
-	profiler_create("HUD");
-	profiler_create("Baking");
-	profiler_create("Rendering");
-	profiler_create("World Gen");
-	#endif
+	float lastFrame = 0.0f;
 
 	// Initialize player
 	Entity player = {
-		.x = (WORLD_SIZE * CHUNK_SIZE) / 2,
+		.x = (WORLD_SIZE * CHUNK_SIZE) / 2.0f,
 		.y = 35.0f,
-		.z = (WORLD_SIZE * CHUNK_SIZE) / 2,
+		.z = (WORLD_SIZE * CHUNK_SIZE) / 2.0f,
 		.yaw = 0.0f,
 		.pitch = 0.0f,
 		.speed = 20
 	};
 	global_entities[0] = player;
 
-	// Load spawn chunk
-	load_around_entity(&global_entities[0]);
-
-	// Set up GLFW callbacks
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetKeyCallback(window, key_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 
-	// Main loop
+	load_around_entity(&player);
+
+	// Initialize mouse capture
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPos(window, screen_center_x, screen_center_y);
+	glfwSetKeyCallback(window, key_callback);
+
+	// Main render loop
 	while (!glfwWindowShouldClose(window)) {
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-		
-		// Calculate FPS and maintain rolling average
-		static float fpsHistory[180] = {0};  // 180 frames = ~3 seconds at 60fps
-		static int fpsIndex = 0;
-		static float fpsSum = 0;
-		
-		fpsSum -= fpsHistory[fpsIndex];
-		fpsHistory[fpsIndex] = 1.0f / deltaTime;
-		fpsSum += fpsHistory[fpsIndex];
-		fpsIndex = (fpsIndex + 1) % 180;
-		
-		fps_average = (int)(fpsSum / 180);
 
-		static float lastPrintTime = 0.0f;
-		if (currentFrame - lastPrintTime >= 1.0f) {
-			profiler_print_all();
-			lastPrintTime = currentFrame;
-		}
-
+		// Process input
 		processInput(window);
-		display();
 
+		// Clear buffers
+		glClearColor(0.471f, 0.655f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// Use shader program
+		glUseProgram(shaderProgram);
+
+		// Set up matrices
+		setupMatrices(view, projection);
+
+		// Set view and projection uniforms
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, view);
+		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, projection);
+
+		// Render chunks
+		render_chunks();
+
+		// Swap buffers and poll events
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -120,15 +175,12 @@ int main(int argc, char* argv[]) {
 }
 
 void cleanup() {
-	for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
-		for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-			for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
-				unload_chunk(&chunks[cx][cy][cz]);
-			}
-		}
-	}
-
-	#ifdef DEBUG
-	profiler_cleanup();
-	#endif
+	// for (int x = 0; x < 16; x++) {
+	//     for (int y = 0; y < 16; y++) {
+	//         for (int z = 0; z < 16; z++) {
+	//             drawChunk(&chunks[x][y][z], shaderProgram, model);
+	//         }
+	//     }
+	// }
+	glDeleteProgram(shaderProgram);
 }
