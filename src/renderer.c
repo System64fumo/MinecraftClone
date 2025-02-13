@@ -6,11 +6,13 @@ typedef struct {
 	float x, y, z;
 	unsigned char block_id;
 	unsigned char face_id;
+	unsigned char rotation;
+	float tex_x, tex_y;
 } Vertex;
 
 static bool isFaceVisible(Chunk* chunk, int x, int y, int z, char face) {
-	int nx = x, ny = y, nz = z; // Neighbor block coordinates
-	int cix = chunk->ci_x, ciy = chunk->ci_y, ciz = chunk->ci_z; // Chunk indices
+	int nx = x, ny = y, nz = z;
+	int cix = chunk->ci_x, ciy = chunk->ci_y, ciz = chunk->ci_z;
 
 	switch (face) {
 		case 0: nz += 1; break; // Front
@@ -66,17 +68,14 @@ void pre_process_chunk(Chunk* chunk) {
 	unsigned int vertex_count = 0;
 	unsigned int index_count = 0;
 
-	// Temporary mask for marking merged blocks
 	bool mask[CHUNK_SIZE][CHUNK_SIZE] = {0};
 
 	// Process each face direction
 	for (int face = 0; face < 6; face++) {
-		// Reset mask for new direction
 		memset(mask, 0, sizeof(mask));
 
 		// Sweep through each layer
 		for (int d = 0; d < CHUNK_SIZE; d++) {
-			// Reset mask for new slice
 			memset(mask, 0, sizeof(mask));
 
 			// Try to find rectangles in this slice
@@ -173,43 +172,48 @@ void pre_process_chunk(Chunk* chunk) {
 						z2 += (face == 0 || face == 2 ? 1 : (face >= 4 ? height : 1));
 					}
 
-					// Match the vertex order from FACE_VERTICES array in the original code
+					// In the face generation section of pre_process_chunk:
+					float width_blocks = (face == 1 || face == 3) ? 1.0f : width;
+					float height_blocks = (face >= 4) ? 1.0f : height;
+					float depth_blocks = (face == 0 || face == 2) ? 1.0f : (face >= 4 ? height : width);
+
+
 					switch (face) {
 						case 0: // Front (Z+)
-							vertices[vertex_count++] = (Vertex){x2, y2, z2, block->id, face};
-							vertices[vertex_count++] = (Vertex){x1, y2, z2, block->id, face};
-							vertices[vertex_count++] = (Vertex){x1, y1, z2, block->id, face};
-							vertices[vertex_count++] = (Vertex){x2, y1, z2, block->id, face};
+							vertices[vertex_count++] = (Vertex){x2, y2, z2, block_textures[block->id][face], face, block->rotations[face], width_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x1, y2, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x1, y1, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, height_blocks};
+							vertices[vertex_count++] = (Vertex){x2, y1, z2, block_textures[block->id][face], face, block->rotations[face], width_blocks, height_blocks};
 							break;
 						case 1: // Left (X-)
-							vertices[vertex_count++] = (Vertex){x1, y2, z1, block->id, face};
-							vertices[vertex_count++] = (Vertex){x1, y2, z2, block->id, face};
-							vertices[vertex_count++] = (Vertex){x1, y1, z2, block->id, face};
-							vertices[vertex_count++] = (Vertex){x1, y1, z1, block->id, face};
+							vertices[vertex_count++] = (Vertex){x1, y2, z1, block_textures[block->id][face], face, block->rotations[face], depth_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x1, y2, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x1, y1, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, height_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y1, z1, block_textures[block->id][face], face, block->rotations[face], depth_blocks, height_blocks};
 							break;
 						case 2: // Back (Z-)
-							vertices[vertex_count++] = (Vertex){x1, y2, z1, block->id, face};
-							vertices[vertex_count++] = (Vertex){x2, y2, z1, block->id, face};
-							vertices[vertex_count++] = (Vertex){x2, y1, z1, block->id, face};
-							vertices[vertex_count++] = (Vertex){x1, y1, z1, block->id, face};
+							vertices[vertex_count++] = (Vertex){x1, y2, z1, block_textures[block->id][face], face, block->rotations[face], width_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y2, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y1, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, height_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y1, z1, block_textures[block->id][face], face, block->rotations[face], width_blocks, height_blocks};
 							break;
 						case 3: // Right (X+)
-							vertices[vertex_count++] = (Vertex){x2, y2, z2, block->id, face};
-							vertices[vertex_count++] = (Vertex){x2, y2, z1, block->id, face};
-							vertices[vertex_count++] = (Vertex){x2, y1, z1, block->id, face};
-							vertices[vertex_count++] = (Vertex){x2, y1, z2, block->id, face};
+							vertices[vertex_count++] = (Vertex){x2, y2, z2, block_textures[block->id][face], face, block->rotations[face], depth_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y2, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y1, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, height_blocks};
+							vertices[vertex_count++] = (Vertex){x2, y1, z2, block_textures[block->id][face], face, block->rotations[face], depth_blocks, height_blocks};
 							break;
 						case 4: // Bottom (Y-)
-							vertices[vertex_count++] = (Vertex){x1, y1, z1, block->id, face};
-							vertices[vertex_count++] = (Vertex){x2, y1, z1, block->id, face};
-							vertices[vertex_count++] = (Vertex){x2, y1, z2, block->id, face};
-							vertices[vertex_count++] = (Vertex){x1, y1, z2, block->id, face};
+							vertices[vertex_count++] = (Vertex){x1, y1, z1, block_textures[block->id][face], face, block->rotations[face], width_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y1, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y1, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, depth_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y1, z2, block_textures[block->id][face], face, block->rotations[face], width_blocks, depth_blocks};
 							break;
 						case 5: // Top (Y+)
-							vertices[vertex_count++] = (Vertex){x1, y2, z2, block->id, face};
-							vertices[vertex_count++] = (Vertex){x2, y2, z2, block->id, face};
-							vertices[vertex_count++] = (Vertex){x2, y2, z1, block->id, face};
-							vertices[vertex_count++] = (Vertex){x1, y2, z1, block->id, face};
+							vertices[vertex_count++] = (Vertex){x1, y2, z2, block_textures[block->id][face], face, block->rotations[face], width_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y2, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y2, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, depth_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y2, z1, block_textures[block->id][face], face, block->rotations[face], width_blocks, depth_blocks};
 							break;
 					}
 
@@ -264,6 +268,12 @@ void pre_process_chunk(Chunk* chunk) {
 
 		glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
 		glEnableVertexAttribArray(2);
+
+		glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, rotation));
+		glEnableVertexAttribArray(3);
+
+		glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_x));
+		glEnableVertexAttribArray(4);
 
 		glBindVertexArray(0);
 		chunk->needs_update = false;

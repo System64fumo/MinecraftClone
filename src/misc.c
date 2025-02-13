@@ -1,4 +1,8 @@
 #include "main.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 void matrix4_identity(float* mat) {
 	mat[0] = mat[5] = mat[10] = mat[15] = 1.0f;
@@ -33,4 +37,92 @@ void matrix4_perspective(float* mat, float fovy, float aspect, float near, float
 	mat[11] = -1.0f;
 	mat[14] = (2.0f * far * near) / (near - far);
 	mat[15] = 0.0f;
+}
+
+
+const char* load_file(const char* filename) {
+	char current_dir[1024];
+	if (realpath(__FILE__, current_dir) == NULL) {
+		perror("Error getting current directory");
+		return NULL;
+	}
+
+	char* last_slash = strrchr(current_dir, '/');
+	if (last_slash != NULL) {
+		*last_slash = '\0';
+	}
+
+	char full_path[1024];
+	snprintf(full_path, sizeof(full_path), "%s/%s", current_dir, filename);
+
+	char resolved_path[1024];
+	if (realpath(full_path, resolved_path) == NULL) {
+		perror("Error resolving file path");
+		return NULL;
+	}
+
+	FILE* file = fopen(resolved_path, "rb");
+	if (file == NULL) {
+		perror("Error opening file");
+		return NULL;
+	}
+
+	fseek(file, 0, SEEK_END);
+	long file_size = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	char* buffer = (char*)malloc(file_size + 1);
+	if (buffer == NULL) {
+		perror("Memory allocation error");
+		fclose(file);
+		return NULL;
+	}
+
+	size_t bytes_read = fread(buffer, 1, file_size, file);
+	if (bytes_read != file_size) {
+		perror("Error reading file");
+		free(buffer);
+		fclose(file);
+		return NULL;
+	}
+
+	buffer[file_size] = '\0';
+
+	fclose(file);
+	return buffer;
+}
+
+
+
+unsigned int loadTexture(const char* path) {
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+
+	int width, height, nrComponents;
+	unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+	if (data) {
+		GLenum format;
+		if (nrComponents == 1)
+			format = GL_RED;
+		else if (nrComponents == 3)
+			format = GL_RGB;
+		else if (nrComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		stbi_image_free(data);
+	} else {
+		printf("Failed to load texture: %s\n", path);
+		stbi_image_free(data);
+	}
+
+	return textureID;
 }

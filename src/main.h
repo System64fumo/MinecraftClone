@@ -10,6 +10,7 @@
 #define WORLD_SIZE UINT8_MAX
 #define MAX_ENTITIES_PER_CHUNK 1024
 #define RENDERR_DISTANCE 16
+#define MAX_BLOCK_TYPES 256
 
 // Structs
 typedef struct {
@@ -26,6 +27,8 @@ typedef struct {
 typedef struct {
 	unsigned char id;
 	unsigned char metadata;
+	unsigned char face_textures[6];
+	unsigned char rotations[6];
 } Block;
 
 typedef struct {
@@ -53,7 +56,10 @@ extern float deltaTime;
 extern float model[16], view[16], projection[16];
 
 extern unsigned int shaderProgram;
+extern const char* vertexShaderSource;
+extern const char* fragmentShaderSource;
 
+extern unsigned char block_textures[MAX_BLOCK_TYPES][6];
 extern Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
 
@@ -69,6 +75,8 @@ void matrix4_identity(float* mat);
 void matrix4_translate(float* mat, float x, float y, float z);
 void matrix4_rotate(float* mat, float angle, float x, float y, float z);
 void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far);
+const char* load_file(const char* filename);
+unsigned int loadTexture(const char* path);
 
 void load_around_entity(Entity* entity);
 void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, unsigned char cx, unsigned char cy, unsigned char cz);
