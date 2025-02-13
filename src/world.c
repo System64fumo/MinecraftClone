@@ -2,6 +2,7 @@
 #define STB_PERLIN_IMPLEMENTATION
 #include "stb_perlin.h"
 #include <stdio.h>
+#include <string.h>
 
 static int last_cx = -1;
 static int last_cz = -1;
@@ -22,16 +23,16 @@ void load_around_entity(Entity* entity) {
 		if (dz < 0) printf("Moving North\n");
 
 		// Unload existing chunks
-		// for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
-		// 	for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-		// 		for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
-		// 			Chunk* chunk = &chunks[cx][cy][cz];
-		// 			if (chunk->vbo) {
-		// 				unload_chunk(chunk);
-		// 			}
-		// 		}
-		// 	}
-		// }
+		for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
+			for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
+				for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
+					Chunk* chunk = &chunks[cx][cy][cz];
+					if (chunk->VBO) {
+						unload_chunk(chunk);
+					}
+				}
+			}
+		}
 
 		// Load new chunks
 		for(int x = 0; x < RENDERR_DISTANCE; x++) {
@@ -58,28 +59,22 @@ void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, unsi
 	generate_chunk_terrain(&chunks[ci_x][ci_y][ci_z], cx, cy, cz);
 }
 
-/*void unload_chunk(Chunk* chunk) {
-	if (chunk->vbo) {
-		glDeleteBuffers(1, &chunk->vbo);
-		chunk->vbo = 0;
-	}
-	if (chunk->color_vbo) {
-		glDeleteBuffers(1, &chunk->color_vbo);
-		chunk->color_vbo = 0;
-	}
-	if (chunk->vertices) {
-		free(chunk->vertices);
-		chunk->vertices = NULL;
-	}
-	if (chunk->colors) {
-		free(chunk->colors);
-		chunk->colors = NULL;
-	}
-	chunk->vertex_count = 0;
-	chunk->needs_update = false;
+void unload_chunk(Chunk* chunk) {
+    if (chunk->VBO) {
+        glDeleteBuffers(1, &chunk->VBO);
+        chunk->VBO = 0;
+    }
+    if (chunk->EBO) {
+        glDeleteBuffers(1, &chunk->EBO);
+        chunk->EBO = 0;
+    }
+    if (chunk->VAO) {
+        glDeleteVertexArrays(1, &chunk->VAO);
+        chunk->VAO = 0;
+    }
 
-	memset(chunk, 0, sizeof(Chunk));
-}*/
+    memset(chunk, 0, sizeof(Chunk));
+}
 
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z) {
 	float scale = 0.01f;  // Adjust this to change the "roughness" of the terrain

@@ -59,8 +59,9 @@ extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_
 
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow* window);
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void processInput(GLFWwindow* window);
 void setupMatrices();
 void cleanup();
 
@@ -71,6 +72,7 @@ void matrix4_perspective(float* mat, float fovy, float aspect, float near, float
 
 void load_around_entity(Entity* entity);
 void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, unsigned char cx, unsigned char cy, unsigned char cz);
+void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z);
 void drawChunk(Chunk* chunk, unsigned int shaderProgram, float* model);
 void render_chunks();
