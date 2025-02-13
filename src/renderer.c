@@ -56,12 +56,6 @@ static bool isFaceVisible(Chunk* chunk, int x, int y, int z, char face) {
 }
 
 void pre_process_chunk(Chunk* chunk) {
-	if (chunk->VAO == 0) {
-		glGenVertexArrays(1, &chunk->VAO);
-		glGenBuffers(1, &chunk->VBO);
-		glGenBuffers(1, &chunk->EBO);
-	}
-
 	const size_t max_vertices = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4;
 	const size_t max_indices = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 6;
 	
@@ -234,7 +228,26 @@ void pre_process_chunk(Chunk* chunk) {
 	chunk->vertex_count = vertex_count;
 	chunk->index_count = index_count;
 
+	// Delete existing buffers if they exist
+	if (chunk->VBO) {
+		glDeleteBuffers(1, &chunk->VBO);
+		chunk->VBO = 0;
+	}
+	if (chunk->EBO) {
+		glDeleteBuffers(1, &chunk->EBO);
+		chunk->EBO = 0;
+	}
+	if (chunk->VAO) {
+		glDeleteVertexArrays(1, &chunk->VAO);
+		chunk->VAO = 0;
+	}
+
+	// Only create new buffers if there are vertices to process
 	if (vertex_count > 0) {
+		glGenVertexArrays(1, &chunk->VAO);
+		glGenBuffers(1, &chunk->VBO);
+		glGenBuffers(1, &chunk->EBO);
+
 		glBindVertexArray(chunk->VAO);
 
 		glBindBuffer(GL_ARRAY_BUFFER, chunk->VBO);
@@ -251,6 +264,9 @@ void pre_process_chunk(Chunk* chunk) {
 
 		glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
 		glEnableVertexAttribArray(2);
+
+		glBindVertexArray(0);
+		chunk->needs_update = false;
 	}
 }
 

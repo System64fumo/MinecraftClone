@@ -37,19 +37,32 @@ const char* vertexShaderSource = "#version 330 core\n"
 // Fragment shader
 const char* fragmentShaderSource = "#version 330 core\n"
 	"out vec4 FragColor;\n"
+	"flat in int blockID;\n"
 	"flat in int faceID;\n"
-	"vec3 getFaceColor(int id) {\n"
-	"    if (id == 0) return vec3(0.45, 0.45, 0.45); // Front\n"
-	"    if (id == 1) return vec3(0.25, 0.25, 0.25); // Left\n"
-	"    if (id == 2) return vec3(0.35, 0.35, 0.35); // Back\n"
-	"    if (id == 3) return vec3(0.5, 0.5, 0.5); // Right\n"
-	"    if (id == 4) return vec3(0.1, 0.1, 0.1); // Bottom\n"
-	"    if (id == 5) return vec3(0.6, 0.6, 0.6); // Top\n"
-	"    return vec3(0.5, 0.5, 0.5); // Default Gray\n"
+
+	"vec3 getBlockColor(int id) {\n"
+	"    if (id == 1) return vec3(0.6, 0.4, 0.2);  // Dirt\n"
+	"    if (id == 2) return vec3(0.2, 0.8, 0.2);  // Grass\n"
+	"    if (id == 3) return vec3(0.5, 0.5, 0.5);  // Stone\n"
+	"    return vec3(0.5, 0.5, 0.5);  // Default (Gray for unknown)\n"
 	"}\n"
+
+	"vec3 getFaceShade(int id) {\n"
+	"    if (id == 0) return vec3(1.0, 1.0, 1.0); // Front (No shading)\n"
+	"    if (id == 1) return vec3(0.9, 0.9, 0.9); // Left (Slight shading)\n"
+	"    if (id == 2) return vec3(0.85, 0.85, 0.85); // Back (More shading)\n"
+	"    if (id == 3) return vec3(0.95, 0.95, 0.95); // Right (Slight lightening)\n"
+	"    if (id == 4) return vec3(0.8, 0.8, 0.8); // Bottom (More shading)\n"
+	"    if (id == 5) return vec3(1.0, 1.0, 1.0); // Top (No shading)\n"
+	"    return vec3(0.9, 0.9, 0.9);  // Default shade (gray)\n"
+	"}\n"
+
 	"void main() {\n"
-	"    FragColor = vec4(getFaceColor(faceID), 1.0);\n"
-	"}\0";
+	"    vec3 baseColor = getBlockColor(blockID);\n"
+	"    vec3 faceShade = getFaceShade(faceID);\n"
+	"    FragColor = vec4(baseColor * faceShade, 1.0); // Apply face shading\n"
+	"}\n";
+
 
 
 int main() {
@@ -105,11 +118,11 @@ int main() {
 
 	// Initialize player
 	Entity player = {
-		.x = -16,
-		.y = 32,
-		.z = -16,
-		.yaw = 45.0f,
-		.pitch = -45.0f,
+		.x = (WORLD_SIZE * CHUNK_SIZE) / 2.0f,
+		.y = 35.0f,
+		.z = (WORLD_SIZE * CHUNK_SIZE) / 2.0f,
+		.yaw = 0.0f,
+		.pitch = 0.0f,
 		.speed = 20
 	};
 	global_entities[0] = player;
@@ -122,6 +135,7 @@ int main() {
 	// Initialize mouse capture
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPos(window, screen_center_x, screen_center_y);
+	glfwSetKeyCallback(window, key_callback);
 
 	// Main render loop
 	while (!glfwWindowShouldClose(window)) {

@@ -19,6 +19,16 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	matrix4_perspective(projection, fov * 3.14159f / 180.0f, aspect, near, far);
 }
 
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+		switch (key) {
+			case GLFW_KEY_R:
+				load_around_entity(&global_entities[0]);
+				break;
+		}
+	}
+}
+
 void processInput(GLFWwindow* window) {
 	float moveSpeed = global_entities[0].speed * deltaTime;
 	float yaw = global_entities[0].yaw * (M_PI / 180.0f);
