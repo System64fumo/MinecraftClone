@@ -289,6 +289,9 @@ void render_chunk(Chunk* chunk, unsigned int shaderProgram, float* model) {
 }
 
 void render_chunks() {
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_BAKE);
+	#endif
 	for (unsigned char x = 0; x < RENDERR_DISTANCE; x++) {
 		for (unsigned char y = 0; y < WORLD_HEIGHT; y++) {
 			for (unsigned char z = 0; z < RENDERR_DISTANCE; z++) {
@@ -298,16 +301,31 @@ void render_chunks() {
 					pre_process_chunk(chunk);
 					chunk->needs_update = false;
 				}
+			}
+		}
+	}
+	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_BAKE);
+	#endif
 
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_RENDER);
+	#endif
+	for (unsigned char x = 0; x < RENDERR_DISTANCE; x++) {
+		for (unsigned char y = 0; y < WORLD_HEIGHT; y++) {
+			for (unsigned char z = 0; z < RENDERR_DISTANCE; z++) {
+				Chunk* chunk = &chunks[x][y][z];
 				matrix4_identity(model);
 				matrix4_translate(model, 
 					chunk->x * CHUNK_SIZE, 
 					chunk->y * CHUNK_SIZE, 
 					chunk->z * CHUNK_SIZE
 				);
-
 				render_chunk(chunk, shaderProgram, model);
 			}
 		}
 	}
+	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_RENDER);
+	#endif
 }

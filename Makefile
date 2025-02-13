@@ -18,7 +18,7 @@ clean:
 	rm -rf $(BUILDDIR)
 
 game: $(OBJS)
-	$(CC) -o $(BUILDDIR)/game $(OBJS) $(CFLAGS) -lGL -lGLEW -lglfw -lm
+	$(CC) -o $(BUILDDIR)/game $(OBJS) $(CFLAGS) -lGL -lGLEW -lglfw -lm -lpng
 
 $(BUILDDIR)/%.o: src/%.c
 	$(CC) -c $< -o $@ $(CFLAGS)

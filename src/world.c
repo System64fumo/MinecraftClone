@@ -17,6 +17,9 @@ void load_around_entity(Entity* entity) {
 	
 	// Only update chunks if position has changed
 	if (dx != 0 || dz != 0) {
+		#ifdef DEBUG
+		profiler_start(PROFILER_ID_WORLD_GEN);
+		#endif
 		if (dx > 0) printf("Moving East\n");
 		if (dx < 0) printf("Moving West\n");
 		if (dz > 0) printf("Moving South\n");
@@ -45,6 +48,9 @@ void load_around_entity(Entity* entity) {
 
 		last_cx = center_cx;
 		last_cz = center_cz;
+		#ifdef DEBUG
+		profiler_stop(PROFILER_ID_WORLD_GEN);
+		#endif
 	}
 }
 

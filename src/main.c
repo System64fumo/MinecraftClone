@@ -11,6 +11,7 @@ float far = 300.0f;
 float aspect = 1.7f;
 
 float deltaTime = 0.0f;
+unsigned short fps_average = 0;
 float model[16], view[16], projection[16];
 unsigned int shaderProgram;
 
@@ -89,6 +90,14 @@ int main() {
 
 	float lastFrame = 0.0f;
 
+	// Debugging
+	#ifdef DEBUG
+	profiler_init();
+	profiler_create("Baking");
+	profiler_create("Rendering");
+	profiler_create("World Gen");
+	#endif
+
 	// Initialize player
 	Entity player = {
 		.x = (WORLD_SIZE * CHUNK_SIZE) / 2.0f,
@@ -115,6 +124,12 @@ int main() {
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+
+		#ifdef DEBUG
+		count_framerate();
+		printf("Framerate: %d\n", fps_average);
+		profiler_print_all();
+		#endif
 
 		// Process input
 		processInput(window);

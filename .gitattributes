@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+*.c linguist-language=C
+*.c text eol=lf linguist-language=C
+*.glsl text eol=lf linguist-language=GLSL

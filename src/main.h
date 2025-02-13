@@ -4,6 +4,11 @@
 #include <math.h>
 #include <stdbool.h>
 
+#ifdef DEBUG
+#include "profiler.h"
+#endif
+
+
 // Defines
 #define CHUNK_SIZE 16
 #define WORLD_HEIGHT 4
@@ -53,6 +58,7 @@ extern float far;
 extern float aspect;
 
 extern float deltaTime;
+extern unsigned short fps_average;
 extern float model[16], view[16], projection[16];
 
 extern unsigned int shaderProgram;
@@ -75,6 +81,7 @@ void matrix4_identity(float* mat);
 void matrix4_translate(float* mat, float x, float y, float z);
 void matrix4_rotate(float* mat, float angle, float x, float y, float z);
 void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far);
+void count_framerate();
 const char* load_file(const char* filename);
 unsigned int loadTexture(const char* path);
 
