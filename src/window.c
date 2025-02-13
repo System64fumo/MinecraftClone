@@ -9,8 +9,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	screen_height = height;
 
 	aspect = (float)screen_width / (float)screen_height;
-	float fovRad = (fov * M_PI) / 180.0f;
-	float tanHalf = tanf(fovRad / 2.0f);
 	screen_center_x = screen_width / 2.0f;
 	screen_center_y = screen_height / 2.0f;
 
