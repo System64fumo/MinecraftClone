@@ -20,6 +20,7 @@ unsigned char block_textures[MAX_BLOCK_TYPES][6] = {
 	[1] = {3, 3, 3, 3, 3, 3},                    // Dirt
 	[2] = {4, 4, 4, 4, 3, 1},                    // Grass
 	[3] = {2, 2, 2, 2, 2, 2},                    // Stone
+	[7] = {18, 18, 18, 18, 18, 18},              // Bedrock
 };
 Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
 Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
@@ -170,12 +171,15 @@ int main() {
 }
 
 void cleanup() {
-	// for (int x = 0; x < 16; x++) {
-	//     for (int y = 0; y < 16; y++) {
-	//         for (int z = 0; z < 16; z++) {
-	//             drawChunk(&chunks[x][y][z], shaderProgram, model);
-	//         }
-	//     }
-	// }
+	for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
+		for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
+			for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
+				Chunk* chunk = &chunks[cx][cy][cz];
+				if (chunk->VBO) {
+					unload_chunk(chunk);
+				}
+			}
+		}
+	}
 	glDeleteProgram(shaderProgram);
 }
