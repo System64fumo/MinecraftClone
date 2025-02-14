@@ -24,10 +24,13 @@ unsigned char block_textures[MAX_BLOCK_TYPES][6] = {
 Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
 Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
 
-// Vertex shader source
+// Shaders
 const char* vertexShaderSource;
-// Fragment shader
 const char* fragmentShaderSource;
+
+int world_block_x;
+int world_block_y;
+int world_block_z;
 
 int main() {
 	// Initialize GLFW
@@ -103,7 +106,7 @@ int main() {
 		.x = (WORLD_SIZE * CHUNK_SIZE) / 2.0f,
 		.y = 35.0f,
 		.z = (WORLD_SIZE * CHUNK_SIZE) / 2.0f,
-		.yaw = 0.0f,
+		.yaw = 90.0f,
 		.pitch = 0.0f,
 		.speed = 20
 	};
@@ -150,6 +153,10 @@ int main() {
 
 		// Render chunks
 		render_chunks();
+
+		get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z);
+		if (world_block_x != -1 && world_block_y != -1 && world_block_z != -1)
+			draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
 
 		// Swap buffers and poll events
 		glfwSwapBuffers(window);
