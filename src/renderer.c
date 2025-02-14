@@ -79,7 +79,7 @@ void draw_block_highlight(float x, float y, float z) {
 	GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, translationMatrix);
 
-	glLineWidth(2f);
+	glLineWidth(2.0f);
 
 	glBindVertexArray(vao);
 
