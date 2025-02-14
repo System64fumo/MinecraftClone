@@ -77,6 +77,9 @@ void processInput(GLFWwindow* window);
 void setupMatrices();
 void cleanup();
 
+void get_targeted_block(Entity* player, int* out_x, int* out_y, int* out_z);
+void draw_block_highlight(float x, float y, float z);
+
 void matrix4_identity(float* mat);
 void matrix4_translate(float* mat, float x, float y, float z);
 void matrix4_rotate(float* mat, float angle, float x, float y, float z);

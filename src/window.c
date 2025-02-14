@@ -74,8 +74,20 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	global_entities[0].yaw += xoffset;
 	global_entities[0].pitch += yoffset;
 
-	if (global_entities[0].pitch > 89.0f) global_entities[0].pitch = 89.0f;
-	if (global_entities[0].pitch < -89.0f) global_entities[0].pitch = -89.0f;
+	if (global_entities[0].pitch > 89.0f) {
+		global_entities[0].pitch = 89.0f;
+	}
+	if (global_entities[0].pitch < -89.0f) {
+		global_entities[0].pitch = -89.0f;
+	}
+
+	// Wrap yaw
+	if (global_entities[0].yaw >= 360.0f) {
+		global_entities[0].yaw -= 360.0f;
+	}
+	if (global_entities[0].yaw < 0.0f) {
+		global_entities[0].yaw += 360.0f;
+	}
 }
 
 void setupMatrices() {
