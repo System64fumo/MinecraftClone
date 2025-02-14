@@ -103,17 +103,21 @@ void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char c
 			// Fill the chunk with blocks
 			for(int y = 0; y < CHUNK_SIZE; y++) {
 				int absolute_y = chunk_base_y + y;
-				if(absolute_y > terrain_height) {
-					chunk->blocks[x][y][z] = (Block){.id = 0, .metadata = 0};  // Air
+
+				if (absolute_y == 0) {
+					chunk->blocks[x][y][z] = (Block){.id = 7};  // Bedrock
+				}
+				else if(absolute_y > terrain_height) {
+					chunk->blocks[x][y][z] = (Block){.id = 0};  // Air
 				}
 				else if(absolute_y == terrain_height) {
-					chunk->blocks[x][y][z] = (Block){.id = 2, .metadata = 0};  // Grass
+					chunk->blocks[x][y][z] = (Block){.id = 2};  // Grass
 				}
 				else if(absolute_y >= terrain_height - 3) {
-					chunk->blocks[x][y][z] = (Block){.id = 1, .metadata = 0};  // Dirt
+					chunk->blocks[x][y][z] = (Block){.id = 1};  // Dirt
 				}
 				else {
-					chunk->blocks[x][y][z] = (Block){.id = 3, .metadata = 0};  // Stone
+					chunk->blocks[x][y][z] = (Block){.id = 3};  // Stone
 				}
 			}
 		}

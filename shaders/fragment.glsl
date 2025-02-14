@@ -17,13 +17,21 @@ const vec3 faceShades[6] = vec3[6](
 );
 
 vec2 getTextureCoords() {
-	float texSize = 16.0 / 256.0;
-	float x = (blockID - 1) * texSize;
-	float y = 1.0;
+	float texSize = 16.0 / 256.0; // Size of each texture in the atlas (16x16 pixels)
+	int atlasWidth = 16; // Number of textures per row in the atlas
+
+	// Calculate the X and Y offsets based on blockID
+	int textureIndex = blockID - 1;	// Convert blockID to 0-based index
+	int xOffset = textureIndex % atlasWidth; // X offset in the atlas
+	int yOffset = textureIndex / atlasWidth; // Y offset in the atlas
+
+	// Calculate the base texture coordinates
+	float x = xOffset * texSize;
+	float y = yOffset * texSize; // Y increases upward in the atlas
 
 	// Handle tiling by using mod on texture coordinates
 	vec2 tiledCoord = mod(TexCoord, 1.0);
-		
+
 	// Rotate UV coordinates based on rotation value
 	vec2 centeredUV = tiledCoord - vec2(0.5, 0.5);
 	float angle = rotation * (3.14159 / 2.0);
@@ -35,6 +43,7 @@ vec2 getTextureCoords() {
 	);
 	vec2 finalUV = rotatedUV + vec2(0.5, 0.5);
 
+	// Apply the final texture coordinates
 	return vec2(x + finalUV.x * texSize, y + finalUV.y * texSize);
 }
 
