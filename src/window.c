@@ -55,6 +55,35 @@ void processInput(GLFWwindow* window) {
 	}
 }
 
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+		int world_block_x, world_block_y, world_block_z;
+		get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z);
+		int chunk_x = world_block_x / CHUNK_SIZE;
+		int chunk_y = world_block_y / CHUNK_SIZE;
+		int chunk_z = world_block_z / CHUNK_SIZE;
+
+		int block_x = world_block_x % CHUNK_SIZE;
+		int block_y = world_block_y % CHUNK_SIZE;
+		int block_z = world_block_z % CHUNK_SIZE;
+
+		for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
+			for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
+				for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
+					Chunk* chunk = &chunks[cx][cy][cz];
+					if (chunk_x == chunk->x && chunk_y == chunk->y && chunk_z == chunk->z) {
+						chunk->blocks[block_x][block_y][block_z].id = 0;
+						chunk->needs_update = true;
+					}
+				}
+			}
+		}
+	}
+	else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+		printf("TODO: Add build functionality\n");
+	}
+}
+
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	if (firstMouse) {
 		lastX = xpos;

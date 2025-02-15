@@ -114,6 +114,7 @@ int main() {
 	global_entities[0] = player;
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 
 	load_around_entity(&player);
