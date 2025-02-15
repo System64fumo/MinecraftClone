@@ -63,17 +63,34 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		int chunk_y = world_block_y / CHUNK_SIZE;
 		int chunk_z = world_block_z / CHUNK_SIZE;
 
-		int block_x = world_block_x % CHUNK_SIZE;
-		int block_y = world_block_y % CHUNK_SIZE;
-		int block_z = world_block_z % CHUNK_SIZE;
+		unsigned char block_x = world_block_x % CHUNK_SIZE;
+		unsigned char block_y = world_block_y % CHUNK_SIZE;
+		unsigned char block_z = world_block_z % CHUNK_SIZE;
 
-		for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
-			for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-				for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
+		for (int cx = 0; cx < RENDERR_DISTANCE; cx++) {
+			for (int cy = 0; cy < WORLD_HEIGHT; cy++) {
+				for (int cz = 0; cz < RENDERR_DISTANCE; cz++) {
 					Chunk* chunk = &chunks[cx][cy][cz];
 					if (chunk_x == chunk->x && chunk_y == chunk->y && chunk_z == chunk->z) {
 						chunk->blocks[block_x][block_y][block_z].id = 0;
 						chunk->needs_update = true;
+
+						if (block_x == 0)
+							chunks[cx - 1][cy][cz].needs_update = true;
+						else if (block_x == 15)
+							chunks[cx + 1][cy][cz].needs_update = true;
+
+						if (block_y == 0)
+							chunks[cx][cy - 1][cz].needs_update = true;
+						else if (block_y == 15)
+							chunks[cx][cy + 1][cz].needs_update = true;
+
+						if (block_z == 0)
+							chunks[cx][cy][cz - 1].needs_update = true;
+						else if (block_z == 15)
+							chunks[cx][cy][cz + 1].needs_update = true;
+
+						break;
 					}
 				}
 			}
