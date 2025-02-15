@@ -55,54 +55,79 @@ void processInput(GLFWwindow* window) {
 	}
 }
 
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-		int world_block_x, world_block_y, world_block_z;
-		char face;
-		get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z, &face);
-		if (face == 'N')
-			return;
+// Helper function to calculate chunk and block coordinates
+void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord) {
+	*chunk_coord = (world_coord < 0) ? ((world_coord + 1) / CHUNK_SIZE - 1) : (world_coord / CHUNK_SIZE);
+	*block_coord = ((world_coord % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+}
 
-		// Handle negative coordinates
-		int chunk_x = (world_block_x < 0) ? ((world_block_x + 1) / CHUNK_SIZE - 1) : (world_block_x / CHUNK_SIZE);
-		int chunk_z = (world_block_z < 0) ? ((world_block_z + 1) / CHUNK_SIZE - 1) : (world_block_z / CHUNK_SIZE);
-		int chunk_y = world_block_y / CHUNK_SIZE;
-			
-		int block_x = ((world_block_x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
-		int block_y = ((world_block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
-		int block_z = ((world_block_z % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
-
-		// Convert to render array indices
-		int render_x = chunk_x - last_cx;
-		int render_z = chunk_z - last_cz;
-
-		if (render_x >= 0 && render_x < RENDERR_DISTANCE &&
+// Helper function to check if a chunk is within bounds
+bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z) {
+	return (render_x >= 0 && render_x < RENDERR_DISTANCE &&
 			chunk_y >= 0 && chunk_y < WORLD_HEIGHT &&
-			render_z >= 0 && render_z < RENDERR_DISTANCE) {
-				
-			Chunk* chunk = &chunks[render_x][chunk_y][render_z];
-			chunk->blocks[block_x][block_y][block_z].id = 0;
-			chunk->needs_update = true;
+			render_z >= 0 && render_z < RENDERR_DISTANCE);
+}
 
-			// Update adjacent chunks if necessary
-			if (block_x == 0 && render_x > 0)
-				chunks[render_x - 1][chunk_y][render_z].needs_update = true;
-			else if (block_x == CHUNK_SIZE - 1 && render_x < RENDERR_DISTANCE - 1)
-				chunks[render_x + 1][chunk_y][render_z].needs_update = true;
+// Helper function to update adjacent chunks
+void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x, int block_y, int block_z) {
+	if (block_x == 0 && render_x > 0)
+		chunks[render_x - 1][chunk_y][render_z].needs_update = true;
+	else if (block_x == CHUNK_SIZE - 1 && render_x < RENDERR_DISTANCE - 1)
+		chunks[render_x + 1][chunk_y][render_z].needs_update = true;
 
-			if (block_y == 0 && chunk_y > 0)
-				chunks[render_x][chunk_y - 1][render_z].needs_update = true;
-			else if (block_y == CHUNK_SIZE - 1 && chunk_y < WORLD_HEIGHT - 1)
-				chunks[render_x][chunk_y + 1][render_z].needs_update = true;
+	if (block_y == 0 && chunk_y > 0)
+		chunks[render_x][chunk_y - 1][render_z].needs_update = true;
+	else if (block_y == CHUNK_SIZE - 1 && chunk_y < WORLD_HEIGHT - 1)
+		chunks[render_x][chunk_y + 1][render_z].needs_update = true;
 
-			if (block_z == 0 && render_z > 0)
-				chunks[render_x][chunk_y][render_z - 1].needs_update = true;
-			else if (block_z == CHUNK_SIZE - 1 && render_z < RENDERR_DISTANCE - 1)
-				chunks[render_x][chunk_y][render_z + 1].needs_update = true;
+	if (block_z == 0 && render_z > 0)
+		chunks[render_x][chunk_y][render_z - 1].needs_update = true;
+	else if (block_z == CHUNK_SIZE - 1 && render_z < RENDERR_DISTANCE - 1)
+		chunks[render_x][chunk_y][render_z + 1].needs_update = true;
+}
+
+// Main callback function
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+	if (action != GLFW_PRESS) return;
+
+	int world_block_x, world_block_y, world_block_z;
+	char face;
+	get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z, &face);
+
+	if (face == 'N') return;
+
+	// Adjust block coordinates based on face for right-click
+	if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+		switch (face) {
+			case 'R': world_block_x--; break;
+			case 'L': world_block_x++; break;
+			case 'F': world_block_z++; break;
+			case 'K': world_block_z--; break;
+			case 'T': world_block_y++; break;
+			case 'B': world_block_y--; break;
 		}
 	}
-	else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
-		printf("TODO: Add build functionality\n");
+
+	// Calculate chunk and block coordinates
+	int chunk_x, chunk_z, block_x, block_z;
+	calculate_chunk_and_block(world_block_x, &chunk_x, &block_x);
+	calculate_chunk_and_block(world_block_z, &chunk_z, &block_z);
+
+	int chunk_y = world_block_y / CHUNK_SIZE;
+	int block_y = ((world_block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+
+	// Convert to render array indices
+	int render_x = chunk_x - last_cx;
+	int render_z = chunk_z - last_cz;
+
+	// Check if the chunk is within bounds
+	if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
+		Chunk* chunk = &chunks[render_x][chunk_y][render_z];
+		chunk->blocks[block_x][block_y][block_z].id = (button == GLFW_MOUSE_BUTTON_LEFT) ? 0 : 5;
+		chunk->needs_update = true;
+
+		// Update adjacent chunks if necessary
+		update_adjacent_chunks(render_x, chunk_y, render_z, block_x, block_y, block_z);
 	}
 }
 

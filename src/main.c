@@ -20,6 +20,7 @@ unsigned char block_textures[MAX_BLOCK_TYPES][6] = {
 	[1] = {3, 3, 3, 3, 3, 3},                    // Dirt
 	[2] = {4, 4, 4, 4, 3, 1},                    // Grass
 	[3] = {2, 2, 2, 2, 2, 2},                    // Stone
+	[5] = {5, 5, 5, 5, 5, 5},                    // Planks
 	[7] = {18, 18, 18, 18, 18, 18},              // Bedrock
 };
 Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
