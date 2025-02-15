@@ -60,41 +60,45 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		int world_block_x, world_block_y, world_block_z;
 		char face;
 		get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z, &face);
-		int chunk_x = world_block_x / CHUNK_SIZE;
+		if (face == 'N')
+			return;
+
+		// Handle negative coordinates
+		int chunk_x = (world_block_x < 0) ? ((world_block_x + 1) / CHUNK_SIZE - 1) : (world_block_x / CHUNK_SIZE);
+		int chunk_z = (world_block_z < 0) ? ((world_block_z + 1) / CHUNK_SIZE - 1) : (world_block_z / CHUNK_SIZE);
 		int chunk_y = world_block_y / CHUNK_SIZE;
-		int chunk_z = world_block_z / CHUNK_SIZE;
+			
+		int block_x = ((world_block_x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+		int block_y = ((world_block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+		int block_z = ((world_block_z % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
 
-		unsigned char block_x = world_block_x % CHUNK_SIZE;
-		unsigned char block_y = world_block_y % CHUNK_SIZE;
-		unsigned char block_z = world_block_z % CHUNK_SIZE;
+		// Convert to render array indices
+		int render_x = chunk_x - last_cx;
+		int render_z = chunk_z - last_cz;
 
-		for (int cx = 0; cx < RENDERR_DISTANCE; cx++) {
-			for (int cy = 0; cy < WORLD_HEIGHT; cy++) {
-				for (int cz = 0; cz < RENDERR_DISTANCE; cz++) {
-					Chunk* chunk = &chunks[cx][cy][cz];
-					if (chunk_x == chunk->x && chunk_y == chunk->y && chunk_z == chunk->z) {
-						chunk->blocks[block_x][block_y][block_z].id = 0;
-						chunk->needs_update = true;
+		if (render_x >= 0 && render_x < RENDERR_DISTANCE &&
+			chunk_y >= 0 && chunk_y < WORLD_HEIGHT &&
+			render_z >= 0 && render_z < RENDERR_DISTANCE) {
+				
+			Chunk* chunk = &chunks[render_x][chunk_y][render_z];
+			chunk->blocks[block_x][block_y][block_z].id = 0;
+			chunk->needs_update = true;
 
-						if (block_x == 0)
-							chunks[cx - 1][cy][cz].needs_update = true;
-						else if (block_x == 15)
-							chunks[cx + 1][cy][cz].needs_update = true;
+			// Update adjacent chunks if necessary
+			if (block_x == 0 && render_x > 0)
+				chunks[render_x - 1][chunk_y][render_z].needs_update = true;
+			else if (block_x == CHUNK_SIZE - 1 && render_x < RENDERR_DISTANCE - 1)
+				chunks[render_x + 1][chunk_y][render_z].needs_update = true;
 
-						if (block_y == 0)
-							chunks[cx][cy - 1][cz].needs_update = true;
-						else if (block_y == 15)
-							chunks[cx][cy + 1][cz].needs_update = true;
+			if (block_y == 0 && chunk_y > 0)
+				chunks[render_x][chunk_y - 1][render_z].needs_update = true;
+			else if (block_y == CHUNK_SIZE - 1 && chunk_y < WORLD_HEIGHT - 1)
+				chunks[render_x][chunk_y + 1][render_z].needs_update = true;
 
-						if (block_z == 0)
-							chunks[cx][cy][cz - 1].needs_update = true;
-						else if (block_z == 15)
-							chunks[cx][cy][cz + 1].needs_update = true;
-
-						break;
-					}
-				}
-			}
+			if (block_z == 0 && render_z > 0)
+				chunks[render_x][chunk_y][render_z - 1].needs_update = true;
+			else if (block_z == CHUNK_SIZE - 1 && render_z < RENDERR_DISTANCE - 1)
+				chunks[render_x][chunk_y][render_z + 1].needs_update = true;
 		}
 	}
 	else if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
