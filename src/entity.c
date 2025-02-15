@@ -28,66 +28,50 @@ void get_targeted_block(Entity* entity, int* out_x, int* out_y, int* out_z, char
 		int block_y = (int)floorf(y);
 		int block_z = (int)floorf(z);
 
-		// Get chunk coordinates
-		int chunk_x = block_x / CHUNK_SIZE;
+		if (block_y < 0)
+			continue;
+
+		// Handle negative coordinates properly
+		int chunk_x = (block_x < 0) ? ((block_x + 1) / CHUNK_SIZE - 1) : (block_x / CHUNK_SIZE);
+		int chunk_z = (block_z < 0) ? ((block_z + 1) / CHUNK_SIZE - 1) : (block_z / CHUNK_SIZE);
 		int chunk_y = block_y / CHUNK_SIZE;
-		int chunk_z = block_z / CHUNK_SIZE;
 
-		// Get local block coordinates within chunk
-		int local_x = block_x % CHUNK_SIZE;
-		int local_y = block_y % CHUNK_SIZE;
-		int local_z = block_z % CHUNK_SIZE;
+		// Convert to local coordinates (always positive 0-15)
+		int local_x = ((block_x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+		int local_y = ((block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+		int local_z = ((block_z % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
 
-		// Skip negative or out-of-bounds blocks
-		if (local_x < 0 || local_y < 0 || local_z < 0) continue;
+		// Convert chunk world coords to render distance array indices
+		int render_x = chunk_x - (last_cx);
+		int render_z = chunk_z - (last_cz);
 
-		// Check if chunk is loaded and block exists
-		for (int cx = 0; cx < RENDERR_DISTANCE; cx++) {
-			for (int cy = 0; cy < WORLD_HEIGHT; cy++) {
-				for (int cz = 0; cz < RENDERR_DISTANCE; cz++) {
-					if (chunks[cx][cy][cz].x == chunk_x &&
-						chunks[cx][cy][cz].y == chunk_y &&
-						chunks[cx][cy][cz].z == chunk_z) {
-						if (chunks[cx][cy][cz].blocks[local_x][local_y][local_z].id != 0) {
-							// Set the output coordinates
-							*out_x = block_x;
-							*out_y = block_y;
-							*out_z = block_z;
+		if (render_x < 0 || render_x >= RENDERR_DISTANCE ||
+			chunk_y < 0 || chunk_y >= WORLD_HEIGHT ||
+			render_z < 0 || render_z >= RENDERR_DISTANCE) continue;
 
-							// Determine which face the entity is looking at
-							// Calculate the intersection point relative to the block's center
-							float block_center_x = block_x + 0.5f;
-							float block_center_y = block_y + 0.5f;
-							float block_center_z = block_z + 0.5f;
+		if (chunks[render_x][chunk_y][render_z].blocks[local_x][local_y][local_z].id != 0) {
+			*out_x = block_x;
+			*out_y = block_y;
+			*out_z = block_z;
 
-							float dx_intersect = x - block_center_x;
-							float dy_intersect = y - block_center_y;
-							float dz_intersect = z - block_center_z;
+			float block_center_x = block_x + 0.5f;
+			float block_center_y = block_y + 0.5f;
+			float block_center_z = block_z + 0.5f;
 
-							// Determine the face based on the largest component of the intersection
-							if (fabs(dx_intersect) > fabs(dy_intersect) && fabs(dx_intersect) > fabs(dz_intersect)) {
-								if (dx_intersect > 0)
-									*out_face = 'L'; // Left
-								else
-									*out_face = 'R'; // Right
-							}
-							else if (fabs(dy_intersect) > fabs(dx_intersect) && fabs(dy_intersect) > fabs(dz_intersect)) {
-								if (dy_intersect > 0)
-									*out_face = 'T'; // Top
-								else
-									*out_face = 'B'; // Bottom
-							}
-							else {
-								if (dz_intersect > 0)
-									*out_face = 'F'; // Front
-								else
-									*out_face = 'K'; // Back
-							}
-							return;
-						}
-					}
-				}
+			float dx_intersect = x - block_center_x;
+			float dy_intersect = y - block_center_y;
+			float dz_intersect = z - block_center_z;
+
+			if (fabs(dx_intersect) > fabs(dy_intersect) && fabs(dx_intersect) > fabs(dz_intersect)) {
+				*out_face = (dx_intersect > 0) ? 'L' : 'R';
 			}
+			else if (fabs(dy_intersect) > fabs(dx_intersect) && fabs(dy_intersect) > fabs(dz_intersect)) {
+				*out_face = (dy_intersect > 0) ? 'T' : 'B';
+			}
+			else {
+				*out_face = (dz_intersect > 0) ? 'F' : 'K';
+			}
+			return;
 		}
 	}
 

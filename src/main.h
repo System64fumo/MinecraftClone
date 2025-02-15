@@ -38,7 +38,7 @@ typedef struct {
 
 typedef struct {
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
-	unsigned char x, y, z;
+	int x, y, z;
 	unsigned char ci_x, ci_y, ci_z;
 	unsigned int VAO, VBO, EBO;
 	bool needs_update;
@@ -57,6 +57,8 @@ extern float near;
 extern float far;
 extern float aspect;
 
+extern int last_cx;
+extern int last_cz;
 extern float deltaTime;
 extern unsigned short fps_average;
 extern float model[16], view[16], projection[16];
@@ -90,8 +92,8 @@ const char* load_file(const char* filename);
 unsigned int loadTexture(const char* path);
 
 void load_around_entity(Entity* entity);
-void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, unsigned char cx, unsigned char cy, unsigned char cz);
+void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz);
 void unload_chunk(Chunk* chunk);
-void generate_chunk_terrain(Chunk* chunk, unsigned char chunk_x, unsigned char chunk_y, unsigned char chunk_z);
+void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z);
 void drawChunk(Chunk* chunk, unsigned int shaderProgram, float* model);
 void render_chunks();

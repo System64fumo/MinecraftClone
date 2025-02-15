@@ -104,9 +104,9 @@ int main() {
 
 	// Initialize player
 	Entity player = {
-		.x = (WORLD_SIZE * CHUNK_SIZE) / 2.0f,
-		.y = 35.0f,
-		.z = (WORLD_SIZE * CHUNK_SIZE) / 2.0f,
+		.x = 0,
+		.y = 43.0f,
+		.z = 0,
 		.yaw = 90.0f,
 		.pitch = 0.0f,
 		.speed = 20
@@ -158,7 +158,7 @@ int main() {
 
 		char face;
 		get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z, &face);
-		if (world_block_x != -1 && world_block_y != -1 && world_block_z != -1)
+		if (face != 'N')
 			draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
 
 		// Swap buffers and poll events
