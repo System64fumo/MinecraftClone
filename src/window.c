@@ -58,7 +58,8 @@ void processInput(GLFWwindow* window) {
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
 		int world_block_x, world_block_y, world_block_z;
-		get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z);
+		char face;
+		get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z, &face);
 		int chunk_x = world_block_x / CHUNK_SIZE;
 		int chunk_y = world_block_y / CHUNK_SIZE;
 		int chunk_z = world_block_z / CHUNK_SIZE;

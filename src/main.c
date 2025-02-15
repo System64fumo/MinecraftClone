@@ -156,7 +156,8 @@ int main() {
 		// Render chunks
 		render_chunks();
 
-		get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z);
+		char face;
+		get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z, &face);
 		if (world_block_x != -1 && world_block_y != -1 && world_block_z != -1)
 			draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
 
