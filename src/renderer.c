@@ -2,17 +2,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+uint32_t max_vertices = 98304; // CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4;
+
 typedef struct {
-	float x, y, z;
+	unsigned char x, y, z;
 	unsigned char block_id;
 	unsigned char face_id;
-	unsigned char rotation;
-	float tex_x, tex_y;
+	unsigned char tex_x, tex_y;
 } Vertex;
 
-static bool isFaceVisible(Chunk* chunk, int x, int y, int z, char face) {
-	int nx = x, ny = y, nz = z;
-	int cix = chunk->ci_x, ciy = chunk->ci_y, ciz = chunk->ci_z;
+static bool isFaceVisible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
+	int8_t nx = x, ny = y, nz = z;
+	uint8_t cix = chunk->ci_x, ciy = chunk->ci_y, ciz = chunk->ci_z;
 
 	switch (face) {
 		case 0: nz += 1; break; // Front
@@ -53,38 +54,35 @@ static bool isFaceVisible(Chunk* chunk, int x, int y, int z, char face) {
 	// Get the neighboring chunk
 	Chunk* neighborChunk = &chunks[cix][ciy][ciz];
 
-	// Check if adjacent block is air
-	return neighborChunk->blocks[nx][ny][nz].id == 0;
+	// Check if adjacent block is translucent
+	return neighborChunk->blocks[nx][ny][nz].id == 0 || neighborChunk->blocks[nx][ny][nz].id == 20;
 }
 
 void pre_process_chunk(Chunk* chunk) {
-	const size_t max_vertices = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4;
-	const size_t max_indices = CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 6;
-	
 	// Use stack allocation for small arrays to avoid malloc overhead
 	Vertex vertices[max_vertices];
-	unsigned int indices[max_indices];
+	uint32_t indices[max_vertices];
 
-	unsigned int vertex_count = 0;
-	unsigned int index_count = 0;
+	uint16_t vertex_count = 0;
+	uint16_t index_count = 0;
 
 	bool mask[CHUNK_SIZE][CHUNK_SIZE] = {0};
 
 	// Process each face direction
-	for (int face = 0; face < 6; face++) {
+	for (uint8_t face = 0; face < 6; face++) {
 		memset(mask, 0, sizeof(mask));
 
 		// Sweep through each layer
-		for (int d = 0; d < CHUNK_SIZE; d++) {
+		for (uint8_t d = 0; d < CHUNK_SIZE; d++) {
 			memset(mask, 0, sizeof(mask));
 
 			// Try to find rectangles in this slice
-			for (int v = 0; v < CHUNK_SIZE; v++) {
-				for (int u = 0; u < CHUNK_SIZE; u++) {
+			for (uint8_t v = 0; v < CHUNK_SIZE; v++) {
+				for (uint8_t u = 0; u < CHUNK_SIZE; u++) {
 					if (mask[v][u]) continue;
 
 					// Map coordinates based on face direction
-					int x = 0, y = 0, z = 0;
+					uint8_t x = 0, y = 0, z = 0;
 					switch (face) {
 						case 0: x = u; y = v; z = d; break; // Front face (Z+)
 						case 1: x = d; y = v; z = u; break; // Left face (X-)
@@ -100,7 +98,7 @@ void pre_process_chunk(Chunk* chunk) {
 					}
 
 					// Find width of rectangle (extend in u direction)
-					int width = 1;
+					uint8_t width = 1;
 					while (u + width < CHUNK_SIZE) {
 						int next_x = x, next_y = y, next_z = z;
 						switch (face) {
@@ -118,11 +116,11 @@ void pre_process_chunk(Chunk* chunk) {
 					}
 
 					// Find height of rectangle (extend in v direction)
-					int height = 1;
+					uint8_t height = 1;
 					bool can_extend = true;
 					while (v + height < CHUNK_SIZE && can_extend) {
-						for (int dx = 0; dx < width; dx++) {
-							int next_x = x, next_y = y, next_z = z;
+						for (uint8_t dx = 0; dx < width; dx++) {
+							uint8_t next_x = x, next_y = y, next_z = z;
 							switch (face) {
 								case 0: case 2:  // Front/Back
 									next_x = x + dx;
@@ -149,71 +147,68 @@ void pre_process_chunk(Chunk* chunk) {
 					}
 
 					// Mark all blocks in the rectangle as processed
-					for (int dy = 0; dy < height; dy++) {
-						for (int dx = 0; dx < width; dx++) {
+					for (uint8_t dy = 0; dy < height; dy++) {
+						for (uint8_t dx = 0; dx < width; dx++) {
 							mask[v + dy][u + dx] = true;
 						}
 					}
 
 					// Generate vertices for the merged rectangle
-					unsigned int base_vertex = vertex_count;
-					float x1 = x, x2 = x, y1 = y, y2 = y + height, z1 = z, z2 = z;
+					uint16_t base_vertex = vertex_count;
+					uint8_t x1 = x, x2 = x, y1 = y, y2 = y + height, z1 = z, z2 = z;
 
-					if (face == 3) {
+					if (face == 3 || face == 1) {
 						z2 += width;
-					} 
-					else if (face == 1) {
-						x1 += 1;
-						z2 += width;
-					} 
+						if (face == 1)
+							x1 += 1;
+					}
 					else {
-						x2 += (face == 0 || face == 2 || face >= 4 ? width : 1);
+						x2 += (face == 0 || face == 2 || face >= 4) ? width : 1;
 						y2 = y + (face >= 4 ? 1 : height);
-						z2 += (face == 0 || face == 2 ? 1 : (face >= 4 ? height : 1));
+						z2 += (face == 0 || face == 2) ? 1 : (face >= 4 ? height : 1);
 					}
 
 					// In the face generation section of pre_process_chunk:
-					float width_blocks = (face == 1 || face == 3) ? 1.0f : width;
-					float height_blocks = (face >= 4) ? 1.0f : height;
-					float depth_blocks = (face == 0 || face == 2) ? 1.0f : (face >= 4 ? height : width);
-
+					uint8_t width_blocks = (face == 1 || face == 3) ? 1.0f : width;
+					uint8_t height_blocks = (face >= 4) ? 1.0f : height;
+					uint8_t depth_blocks = (face == 0 || face == 2) ? 1.0f : (face >= 4 ? height : width);
 
 					switch (face) {
 						case 0: // Front (Z+)
-							vertices[vertex_count++] = (Vertex){x2, y2, z2, block_textures[block->id][face], face, block->rotations[face], width_blocks, 0.0f};
-							vertices[vertex_count++] = (Vertex){x1, y2, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
-							vertices[vertex_count++] = (Vertex){x1, y1, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, height_blocks};
-							vertices[vertex_count++] = (Vertex){x2, y1, z2, block_textures[block->id][face], face, block->rotations[face], width_blocks, height_blocks};
+							vertices[vertex_count++] = (Vertex){x2, y2, z2, block_textures[block->id][face], face, width_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x1, y2, z2, block_textures[block->id][face], face, 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x1, y1, z2, block_textures[block->id][face], face, 0.0f, height_blocks};
+							vertices[vertex_count++] = (Vertex){x2, y1, z2, block_textures[block->id][face], face, width_blocks, height_blocks};
 							break;
 						case 1: // Left (X-)
-							vertices[vertex_count++] = (Vertex){x1, y2, z1, block_textures[block->id][face], face, block->rotations[face], depth_blocks, 0.0f};
-							vertices[vertex_count++] = (Vertex){x1, y2, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
-							vertices[vertex_count++] = (Vertex){x1, y1, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, height_blocks};
-							vertices[vertex_count++] = (Vertex){x1, y1, z1, block_textures[block->id][face], face, block->rotations[face], depth_blocks, height_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y2, z1, block_textures[block->id][face], face, depth_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x1, y2, z2, block_textures[block->id][face], face, 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x1, y1, z2, block_textures[block->id][face], face, 0.0f, height_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y1, z1, block_textures[block->id][face], face, depth_blocks, height_blocks};
 							break;
 						case 2: // Back (Z-)
-							vertices[vertex_count++] = (Vertex){x1, y2, z1, block_textures[block->id][face], face, block->rotations[face], width_blocks, 0.0f};
-							vertices[vertex_count++] = (Vertex){x2, y2, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
-							vertices[vertex_count++] = (Vertex){x2, y1, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, height_blocks};
-							vertices[vertex_count++] = (Vertex){x1, y1, z1, block_textures[block->id][face], face, block->rotations[face], width_blocks, height_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y2, z1, block_textures[block->id][face], face, width_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y2, z1, block_textures[block->id][face], face, 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y1, z1, block_textures[block->id][face], face, 0.0f, height_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y1, z1, block_textures[block->id][face], face, width_blocks, height_blocks};
 							break;
 						case 3: // Right (X+)
-							vertices[vertex_count++] = (Vertex){x2, y2, z2, block_textures[block->id][face], face, block->rotations[face], depth_blocks, 0.0f};
-							vertices[vertex_count++] = (Vertex){x2, y2, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
-							vertices[vertex_count++] = (Vertex){x2, y1, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, height_blocks};
-							vertices[vertex_count++] = (Vertex){x2, y1, z2, block_textures[block->id][face], face, block->rotations[face], depth_blocks, height_blocks};
+							vertices[vertex_count++] = (Vertex){x2, y2, z2, block_textures[block->id][face], face, depth_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y2, z1, block_textures[block->id][face], face, 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y1, z1, block_textures[block->id][face], face, 0.0f, height_blocks};
+							vertices[vertex_count++] = (Vertex){x2, y1, z2, block_textures[block->id][face], face, depth_blocks, height_blocks};
 							break;
 						case 4: // Bottom (Y-)
-							vertices[vertex_count++] = (Vertex){x1, y1, z1, block_textures[block->id][face], face, block->rotations[face], width_blocks, 0.0f};
-							vertices[vertex_count++] = (Vertex){x2, y1, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
-							vertices[vertex_count++] = (Vertex){x2, y1, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, depth_blocks};
-							vertices[vertex_count++] = (Vertex){x1, y1, z2, block_textures[block->id][face], face, block->rotations[face], width_blocks, depth_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y1, z1, block_textures[block->id][face], face, width_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y1, z1, block_textures[block->id][face], face, 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y1, z2, block_textures[block->id][face], face, 0.0f, depth_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y1, z2, block_textures[block->id][face], face, width_blocks, depth_blocks};
 							break;
 						case 5: // Top (Y+)
-							vertices[vertex_count++] = (Vertex){x1, y2, z2, block_textures[block->id][face], face, block->rotations[face], width_blocks, 0.0f};
-							vertices[vertex_count++] = (Vertex){x2, y2, z2, block_textures[block->id][face], face, block->rotations[face], 0.0f, 0.0f};
-							vertices[vertex_count++] = (Vertex){x2, y2, z1, block_textures[block->id][face], face, block->rotations[face], 0.0f, depth_blocks};
-							vertices[vertex_count++] = (Vertex){x1, y2, z1, block_textures[block->id][face], face, block->rotations[face], width_blocks, depth_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y2, z2, block_textures[block->id][face], face, width_blocks, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y2, z2, block_textures[block->id][face], face, 0.0f, 0.0f};
+							vertices[vertex_count++] = (Vertex){x2, y2, z1, block_textures[block->id][face], face, 0.0f, depth_blocks};
+							vertices[vertex_count++] = (Vertex){x1, y2, z1, block_textures[block->id][face], face, width_blocks, depth_blocks};
 							break;
 					}
 
@@ -258,9 +253,9 @@ void pre_process_chunk(Chunk* chunk) {
 		glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(Vertex), vertices, GL_STATIC_DRAW);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(uint64_t), indices, GL_STATIC_DRAW);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+		glVertexAttribPointer(0, 3, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)0);
 		glEnableVertexAttribArray(0);
 
 		glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, block_id));
@@ -269,11 +264,8 @@ void pre_process_chunk(Chunk* chunk) {
 		glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
 		glEnableVertexAttribArray(2);
 
-		glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, rotation));
+		glVertexAttribPointer(3, 2, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_x));
 		glEnableVertexAttribArray(3);
-
-		glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_x));
-		glEnableVertexAttribArray(4);
 
 		glBindVertexArray(0);
 		chunk->needs_update = false;
@@ -292,9 +284,9 @@ void render_chunks() {
 	#ifdef DEBUG
 	profiler_start(PROFILER_ID_BAKE);
 	#endif
-	for (unsigned char x = 0; x < RENDERR_DISTANCE; x++) {
-		for (unsigned char y = 0; y < WORLD_HEIGHT; y++) {
-			for (unsigned char z = 0; z < RENDERR_DISTANCE; z++) {
+	for (uint8_t x = 0; x < RENDERR_DISTANCE; x++) {
+		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
+			for (uint8_t z = 0; z < RENDERR_DISTANCE; z++) {
 				Chunk* chunk = &chunks[x][y][z];
 
 				if (chunk->needs_update) {
@@ -311,9 +303,9 @@ void render_chunks() {
 	#ifdef DEBUG
 	profiler_start(PROFILER_ID_RENDER);
 	#endif
-	for (unsigned char x = 0; x < RENDERR_DISTANCE; x++) {
-		for (unsigned char y = 0; y < WORLD_HEIGHT; y++) {
-			for (unsigned char z = 0; z < RENDERR_DISTANCE; z++) {
+	for (uint8_t x = 0; x < RENDERR_DISTANCE; x++) {
+		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
+			for (uint8_t z = 0; z < RENDERR_DISTANCE; z++) {
 				Chunk* chunk = &chunks[x][y][z];
 				matrix4_identity(model);
 				matrix4_translate(model, 
