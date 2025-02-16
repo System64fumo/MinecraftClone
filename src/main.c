@@ -5,6 +5,8 @@ unsigned short screen_height = 720;
 unsigned short screen_center_x = 640;
 unsigned short screen_center_y = 360;
 
+unsigned char hotbar_slot = 0;
+
 float fov = 70.0f;
 float near = 0.1f;
 float far = 300.0f;
@@ -16,12 +18,27 @@ float model[16], view[16], projection[16];
 unsigned int shaderProgram;
 
 unsigned char block_textures[MAX_BLOCK_TYPES][6] = {
-	[0] = {0, 0, 0, 0, 0, 0},                    // Air
-	[1] = {3, 3, 3, 3, 3, 3},                    // Dirt
-	[2] = {4, 4, 4, 4, 3, 1},                    // Grass
-	[3] = {2, 2, 2, 2, 2, 2},                    // Stone
-	[5] = {5, 5, 5, 5, 5, 5},                    // Planks
-	[7] = {18, 18, 18, 18, 18, 18},              // Bedrock
+	[0] = {0, 0, 0, 0, 0, 0},				// Air
+	[1] = {3, 3, 3, 3, 3, 3},				// Dirt
+	[2] = {4, 4, 4, 4, 3, 1},				// Grass
+	[3] = {2, 2, 2, 2, 2, 2},				// Stone
+	[4] = {17, 17, 17, 17, 17, 17},			// Cobblestone
+	[5] = {5, 5, 5, 5, 5, 5},				// Planks
+	[6] = {16, 16, 16, 16, 16, 16},			// Sapling
+	[7] = {18, 18, 18, 18, 18, 18},			// Bedrock
+	[8] = {208, 208, 208, 208, 208, 208},	// Flowing water
+	[9] = {208, 208, 208, 208, 208, 208},	// Stationary water
+	[10] = {224, 224, 224, 224, 224, 224},	// Flowing lava
+	[11] = {224, 224, 224, 224, 224, 224},	// Stationary lava
+	[12] = {19, 19, 19, 19, 19, 19},		// Sand
+	[13] = {20, 20, 20, 20, 20, 20},		// Gravel
+	[14] = {33, 33, 33, 33, 33, 33},		// Gold Ore
+	[15] = {34, 34, 34, 34, 34, 34},		// Iron Ore
+	[16] = {35, 35, 35, 35, 35, 35},		// Coal Ore
+	[17] = {21, 21, 21, 21, 22, 22},		// Wood
+	[18] = {53, 53, 53, 53, 53, 53},		// Leaves
+	[19] = {49, 49, 49, 49, 49, 49},		// Sponge
+	[20] = {50, 50, 50, 50, 50, 50},		// Glass
 };
 Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
 Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
@@ -116,6 +133,7 @@ int main() {
 
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
+	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 
 	load_around_entity(&player);
