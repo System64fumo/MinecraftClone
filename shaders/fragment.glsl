@@ -2,7 +2,6 @@
 out vec4 FragColor;
 flat in int blockID;
 flat in int faceID;
-flat in int rotation;
 in vec2 TexCoord;
 
 uniform sampler2D textureAtlas;
@@ -17,6 +16,7 @@ const vec3 faceShades[6] = vec3[6](
 );
 
 vec2 getTextureCoords() {
+	int rotation = 0;
 	float texSize = 16.0 / 256.0; // Size of each texture in the atlas (16x16 pixels)
 	int atlasWidth = 16; // Number of textures per row in the atlas
 

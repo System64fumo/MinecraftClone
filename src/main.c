@@ -145,7 +145,7 @@ int main() {
 
 	// Main render loop
 	while (!glfwWindowShouldClose(window)) {
-		float currentFrame = glfwGetTime();
+		double currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
@@ -192,9 +192,9 @@ int main() {
 }
 
 void cleanup() {
-	for(int cx = 0; cx < RENDERR_DISTANCE; cx++) {
-		for(int cy = 0; cy < WORLD_HEIGHT; cy++) {
-			for(int cz = 0; cz < RENDERR_DISTANCE; cz++) {
+	for(uint8_t cx = 0; cx < RENDERR_DISTANCE; cx++) {
+		for(uint8_t cy = 0; cy < WORLD_HEIGHT; cy++) {
+			for(uint8_t cz = 0; cz < RENDERR_DISTANCE; cz++) {
 				Chunk* chunk = &chunks[cx][cy][cz];
 				if (chunk->VBO) {
 					unload_chunk(chunk);

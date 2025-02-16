@@ -12,7 +12,6 @@
 // Defines
 #define CHUNK_SIZE 16
 #define WORLD_HEIGHT 4
-#define WORLD_SIZE UINT8_MAX
 #define MAX_ENTITIES_PER_CHUNK 1024
 #define RENDERR_DISTANCE 16
 #define MAX_BLOCK_TYPES 256
@@ -26,20 +25,19 @@ typedef struct {
 	float x, y, z;
 	float dirX, dirY, dirZ;
 	float yaw, pitch;
-	unsigned char speed;
+	uint8_t speed;
 } Entity;
 
 typedef struct {
-	unsigned char id;
-	unsigned char metadata;
-	unsigned char face_textures[6];
-	unsigned char rotations[6];
+	uint8_t id;
+	uint8_t metadata;
+	uint8_t face_textures[6];
 } Block;
 
 typedef struct {
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
 	int x, y, z;
-	unsigned char ci_x, ci_y, ci_z;
+	uint8_t ci_x, ci_y, ci_z;
 	unsigned int VAO, VBO, EBO;
 	bool needs_update;
 	unsigned int vertex_count;
