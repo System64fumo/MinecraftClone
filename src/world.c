@@ -157,10 +157,10 @@ void unload_chunk(Chunk* chunk) {
 
 void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z) {
 	float scale = 0.01f;
-	float height_scale = WORLD_HEIGHT * CHUNK_SIZE;
+	static float height_scale = WORLD_HEIGHT * CHUNK_SIZE;
 
-	for(int x = 0; x < CHUNK_SIZE; x++) {
-		for(int z = 0; z < CHUNK_SIZE; z++) {
+	for(uint8_t x = 0; x < CHUNK_SIZE; x++) {
+		for(uint8_t z = 0; z < CHUNK_SIZE; z++) {
 			float world_x = (chunk_x * CHUNK_SIZE + x) * scale;
 			float world_z = (chunk_z * CHUNK_SIZE + z) * scale;
 
@@ -170,7 +170,7 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 
 			int chunk_base_y = chunk_y * CHUNK_SIZE;
 
-			for(int y = 0; y < CHUNK_SIZE; y++) {
+			for(uint8_t y = 0; y < CHUNK_SIZE; y++) {
 				int absolute_y = chunk_base_y + y;
 
 				if (absolute_y == 0) {

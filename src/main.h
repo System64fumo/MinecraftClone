@@ -50,7 +50,7 @@ extern unsigned short screen_height;
 extern unsigned short screen_center_x;
 extern unsigned short screen_center_y;
 
-extern unsigned char hotbar_slot;
+extern uint8_t hotbar_slot;
 
 extern float fov;
 extern float near;
@@ -67,7 +67,7 @@ extern unsigned int shaderProgram;
 extern const char* vertexShaderSource;
 extern const char* fragmentShaderSource;
 
-extern unsigned char block_textures[MAX_BLOCK_TYPES][6];
+extern uint8_t block_textures[MAX_BLOCK_TYPES][6];
 extern Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
 
