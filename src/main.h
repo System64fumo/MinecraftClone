@@ -8,7 +8,6 @@
 #include "profiler.h"
 #endif
 
-
 // Defines
 #define CHUNK_SIZE 16
 #define WORLD_HEIGHT 4
@@ -31,7 +30,6 @@ typedef struct {
 typedef struct {
 	uint8_t id;
 	uint8_t metadata;
-	uint8_t face_textures[6];
 } Block;
 
 typedef struct {
@@ -51,6 +49,7 @@ extern unsigned short screen_center_x;
 extern unsigned short screen_center_y;
 
 extern uint8_t hotbar_slot;
+extern char game_dir[255];
 
 extern float fov;
 extern float near;
@@ -91,6 +90,8 @@ void matrix4_perspective(float* mat, float fovy, float aspect, float near, float
 void count_framerate();
 const char* load_file(const char* filename);
 unsigned int loadTexture(const char* path);
+int write_binary_file(const char *filename, const void *data, size_t size);
+void *read_binary_file(const char *filename, size_t *size);
 
 void load_around_entity(Entity* entity);
 void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz);
