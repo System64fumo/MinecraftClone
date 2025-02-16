@@ -5,7 +5,7 @@ unsigned short screen_height = 720;
 unsigned short screen_center_x = 640;
 unsigned short screen_center_y = 360;
 
-unsigned char hotbar_slot = 0;
+uint8_t hotbar_slot = 0;
 
 float fov = 70.0f;
 float near = 0.1f;
@@ -17,7 +17,7 @@ unsigned short fps_average = 0;
 float model[16], view[16], projection[16];
 unsigned int shaderProgram;
 
-unsigned char block_textures[MAX_BLOCK_TYPES][6] = {
+uint8_t block_textures[MAX_BLOCK_TYPES][6] = {
 	[0] = {0, 0, 0, 0, 0, 0},				// Air
 	[1] = {3, 3, 3, 3, 3, 3},				// Dirt
 	[2] = {4, 4, 4, 4, 3, 1},				// Grass
@@ -40,6 +40,7 @@ unsigned char block_textures[MAX_BLOCK_TYPES][6] = {
 	[19] = {49, 49, 49, 49, 49, 49},		// Sponge
 	[20] = {50, 50, 50, 50, 50, 50},		// Glass
 };
+
 Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
 Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
 
@@ -110,7 +111,7 @@ int main() {
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);
 
-	float lastFrame = 0.0f;
+	double lastFrame = 0.0f;
 
 	// Debugging
 	#ifdef DEBUG

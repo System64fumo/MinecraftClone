@@ -4,6 +4,10 @@
 #include <string.h>
 #include <png.h>
 
+double fpsHistory[180] = {0};  // 180 frames = ~3 seconds at 60fps
+int fpsIndex = 0;
+double fpsSum = 0;
+
 void matrix4_identity(float* mat) {
 	mat[0] = mat[5] = mat[10] = mat[15] = 1.0f;
 	mat[1] = mat[2] = mat[3] = mat[4] = mat[6] = mat[7] = mat[8] = mat[9] = mat[11] = mat[12] = mat[13] = mat[14] = 0.0f;
@@ -41,10 +45,6 @@ void matrix4_perspective(float* mat, float fovy, float aspect, float near, float
 
 void count_framerate() {
 	// Calculate FPS and maintain rolling average
-	static float fpsHistory[180] = {0};  // 180 frames = ~3 seconds at 60fps
-	static int fpsIndex = 0;
-	static float fpsSum = 0;
-
 	fpsSum -= fpsHistory[fpsIndex];
 	fpsHistory[fpsIndex] = 1.0f / deltaTime;
 	fpsSum += fpsHistory[fpsIndex];

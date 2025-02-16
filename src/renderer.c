@@ -5,10 +5,10 @@
 uint32_t max_vertices = 98304; // CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4;
 
 typedef struct {
-	unsigned char x, y, z;
-	unsigned char block_id;
-	unsigned char face_id;
-	unsigned char tex_x, tex_y;
+	uint8_t x, y, z;
+	uint8_t block_id;
+	uint8_t face_id;
+	uint8_t tex_x, tex_y;
 } Vertex;
 
 static bool isFaceVisible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
@@ -59,7 +59,6 @@ static bool isFaceVisible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t fa
 }
 
 void pre_process_chunk(Chunk* chunk) {
-	// Use stack allocation for small arrays to avoid malloc overhead
 	Vertex vertices[max_vertices];
 	uint32_t indices[max_vertices];
 
@@ -70,8 +69,6 @@ void pre_process_chunk(Chunk* chunk) {
 
 	// Process each face direction
 	for (uint8_t face = 0; face < 6; face++) {
-		memset(mask, 0, sizeof(mask));
-
 		// Sweep through each layer
 		for (uint8_t d = 0; d < CHUNK_SIZE; d++) {
 			memset(mask, 0, sizeof(mask));
@@ -268,28 +265,25 @@ void pre_process_chunk(Chunk* chunk) {
 		glEnableVertexAttribArray(3);
 
 		glBindVertexArray(0);
-		chunk->needs_update = false;
 	}
-}
-
-void render_chunk(Chunk* chunk, unsigned int shaderProgram, float* model) {
-	if (chunk->vertex_count == 0) return;
-
-	glBindVertexArray(chunk->VAO);
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, model);
-	glDrawElements(GL_TRIANGLES, chunk->index_count, GL_UNSIGNED_INT, 0);
+	chunk->needs_update = false;
 }
 
 void render_chunks() {
-	#ifdef DEBUG
-	profiler_start(PROFILER_ID_BAKE);
-	#endif
+	GLint modelUniformLocation = glGetUniformLocation(shaderProgram, "model");
+	static bool baking = false;
 	for (uint8_t x = 0; x < RENDERR_DISTANCE; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 			for (uint8_t z = 0; z < RENDERR_DISTANCE; z++) {
 				Chunk* chunk = &chunks[x][y][z];
 
 				if (chunk->needs_update) {
+					#ifdef DEBUG
+					if (!baking) {
+						profiler_start(PROFILER_ID_BAKE);
+						baking = true;
+					}
+					#endif
 					pre_process_chunk(chunk);
 					chunk->needs_update = false;
 				}
@@ -297,7 +291,10 @@ void render_chunks() {
 		}
 	}
 	#ifdef DEBUG
-	profiler_stop(PROFILER_ID_BAKE);
+	if (baking) {
+		profiler_stop(PROFILER_ID_BAKE);
+		baking = false;
+	}
 	#endif
 
 	#ifdef DEBUG
@@ -307,13 +304,18 @@ void render_chunks() {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 			for (uint8_t z = 0; z < RENDERR_DISTANCE; z++) {
 				Chunk* chunk = &chunks[x][y][z];
+				if (chunk->vertex_count == 0)
+					continue;
+
 				matrix4_identity(model);
 				matrix4_translate(model, 
 					chunk->x * CHUNK_SIZE, 
 					chunk->y * CHUNK_SIZE, 
 					chunk->z * CHUNK_SIZE
 				);
-				render_chunk(chunk, shaderProgram, model);
+				glBindVertexArray(chunk->VAO);
+				glUniformMatrix4fv(modelUniformLocation, 1, GL_FALSE, model);
+				glDrawElements(GL_TRIANGLES, chunk->index_count, GL_UNSIGNED_INT, 0);
 			}
 		}
 	}
