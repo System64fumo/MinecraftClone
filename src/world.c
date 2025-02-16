@@ -4,9 +4,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 int last_cx = -1;
 int last_cz = -1;
+
+uint32_t serialize(uint8_t a, uint8_t b, uint8_t c) {
+	return ((uint32_t)a << 16) | ((uint32_t)b << 8) | (uint32_t)c;
+}
+
+void deserialize(uint32_t serialized, uint8_t *a, uint8_t *b, uint8_t *c) {
+	*a = (serialized >> 16) & 0xFF;
+	*b = (serialized >> 8) & 0xFF;
+	*c = serialized & 0xFF;
+}
 
 void load_around_entity(Entity* entity) {
 	static Chunk temp_chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
@@ -127,6 +138,51 @@ void load_around_entity(Entity* entity) {
 	#endif
 }
 
+int save_chunk_to_file(const char *filename, const Chunk *chunk) {
+	size_t data_size = sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE + // blocks
+					   sizeof(int) * 3; // x, y, z
+
+	uint8_t *buffer = malloc(data_size);
+	if (!buffer) {
+		return -1;
+	}
+
+	memcpy(buffer, chunk->blocks, sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
+
+	memcpy(buffer + sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, &chunk->x, sizeof(int) * 3);
+
+	int result = write_binary_file(filename, buffer, data_size);
+
+	free(buffer);
+
+	return result;
+}
+
+int load_chunk_from_file(const char *filename, Chunk *chunk) {
+	size_t data_size = sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE + // blocks
+					   sizeof(int) * 3; // x, y, z
+
+	size_t loaded_size;
+	uint8_t *data = read_binary_file(filename, &loaded_size);
+
+	if (!data) {
+		return -1;
+	}
+
+	if (loaded_size != data_size) {
+		free(data);
+		return -1;
+	}
+
+	memcpy(chunk->blocks, data, sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
+
+	memcpy(&chunk->x, data + sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, sizeof(int) * 3);
+
+	free(data);
+
+	return 0; // Success
+}
+
 void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz) {
 	chunks[ci_x][ci_y][ci_z].ci_x = ci_x;
 	chunks[ci_x][ci_y][ci_z].ci_y = ci_y;
@@ -134,11 +190,29 @@ void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int 
 	chunks[ci_x][ci_y][ci_z].x = cx;
 	chunks[ci_x][ci_y][ci_z].y = cy;
 	chunks[ci_x][ci_y][ci_z].z = cz;
+	chunks[ci_x][ci_y][ci_z].needs_update = true;
 
-	generate_chunk_terrain(&chunks[ci_x][ci_y][ci_z], cx, cy, cz);
+	char filename[255];
+	snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(cx, cy, cz));
+
+	size_t size;
+	int *read_data = read_binary_file(filename, &size);
+	if (read_data) {
+		printf("Loading chunk: %s\n", filename);
+		load_chunk_from_file(filename, &chunks[ci_x][ci_y][ci_z]);
+	}
+	else {
+		printf("Generating chunk: %s\n", filename);
+		generate_chunk_terrain(&chunks[ci_x][ci_y][ci_z], cx, cy, cz);
+		save_chunk_to_file(filename, &chunks[ci_x][ci_y][ci_z]);
+	}
 }
 
 void unload_chunk(Chunk* chunk) {
+	char filename[255];
+	snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(chunk->x, chunk->y, chunk->z));
+	if (access(filename, F_OK) == 0)
+		save_chunk_to_file(filename, chunk);
 	if (chunk->VBO) {
 		glDeleteBuffers(1, &chunk->VBO);
 		chunk->VBO = 0;
@@ -154,6 +228,8 @@ void unload_chunk(Chunk* chunk) {
 
 	memset(chunk, 0, sizeof(Chunk));
 }
+
+
 
 void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z) {
 	float scale = 0.01f;
@@ -191,6 +267,4 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 			}
 		}
 	}
-
-	chunk->needs_update = true;
 }

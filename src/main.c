@@ -1,4 +1,6 @@
 #include "main.h"
+#include <stdlib.h>
+#include <sys/stat.h>
 
 unsigned short screen_width = 1280;
 unsigned short screen_height = 720;
@@ -6,6 +8,7 @@ unsigned short screen_center_x = 640;
 unsigned short screen_center_y = 360;
 
 uint8_t hotbar_slot = 0;
+char game_dir[255];
 
 float fov = 70.0f;
 float near = 0.1f;
@@ -53,6 +56,16 @@ int world_block_y;
 int world_block_z;
 
 int main() {
+	snprintf(game_dir, sizeof(game_dir), "%s/.ccraft", getenv("HOME"));
+	mkdir(game_dir, 0766);
+	char saves_dir[255];
+	snprintf(saves_dir, sizeof(saves_dir), "%s/saves", game_dir);
+	mkdir(saves_dir, 0766);
+
+	char chunks_dir[255];
+	snprintf(chunks_dir, sizeof(chunks_dir), "%s/chunks", saves_dir);
+	mkdir(chunks_dir, 0766);
+
 	// Initialize GLFW
 	if (!glfwInit()) {
 		printf("Failed to initialize GLFW\n");

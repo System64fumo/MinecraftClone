@@ -218,3 +218,34 @@ unsigned int loadTexture(const char* path) {
 
 	return textureID;
 }
+
+// Write binary data to a file
+int write_binary_file(const char *filename, const void *data, size_t size) {
+    FILE *file = fopen(filename, "wb");
+    if (!file) return -1;
+
+    size_t written = fwrite(data, 1, size, file);
+    fclose(file);
+
+    return (written == size) ? 0 : -1;
+}
+
+// Read binary data from a file
+void *read_binary_file(const char *filename, size_t *size) {
+    FILE *file = fopen(filename, "rb");
+    if (!file) return NULL;
+
+    fseek(file, 0, SEEK_END);
+    *size = ftell(file);
+    rewind(file);
+
+    void *data = malloc(*size);
+    if (!data) {
+        fclose(file);
+        return NULL;
+    }
+
+    fread(data, 1, *size, file);
+    fclose(file);
+    return data;
+}
