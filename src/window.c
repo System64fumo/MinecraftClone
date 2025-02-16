@@ -123,12 +123,18 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	// Check if the chunk is within bounds
 	if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
 		Chunk* chunk = &chunks[render_x][chunk_y][render_z];
-		chunk->blocks[block_x][block_y][block_z].id = (button == GLFW_MOUSE_BUTTON_LEFT) ? 0 : 5;
+		chunk->blocks[block_x][block_y][block_z].id = (button == GLFW_MOUSE_BUTTON_LEFT) ? 0 : hotbar_slot;
 		chunk->needs_update = true;
 
 		// Update adjacent chunks if necessary
 		update_adjacent_chunks(render_x, chunk_y, render_z, block_x, block_y, block_z);
 	}
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	int8_t offset = yoffset;
+	hotbar_slot -= offset;
+	printf("Slot: %d\n", hotbar_slot);
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {

@@ -51,8 +51,8 @@ void main() {
 	vec4 textureColor = texture(textureAtlas, getTextureCoords());
 	vec3 faceShade = faceShades[faceID];
 
-	// BlockID 1 is grass and needs a biome color
-	if (blockID == 1) {
+	// Textures 1 and 53 are affected by biome colors
+	if (blockID == 1 || blockID == 53) {
 		FragColor = vec4(textureColor.rgb * vec3(0.569, 0.741, 0.349) * faceShade, textureColor.a);
 	} else {
 		FragColor = vec4(textureColor.rgb * faceShade, textureColor.a);
