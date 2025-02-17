@@ -55,7 +55,7 @@ static bool isFaceVisible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t fa
 	Chunk* neighborChunk = &chunks[cix][ciy][ciz];
 
 	// Check if adjacent block is translucent
-	return neighborChunk->blocks[nx][ny][nz].id == 0 || neighborChunk->blocks[nx][ny][nz].id == 20;
+	return neighborChunk->blocks[nx][ny][nz].id == 0;
 }
 
 void pre_process_chunk(Chunk* chunk) {
