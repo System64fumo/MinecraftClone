@@ -33,13 +33,17 @@ typedef struct {
 } Block;
 
 typedef struct {
+	unsigned int VAO, VBO, EBO;
+	unsigned int vertex_count;
+	unsigned int index_count;
+} Face;
+
+typedef struct {
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
 	int x, y, z;
 	uint8_t ci_x, ci_y, ci_z;
-	unsigned int VAO, VBO, EBO;
+	Face faces[6];
 	bool needs_update;
-	unsigned int vertex_count;
-	unsigned int index_count;
 } Chunk;
 
 // Externs

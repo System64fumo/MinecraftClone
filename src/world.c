@@ -20,122 +20,118 @@ void deserialize(uint32_t serialized, uint8_t *a, uint8_t *b, uint8_t *c) {
 }
 
 void load_around_entity(Entity* entity) {
-	static Chunk temp_chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
+    static Chunk temp_chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
+    int center_cx = floorf(entity->x / CHUNK_SIZE) - (RENDERR_DISTANCE / 2);
+    int center_cz = floorf(entity->z / CHUNK_SIZE) - (RENDERR_DISTANCE / 2);
+    int dx = center_cx - last_cx;
+    int dz = center_cz - last_cz;
+    if (dx == 0 && dz == 0) return;
 
-	int center_cx = floorf(entity->x / CHUNK_SIZE) - (RENDERR_DISTANCE / 2);
-	int center_cz = floorf(entity->z / CHUNK_SIZE) - (RENDERR_DISTANCE / 2);
+    #ifdef DEBUG
+    profiler_start(PROFILER_ID_WORLD_GEN);
+    #endif
 
-	int dx = center_cx - last_cx;
-	int dz = center_cz - last_cz;
+    memcpy(temp_chunks, chunks, sizeof(chunks));
 
-	if (dx == 0 && dz == 0) return;
+    // Clear old chunks and mark boundaries for update
+    if (dx > 0) { // Moving East
+        for (int x = 0; x < dx && x < RENDERR_DISTANCE; x++) {
+            for (int y = 0; y < WORLD_HEIGHT; y++) {
+                for (int z = 0; z < RENDERR_DISTANCE; z++) {
+                    if (temp_chunks[x][y][z].faces[0].VAO) {
+                        if (x == dx - 1 && x + 1 < RENDERR_DISTANCE) {
+                            temp_chunks[x + 1][y][z].needs_update = true;
+                        }
+                        unload_chunk(&temp_chunks[x][y][z]);
+                    }
+                }
+            }
+        }
+    }
+    else if (dx < 0) { // Moving West
+        for (int x = RENDERR_DISTANCE + dx; x < RENDERR_DISTANCE; x++) {
+            for (int y = 0; y < WORLD_HEIGHT; y++) {
+                for (int z = 0; z < RENDERR_DISTANCE; z++) {
+                    if (temp_chunks[x][y][z].faces[0].VAO) {
+                        if (x == RENDERR_DISTANCE + dx && x - 1 >= 0) {
+                            temp_chunks[x - 1][y][z].needs_update = true;
+                        }
+                        unload_chunk(&temp_chunks[x][y][z]);
+                    }
+                }
+            }
+        }
+    }
 
-	#ifdef DEBUG
-	profiler_start(PROFILER_ID_WORLD_GEN);
-	#endif
+    if (dz > 0) { // Moving South
+        for (int x = 0; x < RENDERR_DISTANCE; x++) {
+            for (int y = 0; y < WORLD_HEIGHT; y++) {
+                for (int z = 0; z < dz && z < RENDERR_DISTANCE; z++) {
+                    if (temp_chunks[x][y][z].faces[0].VAO) {
+                        if (z == dz - 1 && z + 1 < RENDERR_DISTANCE) {
+                            temp_chunks[x][y][z + 1].needs_update = true;
+                        }
+                        unload_chunk(&temp_chunks[x][y][z]);
+                    }
+                }
+            }
+        }
+    }
+    else if (dz < 0) { // Moving North
+        for (int x = 0; x < RENDERR_DISTANCE; x++) {
+            for (int y = 0; y < WORLD_HEIGHT; y++) {
+                for (int z = RENDERR_DISTANCE + dz; z < RENDERR_DISTANCE; z++) {
+                    if (temp_chunks[x][y][z].faces[0].VAO) {
+                        if (z == RENDERR_DISTANCE + dz && z - 1 >= 0) {
+                            temp_chunks[x][y][z - 1].needs_update = true;
+                        }
+                        unload_chunk(&temp_chunks[x][y][z]);
+                    }
+                }
+            }
+        }
+    }
 
-	memcpy(temp_chunks, chunks, sizeof(chunks));
+    memset(chunks, 0, sizeof(chunks));
 
-	// Clear old chunks and mark boundaries for update
-	if (dx > 0) { // Moving East
-		for (int x = 0; x < dx && x < RENDERR_DISTANCE; x++) {
-			for (int y = 0; y < WORLD_HEIGHT; y++) {
-				for (int z = 0; z < RENDERR_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].VBO) {
-						if (x == dx - 1 && x + 1 < RENDERR_DISTANCE) {
-							temp_chunks[x + 1][y][z].needs_update = true;
-						}
-						unload_chunk(&temp_chunks[x][y][z]);
-					}
-				}
-			}
-		}
-	}
-	else if (dx < 0) { // Moving West
-		for (int x = RENDERR_DISTANCE + dx; x < RENDERR_DISTANCE; x++) {
-			for (int y = 0; y < WORLD_HEIGHT; y++) {
-				for (int z = 0; z < RENDERR_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].VBO) {
-						if (x == RENDERR_DISTANCE + dx && x - 1 >= 0) {
-							temp_chunks[x - 1][y][z].needs_update = true;
-						}
-						unload_chunk(&temp_chunks[x][y][z]);
-					}
-				}
-			}
-		}
-	}
+    // Move surviving chunks
+    for (int x = 0; x < RENDERR_DISTANCE; x++) {
+        for (int y = 0; y < WORLD_HEIGHT; y++) {
+            for (int z = 0; z < RENDERR_DISTANCE; z++) {
+                int old_x = x + dx;
+                int old_z = z + dz;
+                if (old_x >= 0 && old_x < RENDERR_DISTANCE &&
+                    old_z >= 0 && old_z < RENDERR_DISTANCE &&
+                    temp_chunks[old_x][y][old_z].faces[0].VAO) {
+                    chunks[x][y][z] = temp_chunks[old_x][y][old_z];
+                    chunks[x][y][z].ci_x = x;
+                    chunks[x][y][z].ci_z = z;
+                }
+            }
+        }
+    }
 
-	if (dz > 0) { // Moving South
-		for (int x = 0; x < RENDERR_DISTANCE; x++) {
-			for (int y = 0; y < WORLD_HEIGHT; y++) {
-				for (int z = 0; z < dz && z < RENDERR_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].VBO) {
-						if (z == dz - 1 && z + 1 < RENDERR_DISTANCE) {
-							temp_chunks[x][y][z + 1].needs_update = true;
-						}
-						unload_chunk(&temp_chunks[x][y][z]);
-					}
-				}
-			}
-		}
-	}
-	else if (dz < 0) { // Moving North
-		for (int x = 0; x < RENDERR_DISTANCE; x++) {
-			for (int y = 0; y < WORLD_HEIGHT; y++) {
-				for (int z = RENDERR_DISTANCE + dz; z < RENDERR_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].VBO) {
-						if (z == RENDERR_DISTANCE + dz && z - 1 >= 0) {
-							temp_chunks[x][y][z - 1].needs_update = true;
-						}
-						unload_chunk(&temp_chunks[x][y][z]);
-					}
-				}
-			}
-		}
-	}
+    // Load new chunks and mark edges for update
+    for (int x = 0; x < RENDERR_DISTANCE; x++) {
+        for (int y = 0; y < WORLD_HEIGHT; y++) {
+            for (int z = 0; z < RENDERR_DISTANCE; z++) {
+                if (!chunks[x][y][z].faces[0].VAO) {
+                    load_chunk(x, y, z, x + center_cx, y, z + center_cz);
+                    if (x > 0 && chunks[x-1][y][z].faces[0].VAO) chunks[x-1][y][z].needs_update = true;
+                    if (x < RENDERR_DISTANCE-1 && chunks[x+1][y][z].faces[0].VAO) chunks[x+1][y][z].needs_update = true;
+                    if (z > 0 && chunks[x][y][z-1].faces[0].VAO) chunks[x][y][z-1].needs_update = true;
+                    if (z < RENDERR_DISTANCE-1 && chunks[x][y][z+1].faces[0].VAO) chunks[x][y][z+1].needs_update = true;
+                }
+            }
+        }
+    }
 
-	memset(chunks, 0, sizeof(chunks));
+    last_cx = center_cx;
+    last_cz = center_cz;
 
-	// Move surviving chunks
-	for (int x = 0; x < RENDERR_DISTANCE; x++) {
-		for (int y = 0; y < WORLD_HEIGHT; y++) {
-			for (int z = 0; z < RENDERR_DISTANCE; z++) {
-				int old_x = x + dx;
-				int old_z = z + dz;
-					
-				if (old_x >= 0 && old_x < RENDERR_DISTANCE && 
-					old_z >= 0 && old_z < RENDERR_DISTANCE &&
-					temp_chunks[old_x][y][old_z].VBO) {
-					chunks[x][y][z] = temp_chunks[old_x][y][old_z];
-					chunks[x][y][z].ci_x = x;
-					chunks[x][y][z].ci_z = z;
-				}
-			}
-		}
-	}
-
-	// Load new chunks and mark edges for update
-	for (int x = 0; x < RENDERR_DISTANCE; x++) {
-		for (int y = 0; y < WORLD_HEIGHT; y++) {
-			for (int z = 0; z < RENDERR_DISTANCE; z++) {
-				if (!chunks[x][y][z].VBO) {
-					load_chunk(x, y, z, x + center_cx, y, z + center_cz);
-					if (x > 0 && chunks[x-1][y][z].VBO) chunks[x-1][y][z].needs_update = true;
-					if (x < RENDERR_DISTANCE-1 && chunks[x+1][y][z].VBO) chunks[x+1][y][z].needs_update = true;
-					if (z > 0 && chunks[x][y][z-1].VBO) chunks[x][y][z-1].needs_update = true;
-					if (z < RENDERR_DISTANCE-1 && chunks[x][y][z+1].VBO) chunks[x][y][z+1].needs_update = true;
-				}
-			}
-		}
-	}
-
-	last_cx = center_cx;
-	last_cz = center_cz;
-
-	#ifdef DEBUG
-	profiler_stop(PROFILER_ID_WORLD_GEN);
-	#endif
+    #ifdef DEBUG
+    profiler_stop(PROFILER_ID_WORLD_GEN);
+    #endif
 }
 
 int save_chunk_to_file(const char *filename, const Chunk *chunk) {
@@ -213,17 +209,20 @@ void unload_chunk(Chunk* chunk) {
 	// snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(chunk->x, chunk->y, chunk->z));
 	// if (access(filename, F_OK) == 0)
 	// 	save_chunk_to_file(filename, chunk);
-	if (chunk->VBO) {
-		glDeleteBuffers(1, &chunk->VBO);
-		chunk->VBO = 0;
-	}
-	if (chunk->EBO) {
-		glDeleteBuffers(1, &chunk->EBO);
-		chunk->EBO = 0;
-	}
-	if (chunk->VAO) {
-		glDeleteVertexArrays(1, &chunk->VAO);
-		chunk->VAO = 0;
+	for (int face = 0; face < 6; face++) {
+		Face* current_face = &chunk->faces[face];
+		if (current_face->VBO) {
+			glDeleteBuffers(1, &current_face->VBO);
+			current_face->VBO = 0;
+		}
+		if (current_face->EBO) {
+			glDeleteBuffers(1, &current_face->EBO);
+			current_face->EBO = 0;
+		}
+		if (current_face->VAO) {
+			glDeleteVertexArrays(1, &current_face->VAO);
+			current_face->VAO = 0;
+		}
 	}
 
 	memset(chunk, 0, sizeof(Chunk));

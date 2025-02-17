@@ -211,9 +211,12 @@ void cleanup() {
 	for(uint8_t cx = 0; cx < RENDERR_DISTANCE; cx++) {
 		for(uint8_t cy = 0; cy < WORLD_HEIGHT; cy++) {
 			for(uint8_t cz = 0; cz < RENDERR_DISTANCE; cz++) {
-				Chunk* chunk = &chunks[cx][cy][cz];
-				if (chunk->VBO) {
-					unload_chunk(chunk);
+				for (int face = 0; face < 6; face++) {
+					Chunk* chunk = &chunks[cx][cy][cz];
+					Face* current_face = &chunk->faces[face];
+					if (current_face->VBO) {
+						unload_chunk(chunk);
+					}
 				}
 			}
 		}
