@@ -267,6 +267,10 @@ void pre_process_chunk(Chunk* chunk) {
 	chunk->needs_update = false;
 }
 
+int isWithinRange(int num, int lower, int upper) {
+	return (num >= lower && num <= upper);
+}
+
 void render_chunks() {
 	GLint modelUniformLocation = glGetUniformLocation(shaderProgram, "model");
 	static bool baking = false;
@@ -310,6 +314,19 @@ void render_chunks() {
 					chunk->z * CHUNK_SIZE);
 
 				for (int face = 0; face < 6; face++) {
+					if (isWithinRange(global_entities[0].yaw, 45, 135) && face == 0)
+						continue;
+					else if ((isWithinRange(global_entities[0].yaw, 0, 45) || isWithinRange(global_entities[0].yaw, 315, 360)) && face == 1)
+						continue;
+					else if (isWithinRange(global_entities[0].yaw, 225, 315) && face == 2)
+						continue;
+					else if (isWithinRange(global_entities[0].yaw, 135, 225) && face == 3)
+						continue;
+					else if (isWithinRange(global_entities[0].pitch, -90, -45) && face == 4)
+						continue;
+					else if (isWithinRange(global_entities[0].pitch, 45, 90) && face == 5)
+						continue;
+
 					Face* current_face = &chunk->faces[face];
 					if (current_face->vertex_count == 0) continue;
 
