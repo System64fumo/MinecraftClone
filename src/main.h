@@ -60,6 +60,8 @@ extern float near;
 extern float far;
 extern float aspect;
 
+extern bool frustum_faces[6];
+
 extern int last_cx;
 extern int last_cz;
 extern float deltaTime;

@@ -1,5 +1,8 @@
 #include "main.h"
 
+#define IS_WITHIN_RANGE(num, lower, upper) ((num) >= (lower) && (num) <= (upper))
+bool frustum_faces[6];
+
 float lastX = 1280.0f / 2.0f;
 float lastY = 720.0f / 2.0f;
 bool firstMouse = true;
@@ -170,6 +173,13 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	if (global_entities[0].yaw < 0.0f) {
 		global_entities[0].yaw += 360.0f;
 	}
+
+	frustum_faces[0] = IS_WITHIN_RANGE(global_entities[0].yaw, 45, 135);
+	frustum_faces[1] = (IS_WITHIN_RANGE(global_entities[0].yaw, 0, 45) || IS_WITHIN_RANGE(global_entities[0].yaw, 315, 360));
+	frustum_faces[2] = IS_WITHIN_RANGE(global_entities[0].yaw, 225, 315);
+	frustum_faces[3] = IS_WITHIN_RANGE(global_entities[0].yaw, 135, 225);
+	frustum_faces[4] = IS_WITHIN_RANGE(global_entities[0].pitch, -90, -45);
+	frustum_faces[5] = IS_WITHIN_RANGE(global_entities[0].pitch, 45, 90);
 }
 
 void setupMatrices() {
