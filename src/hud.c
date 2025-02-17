@@ -1,6 +1,5 @@
 #include "main.h"
 
-void draw_block_highlight(float x, float y, float z) {
 	static const float vertices_template[] = {
 		// Front face (Z+)
 		-0.505f, -0.505f, 0.505f,
@@ -46,6 +45,9 @@ void draw_block_highlight(float x, float y, float z) {
 	};
 
 	static unsigned int vbo = 0, vao = 0;
+
+void draw_block_highlight(float x, float y, float z) {
+	glDisable(GL_BLEND);
 	if (vbo == 0) {
 		glGenVertexArrays(1, &vao);
 		glGenBuffers(1, &vbo);
@@ -79,4 +81,5 @@ void draw_block_highlight(float x, float y, float z) {
 
 	glBindVertexArray(0);
 	glUseProgram(0);
+	glEnable(GL_BLEND);
 }
