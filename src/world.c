@@ -192,27 +192,27 @@ void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int 
 	chunks[ci_x][ci_y][ci_z].z = cz;
 	chunks[ci_x][ci_y][ci_z].needs_update = true;
 
-	char filename[255];
-	snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(cx, cy, cz));
+	// char filename[255];
+	// snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(cx, cy, cz));
 
-	size_t size;
-	int *read_data = read_binary_file(filename, &size);
-	if (read_data) {
-		printf("Loading chunk: %s\n", filename);
-		load_chunk_from_file(filename, &chunks[ci_x][ci_y][ci_z]);
-	}
-	else {
-		printf("Generating chunk: %s\n", filename);
-		generate_chunk_terrain(&chunks[ci_x][ci_y][ci_z], cx, cy, cz);
-		save_chunk_to_file(filename, &chunks[ci_x][ci_y][ci_z]);
-	}
+	// size_t size;
+	// int *read_data = read_binary_file(filename, &size);
+	// if (read_data) {
+	// 	printf("Loading chunk: %s\n", filename);
+	// 	load_chunk_from_file(filename, &chunks[ci_x][ci_y][ci_z]);
+	// }
+	// else {
+	// 	printf("Generating chunk: %s\n", filename);
+	 	generate_chunk_terrain(&chunks[ci_x][ci_y][ci_z], cx, cy, cz);
+	// 	save_chunk_to_file(filename, &chunks[ci_x][ci_y][ci_z]);
+	// }
 }
 
 void unload_chunk(Chunk* chunk) {
-	char filename[255];
-	snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(chunk->x, chunk->y, chunk->z));
-	if (access(filename, F_OK) == 0)
-		save_chunk_to_file(filename, chunk);
+	// char filename[255];
+	// snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(chunk->x, chunk->y, chunk->z));
+	// if (access(filename, F_OK) == 0)
+	// 	save_chunk_to_file(filename, chunk);
 	if (chunk->VBO) {
 		glDeleteBuffers(1, &chunk->VBO);
 		chunk->VBO = 0;
