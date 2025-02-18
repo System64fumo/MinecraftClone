@@ -34,9 +34,9 @@ bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
 	}
 
 	// Ensure chunk indices are within bounds
-	if (cix < 0 || cix >= RENDERR_DISTANCE || 
+	if (cix < 0 || cix >= RENDER_DISTANCE || 
 		ciy < 0 || ciy >= WORLD_HEIGHT || 
-		ciz < 0 || ciz >= RENDERR_DISTANCE) {
+		ciz < 0 || ciz >= RENDER_DISTANCE) {
 		return true; // Assume out-of-bounds chunks are air
 	}
 

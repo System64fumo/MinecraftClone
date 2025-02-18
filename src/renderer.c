@@ -3,14 +3,17 @@
 #include <string.h>
 
 void pre_process_chunk(Chunk* chunk) {
-	bool mask[CHUNK_SIZE][CHUNK_SIZE] = {0};
+	Vertex vertices[MAX_VERTICES];
+	uint32_t indices[MAX_VERTICES];
+
+	uint16_t vertex_count = 0;
+	uint16_t index_count = 0;
+
+	bool mask[CHUNK_SIZE][CHUNK_SIZE];
+	uint8_t x = 0, y = 0, z = 0;
 
 	// Process each face direction
 	for (uint8_t face = 0; face < 6; face++) {
-		Vertex vertices[MAX_VERTICES];
-		uint32_t indices[MAX_VERTICES];
-		uint16_t vertex_count = 0;
-		uint16_t index_count = 0;
 		// Sweep through each layer
 		for (uint8_t d = 0; d < CHUNK_SIZE; d++) {
 			memset(mask, 0, sizeof(mask));
@@ -21,13 +24,11 @@ void pre_process_chunk(Chunk* chunk) {
 					if (mask[v][u]) continue;
 
 					// Map coordinates based on face direction
-					uint8_t x = 0, y = 0, z = 0;
 					map_coordinates(face, u, v, d, &x, &y, &z);
 
 					Block* block = &chunk->blocks[x][y][z];
-					if (block->id == 0 || !is_face_visible(chunk, x, y, z, face)) {
+					if (block->id == 0 || !is_face_visible(chunk, x, y, z, face))
 						continue;
-					}
 
 					uint8_t width = find_width(chunk, face, u, v, x, y, z, mask, block);
 					uint8_t height = find_height(chunk, face, u, v, x, y, z, mask, block, width);
@@ -45,52 +46,52 @@ void pre_process_chunk(Chunk* chunk) {
 				}
 			}
 		}
+	}
 
-		Face* current_face = &chunk->faces[face];
-		current_face->vertex_count = vertex_count;
-		current_face->index_count = index_count;
-		// Delete existing buffers if they exist
-		if (current_face->VBO) {
-			glDeleteBuffers(1, &current_face->VBO);
-			current_face->VBO = 0;
-		}
-		if (current_face->EBO) {
-			glDeleteBuffers(1, &current_face->EBO);
-			current_face->EBO = 0;
-		}
-		if (current_face->VAO) {
-			glDeleteVertexArrays(1, &current_face->VAO);
-			current_face->VAO = 0;
-		}
+	chunk->vertex_count = vertex_count;
+	chunk->index_count = index_count;
 
-		// Only create new buffers if there are vertices to process
-		if (vertex_count > 0) {
-			glGenVertexArrays(1, &current_face->VAO);
-			glGenBuffers(1, &current_face->VBO);
-			glGenBuffers(1, &current_face->EBO);
+	// Delete existing buffers if they exist
+	if (chunk->VBO) {
+		glDeleteBuffers(1, &chunk->VBO);
+		chunk->VBO = 0;
+	}
+	if (chunk->EBO) {
+		glDeleteBuffers(1, &chunk->EBO);
+		chunk->EBO = 0;
+	}
+	if (chunk->VAO) {
+		glDeleteVertexArrays(1, &chunk->VAO);
+		chunk->VAO = 0;
+	}
 
-			glBindVertexArray(current_face->VAO);
+	// Only create new buffers if there are vertices to process
+	if (vertex_count > 0) {
+		glGenVertexArrays(1, &chunk->VAO);
+		glGenBuffers(1, &chunk->VBO);
+		glGenBuffers(1, &chunk->EBO);
 
-			glBindBuffer(GL_ARRAY_BUFFER, current_face->VBO);
-			glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(Vertex), vertices, GL_STATIC_DRAW);
+		glBindVertexArray(chunk->VAO);
 
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, current_face->EBO);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(uint64_t), indices, GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, chunk->VBO);
+		glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(Vertex), vertices, GL_STATIC_DRAW);
 
-			glVertexAttribPointer(0, 3, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)0);
-			glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(uint64_t), indices, GL_STATIC_DRAW);
 
-			glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, block_id));
-			glEnableVertexAttribArray(1);
+		glVertexAttribPointer(0, 3, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)0);
+		glEnableVertexAttribArray(0);
 
-			glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
-			glEnableVertexAttribArray(2);
+		glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, block_id));
+		glEnableVertexAttribArray(1);
 
-			glVertexAttribPointer(3, 2, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_x));
-			glEnableVertexAttribArray(3);
+		glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
+		glEnableVertexAttribArray(2);
 
-			glBindVertexArray(0);
-		}
+		glVertexAttribPointer(3, 2, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_x));
+		glEnableVertexAttribArray(3);
+
+		glBindVertexArray(0);
 	}
 	chunk->needs_update = false;
 }
@@ -98,9 +99,9 @@ void pre_process_chunk(Chunk* chunk) {
 void render_chunks() {
 	GLint modelUniformLocation = glGetUniformLocation(shaderProgram, "model");
 	static bool baking = false;
-	for (uint8_t x = 0; x < RENDERR_DISTANCE; x++) {
+	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-			for (uint8_t z = 0; z < RENDERR_DISTANCE; z++) {
+			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
 				Chunk* chunk = &chunks[x][y][z];
 
 				if (chunk->needs_update) {
@@ -126,28 +127,22 @@ void render_chunks() {
 	#ifdef DEBUG
 	profiler_start(PROFILER_ID_RENDER);
 	#endif
-	for (uint8_t x = 0; x < RENDERR_DISTANCE; x++) {
+	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-			for (uint8_t z = 0; z < RENDERR_DISTANCE; z++) {
+			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
 				Chunk* chunk = &chunks[x][y][z];
-					
+				if (chunk->vertex_count == 0)
+					continue;
+
 				matrix4_identity(model);
-				matrix4_translate(model,
+				matrix4_translate(model, 
 					chunk->x * CHUNK_SIZE, 
 					chunk->y * CHUNK_SIZE, 
-					chunk->z * CHUNK_SIZE);
-
-				for (uint8_t face = 0; face < 6; face++) {
-					if (frustum_faces[face])
-						continue;
-
-					Face* current_face = &chunk->faces[face];
-					if (current_face->vertex_count == 0) continue;
-
-					glBindVertexArray(current_face->VAO);
-					glUniformMatrix4fv(modelUniformLocation, 1, GL_FALSE, model);
-					glDrawElements(GL_TRIANGLES, current_face->index_count, GL_UNSIGNED_INT, 0);
-				}
+					chunk->z * CHUNK_SIZE
+				);
+				glBindVertexArray(chunk->VAO);
+				glUniformMatrix4fv(modelUniformLocation, 1, GL_FALSE, model);
+				glDrawElements(GL_TRIANGLES, chunk->index_count, GL_UNSIGNED_INT, 0);
 			}
 		}
 	}
