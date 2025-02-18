@@ -8,15 +8,15 @@
 #define PROFILER_ID_WORLD_GEN 2
 
 typedef struct {
-    char name[MAX_NAME_LENGTH];
-    struct timespec cpu_start_time;
-    struct timespec cpu_end_time;
-    unsigned int gpu_query_start;
-    unsigned int gpu_query_end;
-    unsigned int gpu_time_elapsed;
-    double cpu_time;
-    double gpu_time;
-    int active;
+	char name[MAX_NAME_LENGTH];
+	struct timespec cpu_start_time;
+	struct timespec cpu_end_time;
+	unsigned int gpu_query_start;
+	unsigned int gpu_query_end;
+	unsigned int gpu_time_elapsed;
+	double cpu_time;
+	double gpu_time;
+	int active;
 } ProfilerInstance;
 
 void profiler_init();
