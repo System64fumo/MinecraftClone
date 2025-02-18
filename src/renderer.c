@@ -47,8 +47,8 @@ void pre_process_chunk(Chunk* chunk) {
 		}
 
 		Face* current_face = &chunk->faces[face];
-        current_face->vertex_count = vertex_count;
-        current_face->index_count = index_count;
+		current_face->vertex_count = vertex_count;
+		current_face->index_count = index_count;
 		// Delete existing buffers if they exist
 		if (current_face->VBO) {
 			glDeleteBuffers(1, &current_face->VBO);
