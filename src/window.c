@@ -12,12 +12,12 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	screen_height = height;
 
 	aspect = (float)screen_width / (float)screen_height;
-	screen_center_x = screen_width / 2.0f;
-	screen_center_y = screen_height / 2.0f;
+	screen_center_x = screen_width / 2;
+	screen_center_y = screen_height / 2;
 
 	glViewport(0, 0, screen_width, screen_height);
 	matrix4_identity(projection);
-	matrix4_perspective(projection, fov * 3.14159f / 180.0f, aspect, near, far);
+	matrix4_perspective(projection, fov * M_PI / 180.0f, aspect, near, far);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -66,16 +66,16 @@ void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coo
 
 // Helper function to check if a chunk is within bounds
 bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z) {
-	return (render_x >= 0 && render_x < RENDERR_DISTANCE &&
+	return (render_x >= 0 && render_x < RENDER_DISTANCE &&
 			chunk_y >= 0 && chunk_y < WORLD_HEIGHT &&
-			render_z >= 0 && render_z < RENDERR_DISTANCE);
+			render_z >= 0 && render_z < RENDER_DISTANCE);
 }
 
 // Helper function to update adjacent chunks
 void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x, int block_y, int block_z) {
 	if (block_x == 0 && render_x > 0)
 		chunks[render_x - 1][chunk_y][render_z].needs_update = true;
-	else if (block_x == CHUNK_SIZE - 1 && render_x < RENDERR_DISTANCE - 1)
+	else if (block_x == CHUNK_SIZE - 1 && render_x < RENDER_DISTANCE - 1)
 		chunks[render_x + 1][chunk_y][render_z].needs_update = true;
 
 	if (block_y == 0 && chunk_y > 0)
@@ -85,7 +85,7 @@ void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x
 
 	if (block_z == 0 && render_z > 0)
 		chunks[render_x][chunk_y][render_z - 1].needs_update = true;
-	else if (block_z == CHUNK_SIZE - 1 && render_z < RENDERR_DISTANCE - 1)
+	else if (block_z == CHUNK_SIZE - 1 && render_z < RENDER_DISTANCE - 1)
 		chunks[render_x][chunk_y][render_z + 1].needs_update = true;
 }
 
@@ -186,9 +186,9 @@ void setupMatrices() {
 	matrix4_identity(view);
 	
 	float f[3];
-	f[0] = cosf(global_entities[0].yaw * 3.14159f/180.0f) * cosf(global_entities[0].pitch * 3.14159f/180.0f);
-	f[1] = sinf(global_entities[0].pitch * 3.14159f/180.0f);
-	f[2] = sinf(global_entities[0].yaw * 3.14159f/180.0f) * cosf(global_entities[0].pitch * 3.14159f/180.0f);
+	f[0] = cosf(global_entities[0].yaw * M_PI/180.0f) * cosf(global_entities[0].pitch * M_PI/180.0f);
+	f[1] = sinf(global_entities[0].pitch * M_PI/180.0f);
+	f[2] = sinf(global_entities[0].yaw * M_PI/180.0f) * cosf(global_entities[0].pitch * M_PI/180.0f);
 	float len = sqrtf(f[0]*f[0] + f[1]*f[1] + f[2]*f[2]);
 	f[0] /= len; f[1] /= len; f[2] /= len;
 

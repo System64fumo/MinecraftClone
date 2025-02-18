@@ -8,11 +8,15 @@
 #include "profiler.h"
 #endif
 
+#ifndef M_PI
+#define M_PI		3.14159265358979323846
+#endif
+
 // Defines
 #define CHUNK_SIZE 16
 #define WORLD_HEIGHT 4
 #define MAX_ENTITIES_PER_CHUNK 1024
-#define RENDERR_DISTANCE 16
+#define RENDER_DISTANCE 16
 #define MAX_BLOCK_TYPES 256
 #define MAX_VERTICES 98304 // CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4;
 
@@ -26,7 +30,6 @@ typedef struct {
 
 typedef struct {
 	float x, y, z;
-	float dirX, dirY, dirZ;
 	float yaw, pitch;
 	uint8_t speed;
 } Entity;
@@ -37,17 +40,13 @@ typedef struct {
 } Block;
 
 typedef struct {
-	unsigned int VAO, VBO, EBO;
-	unsigned int vertex_count;
-	unsigned int index_count;
-} Face;
-
-typedef struct {
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
-	int x, y, z;
+	int32_t x, y, z;
 	uint8_t ci_x, ci_y, ci_z;
-	Face faces[6];
+	uint32_t VAO, VBO, EBO;
 	bool needs_update;
+	uint32_t vertex_count;
+	uint32_t index_count;
 } Chunk;
 
 // Externs
@@ -77,8 +76,8 @@ extern const char* vertexShaderSource;
 extern const char* fragmentShaderSource;
 
 extern uint8_t block_textures[MAX_BLOCK_TYPES][6];
-extern Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
-extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
+extern Chunk chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
+extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
 
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -116,3 +115,5 @@ uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, 
 uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block, uint8_t width);
 void generate_vertices(uint8_t face, uint8_t x, uint8_t y, uint8_t z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint16_t* vertex_count);
 void generate_indices(uint16_t base_vertex, uint32_t indices[], uint16_t* index_count);
+
+void init_renderer(void);

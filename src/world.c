@@ -20,11 +20,14 @@ void deserialize(uint32_t serialized, uint8_t *a, uint8_t *b, uint8_t *c) {
 }
 
 void load_around_entity(Entity* entity) {
-	static Chunk temp_chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
-	int center_cx = floorf(entity->x / CHUNK_SIZE) - (RENDERR_DISTANCE / 2);
-	int center_cz = floorf(entity->z / CHUNK_SIZE) - (RENDERR_DISTANCE / 2);
+	static Chunk temp_chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
+
+	int center_cx = floorf(entity->x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
+	int center_cz = floorf(entity->z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
+
 	int dx = center_cx - last_cx;
 	int dz = center_cz - last_cz;
+
 	if (dx == 0 && dz == 0) return;
 
 	#ifdef DEBUG
@@ -35,11 +38,11 @@ void load_around_entity(Entity* entity) {
 
 	// Clear old chunks and mark boundaries for update
 	if (dx > 0) { // Moving East
-		for (int x = 0; x < dx && x < RENDERR_DISTANCE; x++) {
+		for (int x = 0; x < dx && x < RENDER_DISTANCE; x++) {
 			for (int y = 0; y < WORLD_HEIGHT; y++) {
-				for (int z = 0; z < RENDERR_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].faces[0].VAO) {
-						if (x == dx - 1 && x + 1 < RENDERR_DISTANCE) {
+				for (int z = 0; z < RENDER_DISTANCE; z++) {
+					if (temp_chunks[x][y][z].VBO) {
+						if (x == dx - 1 && x + 1 < RENDER_DISTANCE) {
 							temp_chunks[x + 1][y][z].needs_update = true;
 						}
 						unload_chunk(&temp_chunks[x][y][z]);
@@ -49,11 +52,11 @@ void load_around_entity(Entity* entity) {
 		}
 	}
 	else if (dx < 0) { // Moving West
-		for (int x = RENDERR_DISTANCE + dx; x < RENDERR_DISTANCE; x++) {
+		for (int x = RENDER_DISTANCE + dx; x < RENDER_DISTANCE; x++) {
 			for (int y = 0; y < WORLD_HEIGHT; y++) {
-				for (int z = 0; z < RENDERR_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].faces[0].VAO) {
-						if (x == RENDERR_DISTANCE + dx && x - 1 >= 0) {
+				for (int z = 0; z < RENDER_DISTANCE; z++) {
+					if (temp_chunks[x][y][z].VBO) {
+						if (x == RENDER_DISTANCE + dx && x - 1 >= 0) {
 							temp_chunks[x - 1][y][z].needs_update = true;
 						}
 						unload_chunk(&temp_chunks[x][y][z]);
@@ -64,11 +67,11 @@ void load_around_entity(Entity* entity) {
 	}
 
 	if (dz > 0) { // Moving South
-		for (int x = 0; x < RENDERR_DISTANCE; x++) {
+		for (int x = 0; x < RENDER_DISTANCE; x++) {
 			for (int y = 0; y < WORLD_HEIGHT; y++) {
-				for (int z = 0; z < dz && z < RENDERR_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].faces[0].VAO) {
-						if (z == dz - 1 && z + 1 < RENDERR_DISTANCE) {
+				for (int z = 0; z < dz && z < RENDER_DISTANCE; z++) {
+					if (temp_chunks[x][y][z].VBO) {
+						if (z == dz - 1 && z + 1 < RENDER_DISTANCE) {
 							temp_chunks[x][y][z + 1].needs_update = true;
 						}
 						unload_chunk(&temp_chunks[x][y][z]);
@@ -78,11 +81,11 @@ void load_around_entity(Entity* entity) {
 		}
 	}
 	else if (dz < 0) { // Moving North
-		for (int x = 0; x < RENDERR_DISTANCE; x++) {
+		for (int x = 0; x < RENDER_DISTANCE; x++) {
 			for (int y = 0; y < WORLD_HEIGHT; y++) {
-				for (int z = RENDERR_DISTANCE + dz; z < RENDERR_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].faces[0].VAO) {
-						if (z == RENDERR_DISTANCE + dz && z - 1 >= 0) {
+				for (int z = RENDER_DISTANCE + dz; z < RENDER_DISTANCE; z++) {
+					if (temp_chunks[x][y][z].VBO) {
+						if (z == RENDER_DISTANCE + dz && z - 1 >= 0) {
 							temp_chunks[x][y][z - 1].needs_update = true;
 						}
 						unload_chunk(&temp_chunks[x][y][z]);
@@ -95,14 +98,15 @@ void load_around_entity(Entity* entity) {
 	memset(chunks, 0, sizeof(chunks));
 
 	// Move surviving chunks
-	for (int x = 0; x < RENDERR_DISTANCE; x++) {
+	for (int x = 0; x < RENDER_DISTANCE; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
-			for (int z = 0; z < RENDERR_DISTANCE; z++) {
+			for (int z = 0; z < RENDER_DISTANCE; z++) {
 				int old_x = x + dx;
 				int old_z = z + dz;
-				if (old_x >= 0 && old_x < RENDERR_DISTANCE &&
-					old_z >= 0 && old_z < RENDERR_DISTANCE &&
-					temp_chunks[old_x][y][old_z].faces[0].VAO) {
+					
+				if (old_x >= 0 && old_x < RENDER_DISTANCE && 
+					old_z >= 0 && old_z < RENDER_DISTANCE &&
+					temp_chunks[old_x][y][old_z].VBO) {
 					chunks[x][y][z] = temp_chunks[old_x][y][old_z];
 					chunks[x][y][z].ci_x = x;
 					chunks[x][y][z].ci_z = z;
@@ -112,15 +116,15 @@ void load_around_entity(Entity* entity) {
 	}
 
 	// Load new chunks and mark edges for update
-	for (int x = 0; x < RENDERR_DISTANCE; x++) {
+	for (int x = 0; x < RENDER_DISTANCE; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
-			for (int z = 0; z < RENDERR_DISTANCE; z++) {
-				if (!chunks[x][y][z].faces[0].VAO) {
+			for (int z = 0; z < RENDER_DISTANCE; z++) {
+				if (!chunks[x][y][z].VBO) {
 					load_chunk(x, y, z, x + center_cx, y, z + center_cz);
-					if (x > 0 && chunks[x-1][y][z].faces[0].VAO) chunks[x-1][y][z].needs_update = true;
-					if (x < RENDERR_DISTANCE-1 && chunks[x+1][y][z].faces[0].VAO) chunks[x+1][y][z].needs_update = true;
-					if (z > 0 && chunks[x][y][z-1].faces[0].VAO) chunks[x][y][z-1].needs_update = true;
-					if (z < RENDERR_DISTANCE-1 && chunks[x][y][z+1].faces[0].VAO) chunks[x][y][z+1].needs_update = true;
+					if (x > 0 && chunks[x-1][y][z].VBO) chunks[x-1][y][z].needs_update = true;
+					if (x < RENDER_DISTANCE-1 && chunks[x+1][y][z].VBO) chunks[x+1][y][z].needs_update = true;
+					if (z > 0 && chunks[x][y][z-1].VBO) chunks[x][y][z-1].needs_update = true;
+					if (z < RENDER_DISTANCE-1 && chunks[x][y][z+1].VBO) chunks[x][y][z+1].needs_update = true;
 				}
 			}
 		}
@@ -209,20 +213,17 @@ void unload_chunk(Chunk* chunk) {
 	// snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(chunk->x, chunk->y, chunk->z));
 	// if (access(filename, F_OK) == 0)
 	// 	save_chunk_to_file(filename, chunk);
-	for (int face = 0; face < 6; face++) {
-		Face* current_face = &chunk->faces[face];
-		if (current_face->VBO) {
-			glDeleteBuffers(1, &current_face->VBO);
-			current_face->VBO = 0;
-		}
-		if (current_face->EBO) {
-			glDeleteBuffers(1, &current_face->EBO);
-			current_face->EBO = 0;
-		}
-		if (current_face->VAO) {
-			glDeleteVertexArrays(1, &current_face->VAO);
-			current_face->VAO = 0;
-		}
+	if (chunk->VBO) {
+		glDeleteBuffers(1, &chunk->VBO);
+		chunk->VBO = 0;
+	}
+	if (chunk->EBO) {
+		glDeleteBuffers(1, &chunk->EBO);
+		chunk->EBO = 0;
+	}
+	if (chunk->VAO) {
+		glDeleteVertexArrays(1, &chunk->VAO);
+		chunk->VAO = 0;
 	}
 
 	memset(chunk, 0, sizeof(Chunk));

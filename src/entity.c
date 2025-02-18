@@ -45,9 +45,9 @@ void get_targeted_block(Entity* entity, int* out_x, int* out_y, int* out_z, char
 		int render_x = chunk_x - (last_cx);
 		int render_z = chunk_z - (last_cz);
 
-		if (render_x < 0 || render_x >= RENDERR_DISTANCE ||
+		if (render_x < 0 || render_x >= RENDER_DISTANCE ||
 			chunk_y < 0 || chunk_y >= WORLD_HEIGHT ||
-			render_z < 0 || render_z >= RENDERR_DISTANCE) continue;
+			render_z < 0 || render_z >= RENDER_DISTANCE) continue;
 
 		if (chunks[render_x][chunk_y][render_z].blocks[local_x][local_y][local_z].id != 0) {
 			*out_x = block_x;

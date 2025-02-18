@@ -1,6 +1,6 @@
 #version 330 core
 out vec4 FragColor;
-flat in int blockID;
+flat in int texID;
 flat in int faceID;
 in vec2 TexCoord;
 
@@ -20,8 +20,7 @@ vec2 getTextureCoords() {
 	float texSize = 16.0 / 256.0; // Size of each texture in the atlas (16x16 pixels)
 	int atlasWidth = 16; // Number of textures per row in the atlas
 
-	// Calculate the X and Y offsets based on blockID
-	int textureIndex = blockID - 1;	// Convert blockID to 0-based index
+	int textureIndex = texID - 1;
 	int xOffset = textureIndex % atlasWidth; // X offset in the atlas
 	int yOffset = textureIndex / atlasWidth; // Y offset in the atlas
 
@@ -52,7 +51,7 @@ void main() {
 	vec3 faceShade = faceShades[faceID];
 
 	// Textures 1 and 53 are affected by biome colors
-	if (blockID == 1 || blockID == 53) {
+	if (texID == 1 || texID == 53) {
 		FragColor = vec4(textureColor.rgb * vec3(0.569, 0.741, 0.349) * faceShade, textureColor.a);
 	} else {
 		FragColor = vec4(textureColor.rgb * faceShade, textureColor.a);

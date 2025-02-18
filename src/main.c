@@ -44,8 +44,8 @@ uint8_t block_textures[MAX_BLOCK_TYPES][6] = {
 	[20] = {50, 50, 50, 50, 50, 50},		// Glass
 };
 
-Chunk chunks[RENDERR_DISTANCE][WORLD_HEIGHT][RENDERR_DISTANCE];
-Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDERR_DISTANCE * CHUNK_SIZE];
+Chunk chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
+Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
 
 // Shaders
 const char* vertexShaderSource;
@@ -152,12 +152,12 @@ int main() {
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 
-	load_around_entity(&player);
-
-	// Initialize mouse capture
+	// Initialize input capture
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPos(window, screen_center_x, screen_center_y);
 	glfwSetKeyCallback(window, key_callback);
+
+	load_around_entity(&player);
 
 	// Main render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -181,10 +181,7 @@ int main() {
 		// Use shader program
 		glUseProgram(shaderProgram);
 
-		// Set up matrices
 		setupMatrices(view, projection);
-
-		// Set view and projection uniforms
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, view);
 		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, projection);
 
@@ -208,15 +205,12 @@ int main() {
 }
 
 void cleanup() {
-	for(uint8_t cx = 0; cx < RENDERR_DISTANCE; cx++) {
+	for(uint8_t cx = 0; cx < RENDER_DISTANCE; cx++) {
 		for(uint8_t cy = 0; cy < WORLD_HEIGHT; cy++) {
-			for(uint8_t cz = 0; cz < RENDERR_DISTANCE; cz++) {
-				for (int face = 0; face < 6; face++) {
-					Chunk* chunk = &chunks[cx][cy][cz];
-					Face* current_face = &chunk->faces[face];
-					if (current_face->VBO) {
-						unload_chunk(chunk);
-					}
+			for(uint8_t cz = 0; cz < RENDER_DISTANCE; cz++) {
+				Chunk* chunk = &chunks[cx][cy][cz];
+				if (chunk->VBO) {
+					unload_chunk(chunk);
 				}
 			}
 		}
