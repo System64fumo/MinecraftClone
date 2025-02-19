@@ -15,8 +15,10 @@ float near = 0.1f;
 float far = 300.0f;
 float aspect = 1.7f;
 
-float deltaTime = 0.0f;
-unsigned short fps_average = 0;
+double currentFrame = 0.0f;
+double lastFrame = 0.0f;
+double deltaTime = 0.0f;
+
 float model[16], view[16], projection[16];
 unsigned int shaderProgram;
 
@@ -76,6 +78,7 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	//glfwWindowHint(GLFW_SAMPLES, 8);
 
 	// Create window
 	GLFWwindow* window = glfwCreateWindow(screen_width, screen_height, "Minecraft Clone", NULL, NULL);
@@ -139,8 +142,7 @@ int main() {
 	glFrontFace(GL_CCW);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	double lastFrame = 0.0f;
+	//glEnable(GL_MULTISAMPLE);
 
 	// Debugging
 	#ifdef DEBUG
@@ -175,13 +177,13 @@ int main() {
 
 	// Main render loop
 	while (!glfwWindowShouldClose(window)) {
-		double currentFrame = glfwGetTime();
+		currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
+		do_time_stuff();
+
 		#ifdef DEBUG
-		count_framerate();
-		printf("Framerate: %d\n", fps_average);
 		profiler_print_all();
 		#endif
 

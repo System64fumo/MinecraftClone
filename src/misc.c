@@ -4,9 +4,12 @@
 #include <string.h>
 #include <png.h>
 
-double fpsHistory[180] = {0};  // 180 frames = ~3 seconds at 60fps
-int fpsIndex = 0;
-double fpsSum = 0;
+double time_current = 0.0f;
+double time_difference = 0.0f;
+double time_previous = 0.0f;
+int time_counter = 0;
+float framerate = 0.0f;
+float frametime = 0.0f;
 
 void matrix4_identity(float* mat) {
 	mat[0] = mat[5] = mat[10] = mat[15] = 1.0f;
@@ -43,14 +46,17 @@ void matrix4_perspective(float* mat, float fovy, float aspect, float near, float
 	mat[15] = 0.0f;
 }
 
-void count_framerate() {
-	// Calculate FPS and maintain rolling average
-	fpsSum -= fpsHistory[fpsIndex];
-	fpsHistory[fpsIndex] = 1.0f / deltaTime;
-	fpsSum += fpsHistory[fpsIndex];
-	fpsIndex = (fpsIndex + 1) % 180;
-
-	fps_average = (int)(fpsSum / 180);
+void do_time_stuff() {
+	time_current = glfwGetTime();
+	time_difference = time_current - time_previous;
+	time_counter++;
+	if (time_difference >= 1.0f) {
+		framerate = (1.0 / time_difference) * time_counter;
+		frametime = (time_difference / time_counter) * 1000;
+		printf("Framerate: %.2f, FrameTime: %.3f\n", framerate, frametime);
+		time_previous = time_current;
+		time_counter = 0;
+	}
 }
 
 const char* load_file(const char* filename) {
