@@ -230,37 +230,76 @@ void unload_chunk(Chunk* chunk) {
 }
 
 void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z) {
-	float scale = 0.01f;
-	static float height_scale = WORLD_HEIGHT * CHUNK_SIZE;
+	static float height_scale = CHUNK_SIZE * 4;
+	int SEA_LEVEL = 64;
 
-	for(uint8_t x = 0; x < CHUNK_SIZE; x++) {
-		for(uint8_t z = 0; z < CHUNK_SIZE; z++) {
-			float world_x = (chunk_x * CHUNK_SIZE + x) * scale;
-			float world_z = (chunk_z * CHUNK_SIZE + z) * scale;
+	// Adjusted Perlin noise scales
+	float continent_scale = 0.005f;
+	float mountain_scale = 0.03f;
+	float flatness_scale = 0.02f;
+	float cave_scale = 0.1f;
+	float cave_simplex_scale = 0.1f;
 
-			float height = stb_perlin_noise3(world_x, 0.0f, world_z, 0, 0, 0);
-			height = (height + 1.0f) * 0.5f;  // Normalize to 0-1 range
-			int terrain_height = (int)(height * height_scale) + 8;  // Add base height
+	for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
+		for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
+			float world_x = (chunk_x * CHUNK_SIZE + x);
+			float world_z = (chunk_z * CHUNK_SIZE + z);
+
+			// *** Continent Formation ***
+			float continent_noise = stb_perlin_noise3(world_x * continent_scale, 0.0f, world_z * continent_scale, 0, 0, 0);
+			continent_noise = (continent_noise + 1.0f) * 0.5f; // Normalize to 0-1 range
+			float continent_height = (continent_noise - 0.4f) * 96;
+
+			// *** Flat Areas Modifier ***
+			float flatness = stb_perlin_noise3(world_x * flatness_scale, 0.0f, world_z * flatness_scale, 0, 0, 0);
+			flatness = (flatness + 1.0f) * 0.5f;  // Normalize to 0-1 range
+			flatness = powf(flatness, 2.0f) * 20.0f;
+
+			// *** Mountain Noise ***
+			float mountain_noise = stb_perlin_noise3(world_x * mountain_scale, 0.0f, world_z * mountain_scale, 0, 0, 0);
+			mountain_noise = (mountain_noise + 1.0f) * 0.5f; // Normalize to 0-1 range
+			mountain_noise = powf(mountain_noise, 2.5f) * 64;
+
+			// *** Final Terrain Height Calculation ***
+			float terrain_height = (continent_height + mountain_noise - flatness);
+			int height = (int)(terrain_height) + (4 * CHUNK_SIZE);
 
 			int chunk_base_y = chunk_y * CHUNK_SIZE;
 
-			for(uint8_t y = 0; y < CHUNK_SIZE; y++) {
+			for (uint8_t y = 0; y < CHUNK_SIZE; y++) {
 				int absolute_y = chunk_base_y + y;
+
+				// *** Cave Generation (3D Perlin Noise) ***
+				float cave_noise = stb_perlin_noise3(world_x * cave_scale, absolute_y * cave_scale, world_z * cave_scale, 0, 0, 0);
+				float cave_simplex = stb_perlin_noise3(world_x * cave_simplex_scale, absolute_y * cave_simplex_scale, world_z * cave_simplex_scale, 0, 0, 0);
+				float cave_value = (cave_noise + cave_simplex) * 0.5f;  // Combine the noises for smooth cave formations
+				bool is_cave = (cave_value > 0.45f);
 
 				if (absolute_y == 0) {
 					chunk->blocks[x][y][z] = (Block){.id = 7};  // Bedrock
 				}
-				else if(absolute_y > terrain_height) {
-					chunk->blocks[x][y][z] = (Block){.id = 0};  // Air
+				else if (absolute_y > height) {
+					// Air or Water
+					if (absolute_y <= SEA_LEVEL) {
+						chunk->blocks[x][y][z] = (Block){.id = 9};  // Water
+					} else {
+						chunk->blocks[x][y][z] = (Block){.id = 0};  // Air
+					}
 				}
-				else if(absolute_y == terrain_height) {
-					chunk->blocks[x][y][z] = (Block){.id = 2};  // Grass
-				}
-				else if(absolute_y >= terrain_height - 3) {
-					chunk->blocks[x][y][z] = (Block){.id = 1};  // Dirt
+				else if (is_cave) {
+					chunk->blocks[x][y][z] = (Block){.id = 0};  // Air (Cave)
 				}
 				else {
-					chunk->blocks[x][y][z] = (Block){.id = 3};  // Stone
+					// Surface and underground terrain
+					if (absolute_y == height) {
+						chunk->blocks[x][y][z] = (Block){.id = 2};  // Grass
+					}
+					else if (absolute_y >= height - 3) {
+						chunk->blocks[x][y][z] = (Block){.id = 1};  // Dirt
+					}
+					else {
+						chunk->blocks[x][y][z] = (Block){.id = 3};  // Stone
+					}
 				}
 			}
 		}
