@@ -14,7 +14,7 @@
 
 // Defines
 #define CHUNK_SIZE 16
-#define WORLD_HEIGHT 4
+#define WORLD_HEIGHT 16
 #define MAX_ENTITIES_PER_CHUNK 1024
 #define RENDER_DISTANCE 16
 #define MAX_BLOCK_TYPES 256
@@ -67,8 +67,9 @@ extern bool frustum_faces[6];
 
 extern int last_cx;
 extern int last_cz;
-extern float deltaTime;
-extern unsigned short fps_average;
+extern double deltaTime;
+extern float framerate;
+extern float frametime;
 extern float model[16], view[16], projection[16];
 
 extern unsigned int shaderProgram;
@@ -96,7 +97,7 @@ void matrix4_identity(float* mat);
 void matrix4_translate(float* mat, float x, float y, float z);
 void matrix4_rotate(float* mat, float angle, float x, float y, float z);
 void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far);
-void count_framerate();
+void do_time_stuff();
 const char* load_file(const char* filename);
 unsigned int loadTexture(const char* path);
 int write_binary_file(const char *filename, const void *data, size_t size);
