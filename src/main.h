@@ -23,9 +23,9 @@
 // Structs
 typedef struct {
 	uint8_t x, y, z;
-	uint8_t block_id;
 	uint8_t face_id;
-	uint8_t tex_x, tex_y;
+	uint8_t texture_id;
+	uint8_t width, height;
 } Vertex;
 
 typedef struct {

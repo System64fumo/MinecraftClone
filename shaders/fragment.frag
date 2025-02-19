@@ -2,7 +2,7 @@
 out vec4 FragColor;
 flat in int texID;
 flat in int faceID;
-in vec2 TexCoord;
+in vec2 size;
 
 uniform sampler2D textureAtlas;
 
@@ -29,7 +29,7 @@ vec2 getTextureCoords() {
 	float y = yOffset * texSize; // Y increases upward in the atlas
 
 	// Handle tiling by using mod on texture coordinates
-	vec2 tiledCoord = mod(TexCoord, 1.0);
+	vec2 tiledCoord = mod(size, 1.0);
 
 	// Rotate UV coordinates based on rotation value
 	vec2 centeredUV = tiledCoord - vec2(0.5, 0.5);

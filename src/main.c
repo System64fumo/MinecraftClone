@@ -90,17 +90,31 @@ int main() {
 	glewExperimental = GL_TRUE;
 	glewInit();
 
-	vertexShaderSource = load_file("../shaders/vertex.glsl");
-	fragmentShaderSource = load_file("../shaders/fragment.glsl");
+	vertexShaderSource = load_file("../shaders/vertex.vert");
+	fragmentShaderSource = load_file("../shaders/fragment.frag");
 
 	// Create and compile shaders
+	int success;
+	char infoLog[512];
 	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
 	glCompileShader(vertexShader);
 
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+		printf("Vertex shader compilation failed: %s\n", infoLog);
+	}
+
 	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
 	glCompileShader(fragmentShader);
+
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+		printf("Fragment shader compilation failed: %s\n", infoLog);
+	}
 
 	// Create shader program
 	shaderProgram = glCreateProgram();
