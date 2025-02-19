@@ -1,8 +1,13 @@
 #include "main.h"
 
+// TODO: Use block data
+bool is_translucent(int8_t id) {
+	return (id == 9 || id == 20);
+}
+
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
 	int8_t nx = x, ny = y, nz = z;
-	uint8_t cix = chunk->ci_x, ciy = chunk->ci_y, ciz = chunk->ci_z;
+	int8_t cix = chunk->ci_x, ciy = chunk->ci_y, ciz = chunk->ci_z;
 
 	switch (face) {
 		case 0: nz += 1; break; // Front
@@ -40,11 +45,27 @@ bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
 		return true; // Assume out-of-bounds chunks are air
 	}
 
-	// Get the neighboring chunk
 	Chunk* neighborChunk = &chunks[cix][ciy][ciz];
 
-	// Check if adjacent block is translucent
-	return neighborChunk->blocks[nx][ny][nz].id == 0;
+	Block currentBlock = chunk->blocks[x][y][z];
+	Block neighborBlock = neighborChunk->blocks[nx][ny][nz];
+
+	bool isCurrentTranslucent = is_translucent(currentBlock.id);
+	bool isNeighborTranslucent = is_translucent(neighborBlock.id);
+
+	if (neighborBlock.id == 0) {
+		return true;
+	}
+
+	if (!isCurrentTranslucent && !isNeighborTranslucent) {
+		return false;
+	}
+
+	if (isCurrentTranslucent && isNeighborTranslucent) {
+		return currentBlock.id != neighborBlock.id;
+	}
+
+	return !isCurrentTranslucent;
 }
 
 void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, uint8_t* y, uint8_t* z) {
