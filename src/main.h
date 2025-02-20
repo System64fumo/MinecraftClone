@@ -110,6 +110,7 @@ void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int 
 void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z);
 void drawChunk(Chunk* chunk, unsigned int shaderProgram, float* model);
+void process_chunks();
 void render_chunks();
 
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);
