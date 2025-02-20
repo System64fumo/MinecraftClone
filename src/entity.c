@@ -37,9 +37,9 @@ void get_targeted_block(Entity* entity, int* out_x, int* out_y, int* out_z, char
 		int chunk_y = block_y / CHUNK_SIZE;
 
 		// Convert to local coordinates (always positive 0-15)
-		int local_x = ((block_x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
-		int local_y = ((block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
-		int local_z = ((block_z % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+		uint8_t local_x = ((block_x % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+		uint8_t local_y = ((block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+		uint8_t local_z = ((block_z % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
 
 		// Convert chunk world coords to render distance array indices
 		int render_x = chunk_x - (last_cx);

@@ -184,10 +184,6 @@ int main() {
 
 		do_time_stuff();
 
-		#ifdef DEBUG
-		profiler_print_all();
-		#endif
-
 		// Process input
 		processInput(window);
 
