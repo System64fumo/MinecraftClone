@@ -3,9 +3,10 @@
 #define MAX_TIMERS 32
 #define MAX_NAME_LENGTH 64
 
-#define PROFILER_ID_BAKE 0
-#define PROFILER_ID_RENDER 1
-#define PROFILER_ID_WORLD_GEN 2
+#define PROFILER_ID_SHADER 0
+#define PROFILER_ID_BAKE 1
+#define PROFILER_ID_RENDER 2
+#define PROFILER_ID_WORLD_GEN 3
 
 typedef struct {
 	char name[MAX_NAME_LENGTH];

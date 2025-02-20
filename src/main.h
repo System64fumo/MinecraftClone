@@ -103,6 +103,8 @@ unsigned int loadTexture(const char* path);
 int write_binary_file(const char *filename, const void *data, size_t size);
 void *read_binary_file(const char *filename, size_t *size);
 
+void load_shaders();
+
 void load_around_entity(Entity* entity);
 void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz);
 void unload_chunk(Chunk* chunk);
