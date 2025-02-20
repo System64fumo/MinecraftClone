@@ -49,7 +49,8 @@ void get_targeted_block(Entity* entity, int* out_x, int* out_y, int* out_z, char
 			chunk_y < 0 || chunk_y >= WORLD_HEIGHT ||
 			render_z < 0 || render_z >= RENDER_DISTANCE) continue;
 
-		if (chunks[render_x][chunk_y][render_z].blocks[local_x][local_y][local_z].id != 0) {
+		uint8_t intersecting_block_id = chunks[render_x][chunk_y][render_z].blocks[local_x][local_y][local_z].id;
+		if (intersecting_block_id != 0 && intersecting_block_id != 8 && intersecting_block_id != 9) {
 			*out_x = block_x;
 			*out_y = block_y;
 			*out_z = block_z;

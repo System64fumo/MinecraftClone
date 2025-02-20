@@ -109,7 +109,6 @@ void load_around_entity(Entity* entity);
 void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz);
 void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z);
-void drawChunk(Chunk* chunk, unsigned int shaderProgram, float* model);
 void process_chunks();
 void render_chunks();
 
