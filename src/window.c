@@ -18,6 +18,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, screen_width, screen_height);
 	matrix4_identity(projection);
 	matrix4_perspective(projection, fov * M_PI / 180.0f, aspect, near, far);
+	resizeFramebuffer(width, height);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
