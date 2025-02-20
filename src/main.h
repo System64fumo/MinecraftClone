@@ -72,7 +72,7 @@ extern float framerate;
 extern float frametime;
 extern float model[16], view[16], projection[16];
 
-extern unsigned int shaderProgram;
+extern unsigned int shaderProgram, postProcessingShader;
 extern const char* vertexShaderSource;
 extern const char* fragmentShaderSource;
 
@@ -120,3 +120,10 @@ void generate_slab_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Verte
 void generate_cross_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Vertex vertices[], uint16_t* vertex_count);
 void generate_vertices(uint8_t face, uint8_t x, uint8_t y, uint8_t z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint16_t* vertex_count);
 void generate_indices(uint16_t base_vertex, uint32_t indices[], uint16_t* index_count);
+
+void initFramebuffer();
+void resizeFramebuffer(int width, int height);
+void initQuad();
+void renderSceneToFramebuffer();
+void renderFramebufferToScreen();
+void cleanupFramebuffer();

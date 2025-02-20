@@ -20,7 +20,7 @@ double lastFrame = 0.0f;
 double deltaTime = 0.0f;
 
 float model[16], view[16], projection[16];
-unsigned int shaderProgram;
+unsigned int shaderProgram, postProcessingShader;
 
 uint8_t block_textures[MAX_BLOCK_TYPES][6] = {
 	[0] = {0, 0, 0, 0, 0, 0},				// Air
@@ -53,10 +53,6 @@ Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
 // Shaders
 const char* vertexShaderSource;
 const char* fragmentShaderSource;
-
-int world_block_x;
-int world_block_y;
-int world_block_z;
 
 int main() {
 	snprintf(game_dir, sizeof(game_dir), "%s/.ccraft", getenv("HOME"));
@@ -146,6 +142,8 @@ int main() {
 	glfwSetKeyCallback(window, key_callback);
 
 	load_around_entity(&player);
+	initFramebuffer();
+	initQuad();
 
 	// Main render loop
 	while (!glfwWindowShouldClose(window)) {
@@ -158,24 +156,8 @@ int main() {
 		// Process input
 		processInput(window);
 
-		// Clear buffers
-		glClearColor(0.471f, 0.655f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		// Use shader program
-		glUseProgram(shaderProgram);
-
-		setupMatrices(view, projection);
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, view);
-		glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, projection);
-
-		// Render chunks
-		render_chunks();
-
-		char face;
-		get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z, &face);
-		if (face != 'N')
-			draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
+		renderSceneToFramebuffer();
+		renderFramebufferToScreen();
 
 		// Swap buffers and poll events
 		glfwSwapBuffers(window);
@@ -189,6 +171,7 @@ int main() {
 }
 
 void cleanup() {
+	cleanupFramebuffer();
 	for(uint8_t cx = 0; cx < RENDER_DISTANCE; cx++) {
 		for(uint8_t cy = 0; cy < WORLD_HEIGHT; cy++) {
 			for(uint8_t cz = 0; cz < RENDER_DISTANCE; cz++) {
