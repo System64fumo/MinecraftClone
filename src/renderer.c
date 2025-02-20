@@ -122,8 +122,7 @@ void pre_process_chunk(Chunk* chunk) {
 	chunk->needs_update = false;
 }
 
-void render_chunks() {
-	GLint modelUniformLocation = glGetUniformLocation(shaderProgram, "model");
+void process_chunks() {
 	static bool baking = false;
 	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
@@ -149,7 +148,10 @@ void render_chunks() {
 		baking = false;
 	}
 	#endif
+}
 
+void render_chunks() {
+	GLint modelUniformLocation = glGetUniformLocation(shaderProgram, "model");
 	#ifdef DEBUG
 	profiler_start(PROFILER_ID_RENDER);
 	#endif

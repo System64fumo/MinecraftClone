@@ -50,7 +50,9 @@ void do_time_stuff() {
 	time_current = glfwGetTime();
 	time_difference = time_current - time_previous;
 	time_counter++;
-	if (time_difference >= 1.0f) {
+
+	// 20 TPS
+	if (time_difference >= 0.05f) {
 		framerate = (1.0 / time_difference) * time_counter;
 		frametime = (time_difference / time_counter) * 1000;
 		printf("Framerate: %.2f, FrameTime: %.3f\n", framerate, frametime);
@@ -60,6 +62,8 @@ void do_time_stuff() {
 		#ifdef DEBUG
 		profiler_print_all();
 		#endif
+
+		process_chunks();
 	}
 }
 
