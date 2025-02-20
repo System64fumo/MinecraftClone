@@ -44,6 +44,7 @@ uint8_t block_textures[MAX_BLOCK_TYPES][6] = {
 	[18] = {53, 53, 53, 53, 53, 53},		// Leaves
 	[19] = {49, 49, 49, 49, 49, 49},		// Sponge
 	[20] = {50, 50, 50, 50, 50, 50},		// Glass
+	[44] = {6, 6, 6, 6, 7, 7},				// Slab
 };
 
 Chunk chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];

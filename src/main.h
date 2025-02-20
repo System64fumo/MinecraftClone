@@ -22,7 +22,7 @@
 
 // Structs
 typedef struct {
-	uint8_t x, y, z;
+	float x, y, z;
 	uint8_t face_id;
 	uint8_t texture_id;
 	uint8_t width, height;
@@ -114,6 +114,8 @@ bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);
 void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, uint8_t* y, uint8_t* z);
 uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block);
 uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block, uint8_t width);
+void generate_slab_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Vertex vertices[], uint16_t* vertex_count);
+void generate_cross_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Vertex vertices[], uint16_t* vertex_count);
 void generate_vertices(uint8_t face, uint8_t x, uint8_t y, uint8_t z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint16_t* vertex_count);
 void generate_indices(uint16_t base_vertex, uint32_t indices[], uint16_t* index_count);
 
