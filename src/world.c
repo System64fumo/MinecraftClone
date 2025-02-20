@@ -8,6 +8,15 @@
 
 int last_cx = -1;
 int last_cz = -1;
+Chunk temp_chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
+
+static const int SEA_LEVEL = 64;
+
+static const float continent_scale = 0.005f;
+static const float mountain_scale = 0.03f;
+static const float flatness_scale = 0.02f;
+static const float cave_scale = 0.1f;
+static const float cave_simplex_scale = 0.1f;
 
 uint32_t serialize(uint8_t a, uint8_t b, uint8_t c) {
 	return ((uint32_t)a << 16) | ((uint32_t)b << 8) | (uint32_t)c;
@@ -20,8 +29,6 @@ void deserialize(uint32_t serialized, uint8_t *a, uint8_t *b, uint8_t *c) {
 }
 
 void load_around_entity(Entity* entity) {
-	static Chunk temp_chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
-
 	int center_cx = floorf(entity->x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
 	int center_cz = floorf(entity->z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
 
@@ -230,25 +237,20 @@ void unload_chunk(Chunk* chunk) {
 }
 
 void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z) {
-	static float height_scale = CHUNK_SIZE * 4;
-	int SEA_LEVEL = 64;
-
-	// Adjusted Perlin noise scales
-	float continent_scale = 0.005f;
-	float mountain_scale = 0.03f;
-	float flatness_scale = 0.02f;
-	float cave_scale = 0.1f;
-	float cave_simplex_scale = 0.1f;
+	int chunk_base_y = chunk_y * CHUNK_SIZE;
+	int world_x_base = chunk_x * CHUNK_SIZE;
+	int world_z_base = chunk_z * CHUNK_SIZE;
 
 	for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
+		float world_x = world_x_base + x;
+
 		for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
-			float world_x = (chunk_x * CHUNK_SIZE + x);
-			float world_z = (chunk_z * CHUNK_SIZE + z);
+			float world_z = world_z_base + z;
 
 			// *** Continent Formation ***
 			float continent_noise = stb_perlin_noise3(world_x * continent_scale, 0.0f, world_z * continent_scale, 0, 0, 0);
 			continent_noise = (continent_noise + 1.0f) * 0.5f; // Normalize to 0-1 range
-			float continent_height = (continent_noise - 0.4f) * 96;
+			float continent_height = (continent_noise - 0.5f) * 128; // Adjusted for more distinct continents
 
 			// *** Flat Areas Modifier ***
 			float flatness = stb_perlin_noise3(world_x * flatness_scale, 0.0f, world_z * flatness_scale, 0, 0, 0);
@@ -264,7 +266,9 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 			float terrain_height = (continent_height + mountain_noise - flatness);
 			int height = (int)(terrain_height) + (4 * CHUNK_SIZE);
 
-			int chunk_base_y = chunk_y * CHUNK_SIZE;
+			// *** Ocean and Sand Generation ***
+			bool is_ocean = (height < SEA_LEVEL);
+			bool is_beach = (height >= SEA_LEVEL - 3 && height <= SEA_LEVEL + 2);
 
 			for (uint8_t y = 0; y < CHUNK_SIZE; y++) {
 				int absolute_y = chunk_base_y + y;
@@ -272,8 +276,14 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 				// *** Cave Generation (3D Perlin Noise) ***
 				float cave_noise = stb_perlin_noise3(world_x * cave_scale, absolute_y * cave_scale, world_z * cave_scale, 0, 0, 0);
 				float cave_simplex = stb_perlin_noise3(world_x * cave_simplex_scale, absolute_y * cave_simplex_scale, world_z * cave_simplex_scale, 0, 0, 0);
-				float cave_value = (cave_noise + cave_simplex) * 0.5f;  // Combine the noises for smooth cave formations
-				bool is_cave = (cave_value > 0.45f);
+				float cave_value = (cave_noise + cave_simplex) * 0.5f;
+
+				// *** Depth-based Cave Probability ***
+				float depth_factor = 1.0f - (float)(absolute_y) / (float)(height);
+				depth_factor = powf(depth_factor, 3.0f);
+				float cave_threshold = 0.55f - (0.3f * depth_factor);
+
+				bool is_cave = (cave_value > cave_threshold);
 
 				if (absolute_y == 0) {
 					chunk->blocks[x][y][z] = (Block){.id = 7};  // Bedrock
@@ -286,16 +296,26 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 						chunk->blocks[x][y][z] = (Block){.id = 0};  // Air
 					}
 				}
-				else if (is_cave) {
+				else if (is_cave && absolute_y < height - 5) {
 					chunk->blocks[x][y][z] = (Block){.id = 0};  // Air (Cave)
 				}
 				else {
 					// Surface and underground terrain
 					if (absolute_y == height) {
-						chunk->blocks[x][y][z] = (Block){.id = 2};  // Grass
+						if (is_beach) {
+							chunk->blocks[x][y][z] = (Block){.id = 12};  // Sand (Beach)
+						} else if (is_ocean) {
+							chunk->blocks[x][y][z] = (Block){.id = 12};  // Sand (Ocean floor)
+						} else {
+							chunk->blocks[x][y][z] = (Block){.id = 2};  // Grass
+						}
 					}
 					else if (absolute_y >= height - 3) {
-						chunk->blocks[x][y][z] = (Block){.id = 1};  // Dirt
+						if (is_beach || (is_ocean && absolute_y >= SEA_LEVEL - 3)) {
+							chunk->blocks[x][y][z] = (Block){.id = 12};  // Sand
+						} else {
+							chunk->blocks[x][y][z] = (Block){.id = 1};  // Dirt
+						}
 					}
 					else {
 						chunk->blocks[x][y][z] = (Block){.id = 3};  // Stone
