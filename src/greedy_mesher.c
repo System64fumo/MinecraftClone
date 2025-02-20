@@ -1,8 +1,22 @@
 #include "main.h"
 
 // TODO: Use block data
-bool is_translucent(int8_t id) {
+static inline bool is_translucent(int8_t id) {
 	return (id == 6 || id == 9 || id == 20 || id == 44);
+}
+
+static inline bool check_bounds(int8_t val, int8_t* ci, int8_t* coord) {
+	if (val < 0) {
+		*ci -= 1;
+		*coord = CHUNK_SIZE - 1;
+		return true;
+	} 
+	if (val >= CHUNK_SIZE) {
+		*ci += 1;
+		*coord = 0;
+		return true;
+	}
+	return false;
 }
 
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
@@ -20,29 +34,14 @@ bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
 	}
 
 	// Check if neighbor is out of chunk bounds
-	if (nx < 0) {
-		cix -= 1; nx = CHUNK_SIZE - 1;
-	} else if (nx >= CHUNK_SIZE) {
-		cix += 1; nx = 0;
-	}
+	bool bounds_changed = check_bounds(nx, &cix, &nx) ||
+						 check_bounds(ny, &ciy, &ny) ||
+						 check_bounds(nz, &ciz, &nz);
 
-	if (ny < 0) {
-		ciy -= 1; ny = CHUNK_SIZE - 1;
-	} else if (ny >= CHUNK_SIZE) {
-		ciy += 1; ny = 0;
-	}
-
-	if (nz < 0) {
-		ciz -= 1; nz = CHUNK_SIZE - 1;
-	} else if (nz >= CHUNK_SIZE) {
-		ciz += 1; nz = 0;
-	}
-
-	// Ensure chunk indices are within bounds
-	if (cix < 0 || cix >= RENDER_DISTANCE || 
+	if (bounds_changed && (cix < 0 || cix >= RENDER_DISTANCE || 
 		ciy < 0 || ciy >= WORLD_HEIGHT || 
-		ciz < 0 || ciz >= RENDER_DISTANCE) {
-		return true; // Assume out-of-bounds chunks are air
+		ciz < 0 || ciz >= RENDER_DISTANCE)) {
+		return true;
 	}
 
 	Chunk* neighborChunk = &chunks[cix][ciy][ciz];
