@@ -12,28 +12,54 @@ void pre_process_chunk(Chunk* chunk) {
 	bool mask[CHUNK_SIZE][CHUNK_SIZE];
 	uint8_t x = 0, y = 0, z = 0;
 
-	// Process each face direction
+	// First pass: Handle special blocks (cross, slab)
+	for (x = 0; x < CHUNK_SIZE; x++) {
+		for (y = 0; y < CHUNK_SIZE; y++) {
+			for (z = 0; z < CHUNK_SIZE; z++) {
+				Block* block = &chunk->blocks[x][y][z];
+				if (block->id == 0) continue;
+
+				if (block->id == 6) {
+					uint16_t base_vertex = vertex_count;
+					generate_cross_vertices(x, y, z, block, vertices, &vertex_count);
+					
+					// Generate indices for 4 quads (8 triangles)
+					for (int i = 0; i < 4; i++) {
+						generate_indices(base_vertex + (i * 4), indices, &index_count);
+					}
+				}
+				else if (block->id == 44) {
+					uint16_t base_vertex = vertex_count;
+					generate_slab_vertices(x, y, z, block, vertices, &vertex_count);
+					
+					// Generate indices for 6 faces
+					for (int i = 0; i < 6; i++) {
+						generate_indices(base_vertex + (i * 4), indices, &index_count);
+					}
+				}
+			}
+		}
+	}
+
+	// Second pass: Handle regular blocks using greedy meshing
 	for (uint8_t face = 0; face < 6; face++) {
-		// Sweep through each layer
 		for (uint8_t d = 0; d < CHUNK_SIZE; d++) {
 			memset(mask, 0, sizeof(mask));
 
-			// Try to find rectangles in this slice
 			for (uint8_t v = 0; v < CHUNK_SIZE; v++) {
 				for (uint8_t u = 0; u < CHUNK_SIZE; u++) {
 					if (mask[v][u]) continue;
 
-					// Map coordinates based on face direction
 					map_coordinates(face, u, v, d, &x, &y, &z);
 
 					Block* block = &chunk->blocks[x][y][z];
-					if (block->id == 0 || !is_face_visible(chunk, x, y, z, face))
+					if (block->id == 0 || !is_face_visible(chunk, x, y, z, face) ||
+						block->id == 6 || block->id == 44) // Non full blocks
 						continue;
 
 					uint8_t width = find_width(chunk, face, u, v, x, y, z, mask, block);
 					uint8_t height = find_height(chunk, face, u, v, x, y, z, mask, block, width);
 
-					// Mark all blocks in the rectangle as processed
 					for (uint8_t dy = 0; dy < height; dy++) {
 						for (uint8_t dx = 0; dx < width; dx++) {
 							mask[v + dy][u + dx] = true;
@@ -77,9 +103,9 @@ void pre_process_chunk(Chunk* chunk) {
 		glBufferData(GL_ARRAY_BUFFER, vertex_count * sizeof(Vertex), vertices, GL_STATIC_DRAW);
 
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chunk->EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(uint64_t), indices, GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, index_count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
 
-		glVertexAttribPointer(0, 3, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
 		glEnableVertexAttribArray(0);
 
 		glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
