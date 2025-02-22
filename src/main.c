@@ -20,7 +20,6 @@ double lastFrame = 0.0f;
 double deltaTime = 0.0f;
 
 float model[16], view[16], projection[16];
-unsigned int shaderProgram, postProcessingShader;
 
 uint8_t block_textures[MAX_BLOCK_TYPES][6] = {
 	[0] = {0, 0, 0, 0, 0, 0},				// Air
@@ -110,10 +109,6 @@ int main() {
 	profiler_create("Rendering");
 	profiler_create("World Gen");
 	#endif
-
-	// Shaders
-	vertexShaderSource = load_file("../shaders/vertex.vert");
-	fragmentShaderSource = load_file("../shaders/fragment.frag");
 
 	// Textures
 	unsigned int textureAtlas = loadTexture("./atlas.png");
