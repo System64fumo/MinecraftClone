@@ -86,12 +86,24 @@ int main() {
 	}
 	glfwMakeContextCurrent(window);
 
+	// Callbacks
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+	glfwSetCursorPosCallback(window, cursor_position_callback);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetKeyCallback(window, key_callback);
+
 	// Initialize GLEW
 	glewExperimental = GL_TRUE;
 	glewInit();
 
 	// Debugging
 	#ifdef DEBUG
+	printf("OpenGL Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
+	printf("OpenGL Renderer: %s\n", (const char*)glGetString(GL_RENDERER));
+	printf("OpenGL Version: %s\n", (const char*)glGetString(GL_VERSION));
+
 	profiler_init();
 	profiler_create("Shaders");
 	profiler_create("Baking");
@@ -103,15 +115,17 @@ int main() {
 	vertexShaderSource = load_file("../shaders/vertex.vert");
 	fragmentShaderSource = load_file("../shaders/fragment.frag");
 
-	load_shaders();
-
 	// Textures
 	unsigned int textureAtlas = loadTexture("./atlas.png");
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textureAtlas);
 	glUniform1i(glGetUniformLocation(shaderProgram, "textureAtlas"), 0);
 
-	// Enable depth testing
+	// Initialization
+	load_shaders();
+	initFramebuffer();
+	initQuad();
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -122,28 +136,16 @@ int main() {
 
 	// Initialize player
 	Entity player = {
-		.x = 0,
-		.y = 43.0f,
-		.z = 0,
+		.x = 0.0f,
+		.y = 74.0f,
+		.z = 0.0f,
 		.yaw = 90.0f,
 		.pitch = 0.0f,
 		.speed = 20
 	};
 	global_entities[0] = player;
 
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetMouseButtonCallback(window, mouse_button_callback);
-	glfwSetScrollCallback(window, scroll_callback);
-	glfwSetCursorPosCallback(window, cursor_position_callback);
-
-	// Initialize input capture
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetCursorPos(window, screen_center_x, screen_center_y);
-	glfwSetKeyCallback(window, key_callback);
-
 	load_around_entity(&player);
-	initFramebuffer();
-	initQuad();
 
 	// Main render loop
 	while (!glfwWindowShouldClose(window)) {
