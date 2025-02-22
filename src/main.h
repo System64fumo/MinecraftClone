@@ -73,8 +73,6 @@ extern float frametime;
 extern float model[16], view[16], projection[16];
 
 extern unsigned int shaderProgram, postProcessingShader;
-extern const char* vertexShaderSource;
-extern const char* fragmentShaderSource;
 
 extern uint8_t block_textures[MAX_BLOCK_TYPES][6];
 extern Chunk chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
