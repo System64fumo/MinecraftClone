@@ -85,8 +85,6 @@ void draw_block_highlight(float x, float y, float z) {
 }
 
 unsigned int ui_vao, ui_vbo;
-unsigned int ui_shader;
-unsigned int ui_texture;
 
 void init_ui() {
 	float vertices[] = {
@@ -107,25 +105,22 @@ void init_ui() {
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-	ui_shader = load_shader("../shaders/ui.vert", "../shaders/ui.frag");
-	ui_texture = loadTexture("./gui.png");
 }
 
 void render_ui() {
 	glDisable(GL_DEPTH_TEST);
 	glUseProgram(ui_shader);
-	
+
 	// Set orthographic projection
 	float ortho[16];
 	matrix4_identity(ortho);
 	matrix4_translate(ortho, 0.0f, 0.0f, 0.0f);
 	matrix4_scale(ortho, 4.0f / screen_width, 4.0f / screen_height, 1.0f);
-	
+
 	glUniformMatrix4fv(glGetUniformLocation(ui_shader, "projection"), 1, GL_FALSE, ortho);
 
 	glBindVertexArray(ui_vao);
-	glBindTexture(GL_TEXTURE_2D, ui_texture);
+	glBindTexture(GL_TEXTURE_2D, ui_textures);
 	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 

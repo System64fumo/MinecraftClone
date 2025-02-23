@@ -72,9 +72,10 @@ extern float framerate;
 extern float frametime;
 extern float model[16], view[16], projection[16];
 
-extern unsigned int shaderProgram, postProcessingShader;
+extern unsigned int shaderProgram, postProcessingShader, ui_shader;
+extern unsigned int block_textures, ui_textures;
 
-extern uint8_t block_textures[MAX_BLOCK_TYPES][6];
+extern uint8_t block_data[MAX_BLOCK_TYPES][6];
 extern Chunk chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
 
