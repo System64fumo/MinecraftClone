@@ -46,6 +46,12 @@ void matrix4_perspective(float* mat, float fovy, float aspect, float near, float
 	mat[15] = 0.0f;
 }
 
+void matrix4_scale(float* mat, float x, float y, float z) {
+	mat[0] *= x;
+	mat[5] *= y;
+	mat[10] *= z;
+}
+
 void do_time_stuff() {
 	time_current = glfwGetTime();
 	time_difference = time_current - time_previous;

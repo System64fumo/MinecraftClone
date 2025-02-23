@@ -120,6 +120,7 @@ int main() {
 	load_shaders();
 	initFramebuffer();
 	initQuad();
+	init_ui();
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -169,6 +170,7 @@ int main() {
 
 void cleanup() {
 	cleanupFramebuffer();
+	cleanup_ui();
 	for(uint8_t cx = 0; cx < RENDER_DISTANCE; cx++) {
 		for(uint8_t cy = 0; cy < WORLD_HEIGHT; cy++) {
 			for(uint8_t cz = 0; cz < RENDER_DISTANCE; cz++) {
