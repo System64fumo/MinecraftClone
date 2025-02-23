@@ -181,12 +181,12 @@ void generate_slab_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Verte
 	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, 3, block_data[block->id][2+3], 1, 1};
 }
 
-void generate_vertices(uint8_t face, uint8_t x, uint8_t y, uint8_t z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint32_t* vertex_count) {
+void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint32_t* vertex_count) {
 	uint8_t width_blocks = (face == 1 || face == 3) ? 1 : width;
 	uint8_t height_blocks = (face >= 4) ? 1 : height;
 	uint8_t depth_blocks = (face == 0 || face == 2) ? 1 : (face >= 4 ? height : width);
 
-	uint8_t x1 = x, x2 = x, y1 = y, y2 = y + height, z1 = z, z2 = z;
+	float x1 = x, x2 = x, y1 = y, y2 = y + height, z1 = z, z2 = z;
 
 	if (face == 3 || face == 1) {
 		z2 += width;

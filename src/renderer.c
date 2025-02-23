@@ -9,6 +9,10 @@ void pre_process_chunk(Chunk* chunk) {
 	uint32_t vertex_count = 0;
 	uint32_t index_count = 0;
 
+    float world_x = chunk->x * CHUNK_SIZE;
+    float world_y = chunk->y * CHUNK_SIZE;
+    float world_z = chunk->z * CHUNK_SIZE;
+
 	bool mask[CHUNK_SIZE][CHUNK_SIZE];
 
 	// First pass: Handle special blocks (cross, slab)
@@ -20,14 +24,14 @@ void pre_process_chunk(Chunk* chunk) {
 
 				if (block_data[block->id][0] == 2) {
 					uint32_t base_vertex = vertex_count;
-					generate_cross_vertices(x, y, z, block, vertices, &vertex_count);
+					generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
 					for (uint8_t i = 0; i < 4; i++) {
 						generate_indices(base_vertex + (i * 4), indices, &index_count);
 					}
 				}
 				else if (block_data[block->id][0] == 1) {
 					uint32_t base_vertex = vertex_count;
-					generate_slab_vertices(x, y, z, block, vertices, &vertex_count);
+					generate_slab_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
 					for (uint8_t i = 0; i < 6; i++) {
 						generate_indices(base_vertex + (i * 4), indices, &index_count);
 					}
@@ -49,7 +53,7 @@ void pre_process_chunk(Chunk* chunk) {
 					map_coordinates(face, u, v, d, &x, &y, &z);
 
 					Block* block = &chunk->blocks[x][y][z];
-					if (block->id == 0 || !is_face_visible(chunk, x, y, z, face)) continue;
+					if (block->id == 0 || block_data[block->id][0] != 0 || !is_face_visible(chunk, x, y, z, face)) continue;
 
 					uint8_t width = find_width(chunk, face, u, v, x, y, z, mask, block);
 					uint8_t height = find_height(chunk, face, u, v, x, y, z, mask, block, width);
@@ -61,7 +65,7 @@ void pre_process_chunk(Chunk* chunk) {
 					}
 
 					uint16_t base_vertex = vertex_count;
-					generate_vertices(face, x, y, z, width, height, block, vertices, &vertex_count);
+					generate_vertices(face, x + world_x, y + world_y, z + world_z, width, height, block, vertices, &vertex_count);
 					generate_indices(base_vertex, indices, &index_count);
 				}
 			}
@@ -144,11 +148,6 @@ void render_chunks() {
 					continue;
 
 				matrix4_identity(model);
-				matrix4_translate(model, 
-					chunk->x * CHUNK_SIZE, 
-					chunk->y * CHUNK_SIZE, 
-					chunk->z * CHUNK_SIZE
-				);
 				glBindVertexArray(chunk->VAO);
 				glUniformMatrix4fv(modelUniformLocation, 1, GL_FALSE, model);
 				glDrawElements(GL_TRIANGLES, chunk->index_count, GL_UNSIGNED_INT, 0);
