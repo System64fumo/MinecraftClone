@@ -6,8 +6,8 @@ void pre_process_chunk(Chunk* chunk) {
 	Vertex vertices[MAX_VERTICES];
 	uint32_t indices[MAX_VERTICES];
 
-	uint16_t vertex_count = 0;
-	uint16_t index_count = 0;
+	uint32_t vertex_count = 0;
+	uint32_t index_count = 0;
 
 	bool mask[CHUNK_SIZE][CHUNK_SIZE];
 
@@ -16,16 +16,16 @@ void pre_process_chunk(Chunk* chunk) {
 		for (uint8_t y = 0; y < CHUNK_SIZE; y++) {
 			for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
 				Block* block = &chunk->blocks[x][y][z];
-				if (block->id == 0) continue;
+				if (block_data[block->id][0] == 0) continue;
 
-				if (block->id == 6) {
-					uint16_t base_vertex = vertex_count;
+				if (block_data[block->id][0] == 2) {
+					uint32_t base_vertex = vertex_count;
 					generate_cross_vertices(x, y, z, block, vertices, &vertex_count);
 					for (uint8_t i = 0; i < 4; i++) {
 						generate_indices(base_vertex + (i * 4), indices, &index_count);
 					}
 				}
-				else if (block->id == 44) {
+				else if (block_data[block->id][0] == 1) {
 					uint32_t base_vertex = vertex_count;
 					generate_slab_vertices(x, y, z, block, vertices, &vertex_count);
 					for (uint8_t i = 0; i < 6; i++) {
