@@ -76,7 +76,7 @@ extern unsigned int shaderProgram, postProcessingShader, ui_shader;
 extern unsigned int block_textures, ui_textures;
 
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
-extern Chunk chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
+extern Chunk*** chunks;
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
 
 // Function prototypes
@@ -117,8 +117,8 @@ bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);
 void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, uint8_t* y, uint8_t* z);
 uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block);
 uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block, uint8_t width);
-void generate_slab_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Vertex vertices[], uint32_t* vertex_count);
-void generate_cross_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Vertex vertices[], uint32_t* vertex_count);
+void generate_slab_vertices(float x, float y, float z, Block* block, Vertex vertices[], uint32_t* vertex_count);
+void generate_cross_vertices(float x, float y, float z, Block* block, Vertex vertices[], uint32_t* vertex_count);
 void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint32_t* vertex_count);
 void generate_indices(uint32_t base_vertex, uint32_t indices[], uint32_t* index_count);
 
@@ -132,3 +132,6 @@ void cleanupFramebuffer();
 void init_ui();
 void render_ui();
 void cleanup_ui();
+
+Chunk*** allocate_chunks(int render_distance, int world_height);
+void free_chunks(Chunk ***chunks, int render_distance, int world_height);

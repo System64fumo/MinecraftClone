@@ -8,7 +8,6 @@
 
 int last_cx = -1;
 int last_cz = -1;
-Chunk temp_chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
 
 static const int SEA_LEVEL = 64;
 
@@ -41,7 +40,13 @@ void load_around_entity(Entity* entity) {
 	profiler_start(PROFILER_ID_WORLD_GEN);
 	#endif
 
-	memcpy(temp_chunks, chunks, sizeof(chunks));
+	// Allocate and copy temp_chunks manually
+	Chunk ***temp_chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
+	for (int x = 0; x < RENDER_DISTANCE; x++) {
+		for (int y = 0; y < WORLD_HEIGHT; y++) {
+			memcpy(temp_chunks[x][y], chunks[x][y], RENDER_DISTANCE * sizeof(Chunk));
+		}
+	}
 
 	// Clear old chunks and mark boundaries for update
 	if (dx > 0) { // Moving East
@@ -102,7 +107,12 @@ void load_around_entity(Entity* entity) {
 		}
 	}
 
-	memset(chunks, 0, sizeof(chunks));
+	// Clear chunks array
+	for (int x = 0; x < RENDER_DISTANCE; x++) {
+		for (int y = 0; y < WORLD_HEIGHT; y++) {
+			memset(chunks[x][y], 0, RENDER_DISTANCE * sizeof(Chunk));
+		}
+	}
 
 	// Move surviving chunks
 	for (int x = 0; x < RENDER_DISTANCE; x++) {
@@ -110,7 +120,7 @@ void load_around_entity(Entity* entity) {
 			for (int z = 0; z < RENDER_DISTANCE; z++) {
 				int old_x = x + dx;
 				int old_z = z + dz;
-					
+
 				if (old_x >= 0 && old_x < RENDER_DISTANCE && 
 					old_z >= 0 && old_z < RENDER_DISTANCE &&
 					temp_chunks[old_x][y][old_z].VBO) {
@@ -136,6 +146,9 @@ void load_around_entity(Entity* entity) {
 			}
 		}
 	}
+
+	// Free temp_chunks
+	free_chunks(temp_chunks, RENDER_DISTANCE, WORLD_HEIGHT);
 
 	last_cx = center_cx;
 	last_cz = center_cz;
