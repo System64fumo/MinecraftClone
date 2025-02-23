@@ -130,28 +130,28 @@ uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x,
 
 void generate_cross_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Vertex vertices[], uint16_t* vertex_count) {
 	// First diagonal plane
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, 0, block_textures[block->id][0], 1, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, 0, block_textures[block->id][0], 0, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, 0, block_textures[block->id][0], 0, 1};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, 0, block_textures[block->id][0], 1, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, 0, block_data[block->id][0], 1, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, 0, block_data[block->id][0], 0, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, 0, block_data[block->id][0], 0, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, 0, block_data[block->id][0], 1, 1};
 
 	// Back face of first plane
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, 2, block_textures[block->id][2], 1, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, 2, block_textures[block->id][2], 0, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, 2, block_textures[block->id][2], 0, 1};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, 2, block_textures[block->id][2], 1, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, 2, block_data[block->id][2], 1, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, 2, block_data[block->id][2], 0, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, 2, block_data[block->id][2], 0, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, 2, block_data[block->id][2], 1, 1};
 
 	// Second diagonal plane
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, 1, block_textures[block->id][1], 1, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, 1, block_textures[block->id][1], 0, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, 1, block_textures[block->id][1], 0, 1};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, 1, block_textures[block->id][1], 1, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, 1, block_data[block->id][1], 1, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, 1, block_data[block->id][1], 0, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, 1, block_data[block->id][1], 0, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, 1, block_data[block->id][1], 1, 1};
 
 	// Back face of second plane
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, 3, block_textures[block->id][3], 1, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, 3, block_textures[block->id][3], 0, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, 3, block_textures[block->id][3], 0, 1};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, 3, block_textures[block->id][3], 1, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, 3, block_data[block->id][3], 1, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, 3, block_data[block->id][3], 0, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, 3, block_data[block->id][3], 0, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, 3, block_data[block->id][3], 1, 1};
 }
 
 void generate_slab_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Vertex vertices[], uint16_t* vertex_count) {
@@ -159,40 +159,40 @@ void generate_slab_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Verte
 	
 	// Generate vertices for a half-height block
 	// Top face
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, 5, block_textures[block->id][5], 1, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, 5, block_textures[block->id][5], 0, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, 5, block_textures[block->id][5], 0, 1};
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, 5, block_textures[block->id][5], 1, 1};
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, 5, block_data[block->id][5], 1, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, 5, block_data[block->id][5], 0, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, 5, block_data[block->id][5], 0, 1};
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, 5, block_data[block->id][5], 1, 1};
 
 	// Bottom face
-	vertices[(*vertex_count)++] = (Vertex){x, y, z, 4, block_textures[block->id][4], 1, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, 4, block_textures[block->id][4], 0, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, 4, block_textures[block->id][4], 0, 1};
-	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, 4, block_textures[block->id][4], 1, 1};
+	vertices[(*vertex_count)++] = (Vertex){x, y, z, 4, block_data[block->id][4], 1, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, 4, block_data[block->id][4], 0, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, 4, block_data[block->id][4], 0, 1};
+	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, 4, block_data[block->id][4], 1, 1};
 
 	// Front face
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, 0, block_textures[block->id][0], 1, 0};
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, 0, block_textures[block->id][0], 0, 0};
-	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, 0, block_textures[block->id][0], 0, 1};
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, 0, block_textures[block->id][0], 1, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, 0, block_data[block->id][0], 1, 0};
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, 0, block_data[block->id][0], 0, 0};
+	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, 0, block_data[block->id][0], 0, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, 0, block_data[block->id][0], 1, 1};
 
 	// Back face
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, 2, block_textures[block->id][2], 1, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, 2, block_textures[block->id][2], 0, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, 2, block_textures[block->id][2], 0, 1};
-	vertices[(*vertex_count)++] = (Vertex){x, y, z, 2, block_textures[block->id][2], 1, 1};
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, 2, block_data[block->id][2], 1, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, 2, block_data[block->id][2], 0, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, 2, block_data[block->id][2], 0, 1};
+	vertices[(*vertex_count)++] = (Vertex){x, y, z, 2, block_data[block->id][2], 1, 1};
 
 	// Left face
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, 1, block_textures[block->id][1], 1, 0};
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, 1, block_textures[block->id][1], 0, 0};
-	vertices[(*vertex_count)++] = (Vertex){x, y, z, 1, block_textures[block->id][1], 0, 1};
-	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, 1, block_textures[block->id][1], 1, 1};
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, 1, block_data[block->id][1], 1, 0};
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, 1, block_data[block->id][1], 0, 0};
+	vertices[(*vertex_count)++] = (Vertex){x, y, z, 1, block_data[block->id][1], 0, 1};
+	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, 1, block_data[block->id][1], 1, 1};
 
 	// Right face
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, 3, block_textures[block->id][3], 1, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, 3, block_textures[block->id][3], 0, 0};
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, 3, block_textures[block->id][3], 0, 1};
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, 3, block_textures[block->id][3], 1, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, 3, block_data[block->id][3], 1, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, 3, block_data[block->id][3], 0, 0};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, 3, block_data[block->id][3], 0, 1};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, 3, block_data[block->id][3], 1, 1};
 }
 
 void generate_vertices(uint8_t face, uint8_t x, uint8_t y, uint8_t z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint16_t* vertex_count) {
@@ -213,40 +213,40 @@ void generate_vertices(uint8_t face, uint8_t x, uint8_t y, uint8_t z, uint8_t wi
 
 	switch (face) {
 		case 0: // Front (Z+)
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_textures[block->id][face], width_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_textures[block->id][face], 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_textures[block->id][face], 0.0f, height_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_textures[block->id][face], width_blocks, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_data[block->id][face], width_blocks, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_data[block->id][face], 0.0f, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_data[block->id][face], 0.0f, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_data[block->id][face], width_blocks, height_blocks};
 			break;
 		case 1: // Left (X-)
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_textures[block->id][face], depth_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_textures[block->id][face], 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_textures[block->id][face], 0.0f, height_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_textures[block->id][face], depth_blocks, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_data[block->id][face], depth_blocks, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_data[block->id][face], 0.0f, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_data[block->id][face], 0.0f, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_data[block->id][face], depth_blocks, height_blocks};
 			break;
 		case 2: // Back (Z-)
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_textures[block->id][face], width_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_textures[block->id][face], 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_textures[block->id][face], 0.0f, height_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_textures[block->id][face], width_blocks, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_data[block->id][face], width_blocks, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_data[block->id][face], 0.0f, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_data[block->id][face], 0.0f, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_data[block->id][face], width_blocks, height_blocks};
 			break;
 		case 3: // Right (X+)
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_textures[block->id][face], depth_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_textures[block->id][face], 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_textures[block->id][face], 0.0f, height_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_textures[block->id][face], depth_blocks, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_data[block->id][face], depth_blocks, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_data[block->id][face], 0.0f, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_data[block->id][face], 0.0f, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_data[block->id][face], depth_blocks, height_blocks};
 			break;
 		case 4: // Bottom (Y-)
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_textures[block->id][face], width_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_textures[block->id][face], 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_textures[block->id][face], 0.0f, depth_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_textures[block->id][face], width_blocks, depth_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_data[block->id][face], width_blocks, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_data[block->id][face], 0.0f, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_data[block->id][face], 0.0f, depth_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_data[block->id][face], width_blocks, depth_blocks};
 			break;
 		case 5: // Top (Y+)
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_textures[block->id][face], width_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_textures[block->id][face], 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_textures[block->id][face], 0.0f, depth_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_textures[block->id][face], width_blocks, depth_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_data[block->id][face], width_blocks, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_data[block->id][face], 0.0f, 0.0f};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_data[block->id][face], 0.0f, depth_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_data[block->id][face], width_blocks, depth_blocks};
 			break;
 	}
 }

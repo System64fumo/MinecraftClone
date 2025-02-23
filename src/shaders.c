@@ -1,6 +1,6 @@
 #include "main.h"
 
-unsigned int shaderProgram, postProcessingShader;
+unsigned int shaderProgram, postProcessingShader, ui_shader;
 
 unsigned int compile_shader(const char* shader_source, int type) {
 	int success;
@@ -38,6 +38,7 @@ void load_shaders() {
 	#endif
 	shaderProgram = load_shader("../shaders/vertex.vert", "../shaders/fragment.frag");
 	postProcessingShader = load_shader("../shaders/postprocess.vert", "../shaders/postprocess.frag");
+	ui_shader = load_shader("../shaders/ui.vert", "../shaders/ui.frag");
 	#ifdef DEBUG
 	profiler_stop(PROFILER_ID_SHADER);
 	#endif

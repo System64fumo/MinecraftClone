@@ -20,8 +20,9 @@ double lastFrame = 0.0f;
 double deltaTime = 0.0f;
 
 float model[16], view[16], projection[16];
+unsigned int block_textures, ui_textures;
 
-uint8_t block_textures[MAX_BLOCK_TYPES][6] = {
+uint8_t block_data[MAX_BLOCK_TYPES][6] = {
 	[0] = {0, 0, 0, 0, 0, 0},				// Air
 	[1] = {3, 3, 3, 3, 3, 3},				// Dirt
 	[2] = {4, 4, 4, 4, 3, 1},				// Grass
@@ -48,10 +49,6 @@ uint8_t block_textures[MAX_BLOCK_TYPES][6] = {
 
 Chunk chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
 Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
-
-// Shaders
-const char* vertexShaderSource;
-const char* fragmentShaderSource;
 
 int main() {
 	snprintf(game_dir, sizeof(game_dir), "%s/.ccraft", getenv("HOME"));
@@ -111,10 +108,8 @@ int main() {
 	#endif
 
 	// Textures
-	unsigned int textureAtlas = loadTexture("./atlas.png");
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textureAtlas);
-	glUniform1i(glGetUniformLocation(shaderProgram, "textureAtlas"), 0);
+	block_textures = loadTexture("./atlas.png");
+	ui_textures = loadTexture("./gui.png");
 
 	// Initialization
 	load_shaders();

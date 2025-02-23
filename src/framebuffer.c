@@ -96,11 +96,12 @@ void renderSceneToFramebuffer() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, 1);
-
 	// Use shader program
 	glUseProgram(shaderProgram);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, block_textures);
+	glUniform1i(glGetUniformLocation(shaderProgram, "textureAtlas"), 0);
+
 
 	setupMatrices(view, projection);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, view);
