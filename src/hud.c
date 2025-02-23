@@ -83,3 +83,54 @@ void draw_block_highlight(float x, float y, float z) {
 	glUseProgram(0);
 	glEnable(GL_BLEND);
 }
+
+unsigned int ui_vao, ui_vbo;
+unsigned int ui_shader;
+unsigned int ui_texture;
+
+void init_ui() {
+	float vertices[] = {
+		-8.0f,  8.0f,   0.9375f, 0.0f,
+		-8.0f, -8.0f,   0.9375f, 0.0625f,
+		8.0f, -8.0f,   1.0f,    0.0625f,
+		8.0f,  8.0f,   1.0f,    0.0f
+	};
+
+	glGenVertexArrays(1, &ui_vao);
+	glGenBuffers(1, &ui_vbo);
+	
+	glBindVertexArray(ui_vao);
+	glBindBuffer(GL_ARRAY_BUFFER, ui_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+	ui_shader = load_shader("../shaders/ui.vert", "../shaders/ui.frag");
+	ui_texture = loadTexture("./gui.png");
+}
+
+void render_ui() {
+	glDisable(GL_DEPTH_TEST);
+	glUseProgram(ui_shader);
+	
+	// Set orthographic projection
+	float ortho[16];
+	matrix4_identity(ortho);
+	matrix4_translate(ortho, 0.0f, 0.0f, 0.0f);
+	matrix4_scale(ortho, 4.0f / screen_width, 4.0f / screen_height, 1.0f);
+	
+	glUniformMatrix4fv(glGetUniformLocation(ui_shader, "projection"), 1, GL_FALSE, ortho);
+
+	glBindVertexArray(ui_vao);
+	glBindTexture(GL_TEXTURE_2D, ui_texture);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
+void cleanup_ui() {
+	glDeleteVertexArrays(1, &ui_vao);
+	glDeleteBuffers(1, &ui_vbo);
+	glDeleteProgram(ui_shader);
+}

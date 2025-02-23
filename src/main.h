@@ -95,12 +95,14 @@ void matrix4_identity(float* mat);
 void matrix4_translate(float* mat, float x, float y, float z);
 void matrix4_rotate(float* mat, float angle, float x, float y, float z);
 void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far);
+void matrix4_scale(float* mat, float x, float y, float z);
 void do_time_stuff();
 const char* load_file(const char* filename);
 unsigned int loadTexture(const char* path);
 int write_binary_file(const char *filename, const void *data, size_t size);
 void *read_binary_file(const char *filename, size_t *size);
 
+unsigned int load_shader(const char* vertex_path, const char* fragment_path);
 void load_shaders();
 
 void load_around_entity(Entity* entity);
@@ -125,3 +127,7 @@ void initQuad();
 void renderSceneToFramebuffer();
 void renderFramebufferToScreen();
 void cleanupFramebuffer();
+
+void init_ui();
+void render_ui();
+void cleanup_ui();

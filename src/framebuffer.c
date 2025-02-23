@@ -125,6 +125,7 @@ void renderFramebufferToScreen() {
 	glBindVertexArray(quadVAO);
 	glBindTexture(GL_TEXTURE_2D, colorTexture);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
+	render_ui();
 }
 
 // Cleanup framebuffer resources
