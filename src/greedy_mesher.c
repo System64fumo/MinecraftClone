@@ -114,7 +114,7 @@ uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x,
 	return height;
 }
 
-void generate_cross_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Vertex vertices[], uint32_t* vertex_count) {
+void generate_cross_vertices(float x, float y, float z, Block* block, Vertex vertices[], uint32_t* vertex_count) {
 	// First diagonal plane
 	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, 0, block_data[block->id][2+0], 1, 0};
 	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, 0, block_data[block->id][2+0], 0, 0};
@@ -140,7 +140,7 @@ void generate_cross_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Vert
 	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, 3, block_data[block->id][2+3], 1, 1};
 }
 
-void generate_slab_vertices(uint8_t x, uint8_t y, uint8_t z, Block* block, Vertex vertices[], uint32_t* vertex_count) {
+void generate_slab_vertices(float x, float y, float z, Block* block, Vertex vertices[], uint32_t* vertex_count) {
 	float height = 0.5f;
 	
 	// Generate vertices for a half-height block

@@ -49,7 +49,7 @@ uint8_t block_data[MAX_BLOCK_TYPES][8] = {
 	[44] = {1, 1, 6,   6,   6,   6,   7,   7},		// Slab
 };
 
-Chunk chunks[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
+Chunk*** chunks = NULL;
 Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
 
 int main() {
@@ -118,6 +118,7 @@ int main() {
 	initFramebuffer();
 	initQuad();
 	init_ui();
+	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -178,5 +179,7 @@ void cleanup() {
 			}
 		}
 	}
+
+	free_chunks(chunks, RENDER_DISTANCE, WORLD_HEIGHT);
 	glDeleteProgram(shaderProgram);
 }
