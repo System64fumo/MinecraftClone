@@ -19,6 +19,7 @@
 #define RENDER_DISTANCE 16
 #define MAX_BLOCK_TYPES 256
 #define MAX_VERTICES 98304 // CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4;
+#define UI_SCALING 2.5f
 
 // Structs
 typedef struct {
