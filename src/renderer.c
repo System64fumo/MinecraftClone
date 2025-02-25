@@ -122,6 +122,9 @@ void pre_process_chunk(Chunk* chunk) {
 }
 
 void combine_meshes() {
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_MERGE);
+	#endif
 	uint32_t total_vertices = 0;
 	uint32_t total_indices = 0;
 
@@ -218,18 +221,15 @@ void combine_meshes() {
 
 	free(combined_mesh.indices);
 	combined_mesh.indices = NULL;
+
+	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_MERGE);
+	#endif
 }
 
 void process_chunks() {
 	static bool baking = false;
 	bool chunks_updated = false;
-
-	#ifdef DEBUG
-	if (!baking) {
-		profiler_start(PROFILER_ID_BAKE);
-		baking = true;
-	}
-	#endif
 
 	// Process all chunks that need updating
 	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
@@ -239,6 +239,12 @@ void process_chunks() {
 				if (chunk->needs_update) {
 					pre_process_chunk(chunk);
 					chunks_updated = true;
+					#ifdef DEBUG
+					if (!baking) {
+						profiler_start(PROFILER_ID_BAKE);
+						baking = true;
+					}
+					#endif
 				}
 			}
 		}

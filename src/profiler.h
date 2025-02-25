@@ -5,8 +5,9 @@
 
 #define PROFILER_ID_SHADER 0
 #define PROFILER_ID_BAKE 1
-#define PROFILER_ID_RENDER 2
-#define PROFILER_ID_WORLD_GEN 3
+#define PROFILER_ID_MERGE 2
+#define PROFILER_ID_RENDER 3
+#define PROFILER_ID_WORLD_GEN 4
 
 typedef struct {
 	char name[MAX_NAME_LENGTH];
