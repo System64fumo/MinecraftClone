@@ -119,6 +119,7 @@ int main() {
 	initFramebuffer();
 	initQuad();
 	init_ui();
+	init_gl_buffers();
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 
 	glEnable(GL_DEPTH_TEST);
