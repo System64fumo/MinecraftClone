@@ -37,14 +37,12 @@ typedef struct {
 
 typedef struct {
 	uint8_t id;
-	uint8_t metadata;
 } Block;
 
 typedef struct {
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
 	int32_t x, y, z;
 	uint8_t ci_x, ci_y, ci_z;
-	uint32_t VAO, VBO, EBO;
 	bool needs_update;
 	uint32_t vertex_count;
 	uint32_t index_count;
