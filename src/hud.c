@@ -163,6 +163,18 @@ void render_ui() {
 		.tex_height = 22
 	};
 	render_ui_element(&hotbar, 256, 256);
+
+	ui_element_t selected_slot = {
+		.x = screen_width / UI_SCALING - 182 + 22 + (40 * (hotbar_slot % 9)),
+		.y = 22,
+		.width = 24,
+		.height = 24,
+		.tex_x = 0,
+		.tex_y = 22,
+		.tex_width = 24,
+		.tex_height = 24
+	};
+	render_ui_element(&selected_slot, 256, 256);
 }
 
 void cleanup_ui() {
