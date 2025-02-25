@@ -48,6 +48,8 @@ typedef struct {
 	bool needs_update;
 	uint32_t vertex_count;
 	uint32_t index_count;
+	Vertex* vertices;
+	uint32_t* indices;
 } Chunk;
 
 // Externs
