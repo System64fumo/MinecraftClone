@@ -105,6 +105,7 @@ int main() {
 	profiler_init();
 	profiler_create("Shaders");
 	profiler_create("Baking");
+	profiler_create("Merge");
 	profiler_create("Rendering");
 	profiler_create("World Gen");
 	#endif
