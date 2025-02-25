@@ -53,7 +53,7 @@ void load_around_entity(Entity* entity) {
 		for (int x = 0; x < dx && x < RENDER_DISTANCE; x++) {
 			for (int y = 0; y < WORLD_HEIGHT; y++) {
 				for (int z = 0; z < RENDER_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].VBO) {
+					if (temp_chunks[x][y][z].vertices != NULL) {
 						if (x == dx - 1 && x + 1 < RENDER_DISTANCE) {
 							temp_chunks[x + 1][y][z].needs_update = true;
 						}
@@ -67,7 +67,7 @@ void load_around_entity(Entity* entity) {
 		for (int x = RENDER_DISTANCE + dx; x < RENDER_DISTANCE; x++) {
 			for (int y = 0; y < WORLD_HEIGHT; y++) {
 				for (int z = 0; z < RENDER_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].VBO) {
+					if (temp_chunks[x][y][z].vertices != NULL) {
 						if (x == RENDER_DISTANCE + dx && x - 1 >= 0) {
 							temp_chunks[x - 1][y][z].needs_update = true;
 						}
@@ -82,7 +82,7 @@ void load_around_entity(Entity* entity) {
 		for (int x = 0; x < RENDER_DISTANCE; x++) {
 			for (int y = 0; y < WORLD_HEIGHT; y++) {
 				for (int z = 0; z < dz && z < RENDER_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].VBO) {
+					if (temp_chunks[x][y][z].vertices != NULL) {
 						if (z == dz - 1 && z + 1 < RENDER_DISTANCE) {
 							temp_chunks[x][y][z + 1].needs_update = true;
 						}
@@ -96,7 +96,7 @@ void load_around_entity(Entity* entity) {
 		for (int x = 0; x < RENDER_DISTANCE; x++) {
 			for (int y = 0; y < WORLD_HEIGHT; y++) {
 				for (int z = RENDER_DISTANCE + dz; z < RENDER_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].VBO) {
+					if (temp_chunks[x][y][z].vertices != NULL) {
 						if (z == RENDER_DISTANCE + dz && z - 1 >= 0) {
 							temp_chunks[x][y][z - 1].needs_update = true;
 						}
@@ -123,7 +123,7 @@ void load_around_entity(Entity* entity) {
 
 				if (old_x >= 0 && old_x < RENDER_DISTANCE && 
 					old_z >= 0 && old_z < RENDER_DISTANCE &&
-					temp_chunks[old_x][y][old_z].VBO) {
+					temp_chunks[old_x][y][old_z].vertices != NULL) {
 					chunks[x][y][z] = temp_chunks[old_x][y][old_z];
 					chunks[x][y][z].ci_x = x;
 					chunks[x][y][z].ci_z = z;
@@ -136,12 +136,12 @@ void load_around_entity(Entity* entity) {
 	for (int x = 0; x < RENDER_DISTANCE; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
 			for (int z = 0; z < RENDER_DISTANCE; z++) {
-				if (!chunks[x][y][z].VBO) {
+				if (chunks[x][y][z].vertices == NULL) {
 					load_chunk(x, y, z, x + center_cx, y, z + center_cz);
-					if (x > 0 && chunks[x-1][y][z].VBO) chunks[x-1][y][z].needs_update = true;
-					if (x < RENDER_DISTANCE-1 && chunks[x+1][y][z].VBO) chunks[x+1][y][z].needs_update = true;
-					if (z > 0 && chunks[x][y][z-1].VBO) chunks[x][y][z-1].needs_update = true;
-					if (z < RENDER_DISTANCE-1 && chunks[x][y][z+1].VBO) chunks[x][y][z+1].needs_update = true;
+					if (x > 0 && chunks[x-1][y][z].vertices != NULL) chunks[x-1][y][z].needs_update = true;
+					if (x < RENDER_DISTANCE-1 && chunks[x+1][y][z].vertices != NULL) chunks[x+1][y][z].needs_update = true;
+					if (z > 0 && chunks[x][y][z-1].vertices != NULL) chunks[x][y][z-1].needs_update = true;
+					if (z < RENDER_DISTANCE-1 && chunks[x][y][z+1].vertices != NULL) chunks[x][y][z+1].needs_update = true;
 				}
 			}
 		}
@@ -233,17 +233,13 @@ void unload_chunk(Chunk* chunk) {
 	// snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(chunk->x, chunk->y, chunk->z));
 	// if (access(filename, F_OK) == 0)
 	// 	save_chunk_to_file(filename, chunk);
-	if (chunk->VBO) {
-		glDeleteBuffers(1, &chunk->VBO);
-		chunk->VBO = 0;
+	if (chunk->vertices != NULL) {
+		free(chunk->vertices);
+		chunk->vertices = NULL;
 	}
-	if (chunk->EBO) {
-		glDeleteBuffers(1, &chunk->EBO);
-		chunk->EBO = 0;
-	}
-	if (chunk->VAO) {
-		glDeleteVertexArrays(1, &chunk->VAO);
-		chunk->VAO = 0;
+	if (chunk->indices != NULL) {
+		free(chunk->indices);
+		chunk->indices = NULL;
 	}
 
 	memset(chunk, 0, sizeof(Chunk));

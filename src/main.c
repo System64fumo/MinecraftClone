@@ -173,9 +173,7 @@ void cleanup() {
 		for(uint8_t cy = 0; cy < WORLD_HEIGHT; cy++) {
 			for(uint8_t cz = 0; cz < RENDER_DISTANCE; cz++) {
 				Chunk* chunk = &chunks[cx][cy][cz];
-				if (chunk->VBO) {
-					unload_chunk(chunk);
-				}
+				unload_chunk(chunk);
 			}
 		}
 	}
