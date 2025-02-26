@@ -37,7 +37,7 @@ void pre_process_chunk(Chunk* chunk) {
 				
 				if (block_type == 0) continue;
 
-				if (block_type == 2) {
+				else if (block_type == 2) {
 					uint32_t base_vertex = vertex_count;
 					generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
 					for (uint8_t i = 0; i < 4; i++) {
@@ -90,29 +90,21 @@ void pre_process_chunk(Chunk* chunk) {
 	chunk->vertex_count = vertex_count;
 	chunk->index_count = index_count;
 
-	// Free previous memory if it exists
 	free(chunk->vertices);
 	free(chunk->indices);
-	
+	chunk->vertices = NULL;
+	chunk->indices = NULL;
+
 	// Only allocate if we have vertices to store
 	if (vertex_count > 0) {
 		size_t vertex_size = vertex_count * sizeof(Vertex);
 		size_t index_size = index_count * sizeof(uint32_t);
-		
+
 		chunk->vertices = malloc(vertex_size);
 		chunk->indices = malloc(index_size);
-		
-		if (!chunk->vertices || !chunk->indices) {
-			fprintf(stderr, "Failed to allocate memory for chunk mesh\n");
-			exit(EXIT_FAILURE);
-		}
-		
+
 		memcpy(chunk->vertices, vertices, vertex_size);
 		memcpy(chunk->indices, indices, index_size);
-	}
-	else {
-		chunk->vertices = NULL;
-		chunk->indices = NULL;
 	}
 
 	chunk->needs_update = false;
@@ -313,10 +305,6 @@ void render_chunks() {
 		return;
 	}
 
-	#ifdef DEBUG
-	profiler_start(PROFILER_ID_RENDER);
-	#endif
-
 	glUseProgram(shaderProgram);
 	
 	// Cache uniform location
@@ -330,10 +318,6 @@ void render_chunks() {
 
 	glBindVertexArray(combined_VAO);
 	glDrawElements(GL_TRIANGLES, combined_mesh.index_count, GL_UNSIGNED_INT, 0);
-
-	#ifdef DEBUG
-	profiler_stop(PROFILER_ID_RENDER);
-	#endif
 }
 
 void cleanup_renderer() {

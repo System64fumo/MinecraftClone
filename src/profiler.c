@@ -61,8 +61,8 @@ void profiler_stop(int timer_id) {
 }
 
 void profiler_print_all() {
-	printf("\nProfiler Results:\n");
-	printf("%-20s %-15s %-15s\n", "Timer Name", "CPU Time (ms)", "GPU Time (ms)");
+	printf("\e[1;1H\e[2J");
+	printf("%-20s %-15s %-15s\n", "Profiler Name", "CPU", "GPU");
 	printf("--------------------------------------------------\n");
 	for (int i = 0; i < num_timers; i++) {
 		if (timers[i].active) {

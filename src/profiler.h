@@ -7,7 +7,8 @@
 #define PROFILER_ID_BAKE 1
 #define PROFILER_ID_MERGE 2
 #define PROFILER_ID_RENDER 3
-#define PROFILER_ID_WORLD_GEN 4
+#define PROFILER_ID_UI 4
+#define PROFILER_ID_WORLD_GEN 5
 
 typedef struct {
 	char name[MAX_NAME_LENGTH];
