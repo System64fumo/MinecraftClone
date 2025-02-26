@@ -249,6 +249,7 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 	int chunk_base_y = chunk_y * CHUNK_SIZE;
 	int world_x_base = chunk_x * CHUNK_SIZE;
 	int world_z_base = chunk_z * CHUNK_SIZE;
+	bool empty_chunk = true;
 
 	for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
 		float world_x = world_x_base + x;
@@ -296,11 +297,13 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 
 				if (absolute_y == 0) {
 					chunk->blocks[x][y][z] = (Block){.id = 7};  // Bedrock
+					empty_chunk = false;
 				}
 				else if (absolute_y > height) {
 					// Air or Water
 					if (absolute_y <= SEA_LEVEL) {
 						chunk->blocks[x][y][z] = (Block){.id = 9};  // Water
+						empty_chunk = false;
 					} else {
 						chunk->blocks[x][y][z] = (Block){.id = 0};  // Air
 					}
@@ -313,24 +316,33 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 					if (absolute_y == height) {
 						if (is_beach) {
 							chunk->blocks[x][y][z] = (Block){.id = 12};  // Sand (Beach)
+							empty_chunk = false;
 						} else if (is_ocean) {
 							chunk->blocks[x][y][z] = (Block){.id = 12};  // Sand (Ocean floor)
+							empty_chunk = false;
 						} else {
 							chunk->blocks[x][y][z] = (Block){.id = 2};  // Grass
+							empty_chunk = false;
 						}
 					}
 					else if (absolute_y >= height - 3) {
 						if (is_beach || (is_ocean && absolute_y >= SEA_LEVEL - 3)) {
 							chunk->blocks[x][y][z] = (Block){.id = 12};  // Sand
+							empty_chunk = false;
 						} else {
 							chunk->blocks[x][y][z] = (Block){.id = 1};  // Dirt
+							empty_chunk = false;
 						}
 					}
 					else {
 						chunk->blocks[x][y][z] = (Block){.id = 3};  // Stone
+						empty_chunk = false;
 					}
 				}
 			}
 		}
 	}
+
+	if (empty_chunk)
+		chunk->needs_update = false;
 }
