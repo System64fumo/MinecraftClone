@@ -51,6 +51,7 @@ uint8_t block_data[MAX_BLOCK_TYPES][8] = {
 
 Chunk*** chunks = NULL;
 Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
+unsigned int modelUniformLocation = -1;
 
 int main() {
 	snprintf(game_dir, sizeof(game_dir), "%s/.ccraft", getenv("HOME"));
@@ -121,6 +122,7 @@ int main() {
 	initQuad();
 	init_ui();
 	init_gl_buffers();
+	modelUniformLocation = glGetUniformLocation(shaderProgram, "model");
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 
 	glEnable(GL_DEPTH_TEST);
@@ -172,6 +174,7 @@ int main() {
 void cleanup() {
 	cleanupFramebuffer();
 	cleanup_ui();
+	cleanup_renderer();
 	for(uint8_t cx = 0; cx < RENDER_DISTANCE; cx++) {
 		for(uint8_t cy = 0; cy < WORLD_HEIGHT; cy++) {
 			for(uint8_t cz = 0; cz < RENDER_DISTANCE; cz++) {
