@@ -26,8 +26,7 @@ void pre_process_chunk(Chunk* chunk) {
 	float world_y = chunk->y * CHUNK_SIZE;
 	float world_z = chunk->z * CHUNK_SIZE;
 
-	bool* mask_data = (bool*)alloca(CHUNK_SIZE * CHUNK_SIZE * sizeof(bool));
-	bool (*mask)[CHUNK_SIZE] = (bool(*)[CHUNK_SIZE])mask_data;
+	bool mask[CHUNK_SIZE][CHUNK_SIZE];
 
 	// First pass: Handle special blocks (cross, slab)
 	for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
@@ -59,7 +58,7 @@ void pre_process_chunk(Chunk* chunk) {
 	// Second pass: Handle regular blocks using greedy meshing
 	for (uint8_t face = 0; face < 6; face++) {
 		for (uint8_t d = 0; d < CHUNK_SIZE; d++) {
-			memset(mask_data, 0, CHUNK_SIZE * CHUNK_SIZE * sizeof(bool));
+			memset(mask, 0, sizeof(mask));
 
 			for (uint8_t v = 0; v < CHUNK_SIZE; v++) {
 				for (uint8_t u = 0; u < CHUNK_SIZE; u++) {
