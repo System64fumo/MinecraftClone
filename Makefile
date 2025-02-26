@@ -1,7 +1,9 @@
-SRCS +=	$(wildcard src/*.c)
-OBJS = $(patsubst src/%,$(BUILDDIR)/%,$(SRCS:.c=.o))
-CFLAGS=-mtune=native -march=native -Ofast -flto -Wl,--gc-sections -ffunction-sections -fdata-sections
+SRCS +=	$(wildcard src/*.c) $(wildcard src/mesh/*.c) 
+OBJS = $(patsubst src/%, $(BUILDDIR)/%, $(patsubst src/mesh/%, $(BUILDDIR)/%, $(SRCS:.c=.o)))
+CFLAGS = -mtune=native -march=native -Ofast -flto -Wl,--gc-sections -ffunction-sections -fdata-sections
+CFLAGS += -I include
 BUILDDIR = build
+VPATH = src src/mesh
 
 $(shell mkdir -p $(BUILDDIR))
 
@@ -20,5 +22,5 @@ clean:
 game: $(OBJS)
 	$(CC) -o $(BUILDDIR)/game $(OBJS) $(CFLAGS) -lGL -lGLEW -lglfw -lm -lpng
 
-$(BUILDDIR)/%.o: src/%.c
+$(BUILDDIR)/%.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS)
