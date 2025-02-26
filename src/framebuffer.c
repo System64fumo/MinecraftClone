@@ -4,8 +4,12 @@
 unsigned int FBO, colorTexture, RBO;
 unsigned int quadVAO, quadVBO;
 
-// Initializes the framebuffer
-void initFramebuffer() {
+char block_face;
+int world_block_x;
+int world_block_y;
+int world_block_z;
+
+void init_framebuffer() {
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
@@ -25,7 +29,7 @@ void initFramebuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void resizeFramebuffer(int width, int height) {
+void resize_framebuffer(int width, int height) {
 	glDeleteTextures(1, &colorTexture);
 	glDeleteRenderbuffers(1, &RBO);
 	
@@ -45,16 +49,10 @@ void resizeFramebuffer(int width, int height) {
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
 
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		printf("ERROR::FRAMEBUFFER:: Resized framebuffer is not complete!\n");
-	}
-
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-
-// Initializes the fullscreen quad
-void initQuad() {
+void init_fullscreen_quad() {
 	float quadVertices[] = {
 		// positions   // texCoords
 		-1.0f,  1.0f,  0.0f, 1.0f,
@@ -81,22 +79,13 @@ void initQuad() {
 	glBindVertexArray(0);
 }
 
-
-int world_block_x;
-int world_block_y;
-int world_block_z;
-
-
-// Renders the scene to the framebuffer
-void renderSceneToFramebuffer() {
+void render_to_framebuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
-	// Clear buffers
 	glClearColor(0.471f, 0.655f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
-	// Use shader program
 	glUseProgram(shaderProgram);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, block_textures);
@@ -110,12 +99,10 @@ void renderSceneToFramebuffer() {
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, view);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, projection);
 
-	// Render chunks
 	render_chunks();
 
-	char face;
-	get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z, &face);
-	if (face != 'N')
+	get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z, &block_face);
+	if (block_face != 'N')
 		draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -124,8 +111,7 @@ void renderSceneToFramebuffer() {
 	#endif
 }
 
-// Renders the framebuffer texture to the screen
-void renderFramebufferToScreen() {
+void render_to_screen() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glUseProgram(postProcessingShader);
@@ -142,8 +128,7 @@ void renderFramebufferToScreen() {
 	#endif
 }
 
-// Cleanup framebuffer resources
-void cleanupFramebuffer() {
+void cleanup_framebuffer() {
 	glDeleteFramebuffers(1, &FBO);
 	glDeleteTextures(1, &colorTexture);
 	glDeleteRenderbuffers(1, &RBO);

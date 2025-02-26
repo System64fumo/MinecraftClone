@@ -1,4 +1,5 @@
 #include "main.h"
+#include "world.h"
 
 void get_targeted_block(Entity* entity, int* out_x, int* out_y, int* out_z, char* out_face) {
 	float px = entity->x;

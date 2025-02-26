@@ -1,4 +1,5 @@
 #include "main.h"
+#include "framebuffer.h"
 #include <stdlib.h>
 #include <sys/stat.h>
 
@@ -51,10 +52,10 @@ uint8_t block_data[MAX_BLOCK_TYPES][8] = {
 
 Chunk*** chunks = NULL;
 Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
-unsigned int modelUniformLocation = -1;
+unsigned int model_uniform_location = -1;
 
 int main() {
-	snprintf(game_dir, sizeof(game_dir), "%s/.ccraft", getenv("HOME"));
+	/*snprintf(game_dir, sizeof(game_dir), "%s/.ccraft", getenv("HOME"));
 	mkdir(game_dir, 0766);
 	char saves_dir[255];
 	snprintf(saves_dir, sizeof(saves_dir), "%s/saves", game_dir);
@@ -62,7 +63,7 @@ int main() {
 
 	char chunks_dir[255];
 	snprintf(chunks_dir, sizeof(chunks_dir), "%s/chunks", saves_dir);
-	mkdir(chunks_dir, 0766);
+	mkdir(chunks_dir, 0766);*/
 
 	// Initialize GLFW
 	if (!glfwInit()) {
@@ -112,17 +113,18 @@ int main() {
 	profiler_create("World Gen");
 	#endif
 
+
 	// Textures
-	block_textures = loadTexture("./atlas.png");
-	ui_textures = loadTexture("./gui.png");
+	block_textures = loadTexture("./assets/atlas.png");
+	ui_textures = loadTexture("./assets/gui.png");
 
 	// Initialization
 	load_shaders();
-	initFramebuffer();
-	initQuad();
+	init_framebuffer();
+	init_fullscreen_quad();
 	init_ui();
 	init_gl_buffers();
-	modelUniformLocation = glGetUniformLocation(shaderProgram, "model");
+	model_uniform_location = glGetUniformLocation(shaderProgram, "model");
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 
 	glEnable(GL_DEPTH_TEST);
@@ -157,8 +159,8 @@ int main() {
 		// Process input
 		processInput(window);
 
-		renderSceneToFramebuffer();
-		renderFramebufferToScreen();
+		render_to_framebuffer();
+		render_to_screen();
 
 		// Swap buffers and poll events
 		glfwSwapBuffers(window);
@@ -172,7 +174,7 @@ int main() {
 }
 
 void cleanup() {
-	cleanupFramebuffer();
+	cleanup_framebuffer();
 	cleanup_ui();
 	cleanup_renderer();
 	for(uint8_t cx = 0; cx < RENDER_DISTANCE; cx++) {

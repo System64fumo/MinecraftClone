@@ -1,11 +1,17 @@
-SRCS +=	$(wildcard src/*.c) $(wildcard src/mesh/*.c) 
-OBJS = $(patsubst src/%, $(BUILDDIR)/%, $(patsubst src/mesh/%, $(BUILDDIR)/%, $(SRCS:.c=.o)))
-CFLAGS = -mtune=native -march=native -Ofast -flto -Wl,--gc-sections -ffunction-sections -fdata-sections
-CFLAGS += -I include
-BUILDDIR = build
-VPATH = src src/mesh
+SRC_DIRS := src src/mesh src/world
+BUILDDIR := build
+INCLUDE_DIR := include
+
+CFLAGS := -mtune=native -march=native -Ofast -flto -Wl,--gc-sections -ffunction-sections -fdata-sections
+CFLAGS += -I$(INCLUDE_DIR)
+
+SRCS := $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))
+OBJS := $(patsubst %.c, $(BUILDDIR)/%.o, $(SRCS))
 
 $(shell mkdir -p $(BUILDDIR))
+$(foreach dir, $(SRC_DIRS), $(shell mkdir -p $(BUILDDIR)/$(dir)))
+
+VPATH := $(SRC_DIRS)
 
 all: release
 
