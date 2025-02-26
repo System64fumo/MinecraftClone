@@ -107,6 +107,7 @@ int main() {
 	profiler_create("Baking");
 	profiler_create("Merge");
 	profiler_create("Rendering");
+	profiler_create("UI");
 	profiler_create("World Gen");
 	#endif
 

@@ -102,6 +102,9 @@ void renderSceneToFramebuffer() {
 	glBindTexture(GL_TEXTURE_2D, block_textures);
 	glUniform1i(glGetUniformLocation(shaderProgram, "textureAtlas"), 0);
 
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_RENDER);
+	#endif
 
 	setupMatrices(view, projection);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, view);
@@ -116,6 +119,9 @@ void renderSceneToFramebuffer() {
 		draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_RENDER);
+	#endif
 }
 
 // Renders the framebuffer texture to the screen
@@ -126,7 +132,14 @@ void renderFramebufferToScreen() {
 	glBindVertexArray(quadVAO);
 	glBindTexture(GL_TEXTURE_2D, colorTexture);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_UI);
+	#endif
 	render_ui();
+	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_UI);
+	#endif
 }
 
 // Cleanup framebuffer resources

@@ -59,15 +59,15 @@ void do_time_stuff() {
 
 	// 20 TPS
 	if (time_difference >= 0.05f) {
-		framerate = (1.0 / time_difference) * time_counter;
-		frametime = (time_difference / time_counter) * 1000;
-		printf("Framerate: %.2f, FrameTime: %.3f\n", framerate, frametime);
-		time_previous = time_current;
-		time_counter = 0;
-
 		#ifdef DEBUG
 		profiler_print_all();
 		#endif
+
+		framerate = (1.0 / time_difference) * time_counter;
+		frametime = (time_difference / time_counter) * 1000;
+		printf("FPS: %.2f, %.3f ms\n", framerate, frametime);
+		time_previous = time_current;
+		time_counter = 0;
 
 		process_chunks();
 	}
