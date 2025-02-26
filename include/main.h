@@ -93,7 +93,7 @@ static CombinedMesh combined_mesh = {0};
 static unsigned int combined_VAO = 0;
 static unsigned int combined_VBO = 0;
 static unsigned int combined_EBO = 0;
-extern unsigned int modelUniformLocation;
+extern unsigned int model_uniform_location;
 
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -140,13 +140,6 @@ void generate_cross_vertices(float x, float y, float z, Block* block, Vertex ver
 void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint32_t* vertex_count);
 void generate_indices(uint32_t base_vertex, uint32_t indices[], uint32_t* index_count);
 void generate_chunk_mesh(Chunk* chunk);
-
-void initFramebuffer();
-void resizeFramebuffer(int width, int height);
-void initQuad();
-void renderSceneToFramebuffer();
-void renderFramebufferToScreen();
-void cleanupFramebuffer();
 
 void init_ui();
 void render_ui();

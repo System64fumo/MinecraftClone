@@ -194,7 +194,7 @@ void render_chunks() {
 	glUseProgram(shaderProgram);
 	
 	matrix4_identity(model);
-	glUniformMatrix4fv(modelUniformLocation, 1, GL_FALSE, model);
+	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, model);
 
 	glBindVertexArray(combined_VAO);
 	glDrawElements(GL_TRIANGLES, combined_mesh.index_count, GL_UNSIGNED_INT, 0);
