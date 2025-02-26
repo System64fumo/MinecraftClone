@@ -50,6 +50,15 @@ typedef struct {
 	uint32_t* indices;
 } Chunk;
 
+typedef struct {
+	Vertex* vertices;
+	uint32_t* indices;
+	uint32_t vertex_count;
+	uint32_t index_count;
+	uint32_t capacity_vertices;
+	uint32_t capacity_indices;
+} CombinedMesh;
+
 // Externs
 extern unsigned short screen_width;
 extern unsigned short screen_height;
@@ -79,6 +88,12 @@ extern unsigned int block_textures, ui_textures;
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
 extern Chunk*** chunks;
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
+
+static CombinedMesh combined_mesh = {0};
+static unsigned int combined_VAO = 0;
+static unsigned int combined_VBO = 0;
+static unsigned int combined_EBO = 0;
+extern unsigned int modelUniformLocation;
 
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -114,6 +129,7 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 void process_chunks();
 void render_chunks();
 void init_gl_buffers();
+void cleanup_renderer();
 
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);
 void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, uint8_t* y, uint8_t* z);
@@ -123,6 +139,7 @@ void generate_slab_vertices(float x, float y, float z, Block* block, Vertex vert
 void generate_cross_vertices(float x, float y, float z, Block* block, Vertex vertices[], uint32_t* vertex_count);
 void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint32_t* vertex_count);
 void generate_indices(uint32_t base_vertex, uint32_t indices[], uint32_t* index_count);
+void generate_chunk_mesh(Chunk* chunk);
 
 void initFramebuffer();
 void resizeFramebuffer(int width, int height);
