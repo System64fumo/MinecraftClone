@@ -12,6 +12,13 @@
 #define M_PI		3.14159265358979323846
 #endif
 
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+	#include <arm_neon.h>
+	#define USE_ARM_OPTIMIZED_CODE 1
+#else
+	#define USE_ARM_OPTIMIZED_CODE 0
+#endif
+
 // Defines
 #define CHUNK_SIZE 16
 #define WORLD_HEIGHT 16
@@ -102,7 +109,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void processInput(GLFWwindow* window);
-void setupMatrices();
+void setup_matrices();
 void cleanup();
 
 void get_targeted_block(Entity* entity, int* out_x, int* out_y, int* out_z, char* out_face);

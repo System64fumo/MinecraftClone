@@ -185,14 +185,52 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	frustum_faces[5] = IS_WITHIN_RANGE(global_entities[0].pitch, 45, 90);
 }
 
-void setupMatrices() {
+void setup_matrices() {
 	matrix4_identity(view);
-	
+
+	float pitch = global_entities[0].pitch * (M_PI / 180.0f);
+	float yaw = global_entities[0].yaw * (M_PI / 180.0f);
+
+	#if USE_ARM_OPTIMIZED_CODE
+
+	float cos_pitch = cosf(pitch);
+	float sin_pitch = sinf(pitch);
+	float cos_yaw = cosf(yaw);
+	float sin_yaw = sinf(yaw);
+
+	float32x4_t f = {cos_yaw * cos_pitch, sin_pitch, sin_yaw * cos_pitch, 0.0f};
+	float32x4_t len_sq = vmulq_f32(f, f);
+	float len = sqrtf(vaddvq_f32(len_sq));
+	f = vdivq_f32(f, vdupq_n_f32(len));
+
+	float32x4_t s = {-vgetq_lane_f32(f, 2), 0.0f, vgetq_lane_f32(f, 0), 0.0f};
+	len_sq = vmulq_f32(s, s);
+	len = sqrtf(vaddvq_f32(len_sq));
+	s = vdivq_f32(s, vdupq_n_f32(len));
+
+	float32x4_t u = {
+		vgetq_lane_f32(s, 1) * vgetq_lane_f32(f, 2) - vgetq_lane_f32(s, 2) * vgetq_lane_f32(f, 1),
+		vgetq_lane_f32(s, 2) * vgetq_lane_f32(f, 0) - vgetq_lane_f32(s, 0) * vgetq_lane_f32(f, 2),
+		vgetq_lane_f32(s, 0) * vgetq_lane_f32(f, 1) - vgetq_lane_f32(s, 1) * vgetq_lane_f32(f, 0),
+		0.0f
+	};
+
+	view[0] = vgetq_lane_f32(s, 0); view[4] = vgetq_lane_f32(s, 1); view[8] = vgetq_lane_f32(s, 2);
+	view[1] = vgetq_lane_f32(u, 0); view[5] = vgetq_lane_f32(u, 1); view[9] = vgetq_lane_f32(u, 2);
+	view[2] = -vgetq_lane_f32(f, 0); view[6] = -vgetq_lane_f32(f, 1); view[10] = -vgetq_lane_f32(f, 2);
+
+	float32x4_t pos = {global_entities[0].x, global_entities[0].y, global_entities[0].z, 0.0f};
+	view[12] = -vaddvq_f32(vmulq_f32(s, pos));
+	view[13] = -vaddvq_f32(vmulq_f32(u, pos));
+	view[14] = vaddvq_f32(vmulq_f32(f, pos));
+
+	#else // Non ARM platforms
+
 	float f[3];
-	f[0] = cosf(global_entities[0].yaw * M_PI/180.0f) * cosf(global_entities[0].pitch * M_PI/180.0f);
-	f[1] = sinf(global_entities[0].pitch * M_PI/180.0f);
-	f[2] = sinf(global_entities[0].yaw * M_PI/180.0f) * cosf(global_entities[0].pitch * M_PI/180.0f);
-	float len = sqrtf(f[0]*f[0] + f[1]*f[1] + f[2]*f[2]);
+	f[0] = cosf(yaw) * cosf(pitch);
+	f[1] = sinf(pitch);
+	f[2] = sinf(yaw) * cosf(pitch);
+	float len = sqrtf(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]);
 	f[0] /= len; f[1] /= len; f[2] /= len;
 
 	float s[3] = {
@@ -200,7 +238,7 @@ void setupMatrices() {
 		f[2] * 0 - f[0] * 0,
 		f[0] * 1 - f[1] * 0
 	};
-	len = sqrtf(s[0]*s[0] + s[1]*s[1] + s[2]*s[2]);
+	len = sqrtf(s[0] * s[0] + s[1] * s[1] + s[2] * s[2]);
 	s[0] /= len; s[1] /= len; s[2] /= len;
 
 	float u[3] = {
@@ -215,4 +253,5 @@ void setupMatrices() {
 	view[12] = -(s[0] * global_entities[0].x + s[1] * global_entities[0].y + s[2] * global_entities[0].z);
 	view[13] = -(u[0] * global_entities[0].x + u[1] * global_entities[0].y + u[2] * global_entities[0].z);
 	view[14] = (f[0] * global_entities[0].x + f[1] * global_entities[0].y + f[2] * global_entities[0].z);
+	#endif
 }

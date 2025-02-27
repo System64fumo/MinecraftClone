@@ -95,7 +95,7 @@ void render_to_framebuffer() {
 	profiler_start(PROFILER_ID_RENDER);
 	#endif
 
-	setupMatrices(view, projection);
+	setup_matrices(view, projection);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, view);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, projection);
 
