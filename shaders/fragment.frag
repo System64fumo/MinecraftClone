@@ -1,4 +1,5 @@
-#version 330 core
+#version 300 es
+precision mediump float;
 out vec4 FragColor;
 flat in int texID;
 flat in int faceID;
@@ -25,15 +26,15 @@ vec2 getTextureCoords() {
 	int yOffset = textureIndex / atlasWidth; // Y offset in the atlas
 
 	// Calculate the base texture coordinates
-	float x = xOffset * texSize;
-	float y = yOffset * texSize; // Y increases upward in the atlas
+	float x = float(xOffset) * texSize;
+	float y = float(yOffset) * texSize;
 
 	// Handle tiling by using mod on texture coordinates
 	vec2 tiledCoord = mod(size, 1.0);
 
 	// Rotate UV coordinates based on rotation value
 	vec2 centeredUV = tiledCoord - vec2(0.5, 0.5);
-	float angle = rotation * (3.14159 / 2.0);
+	float angle = float(rotation) * (3.14159 / 2.0);
 	float s = sin(angle);
 	float c = cos(angle);
 	vec2 rotatedUV = vec2(
