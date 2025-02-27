@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+CombinedMesh combined_mesh = {0};
+unsigned int combined_VAO = 0;
+unsigned int combined_VBO = 0;
+unsigned int combined_EBO = 0;
+
 void init_gl_buffers() {
 	if (combined_VAO == 0) {
 		glGenVertexArrays(1, &combined_VAO);

@@ -96,10 +96,10 @@ extern uint8_t block_data[MAX_BLOCK_TYPES][8];
 extern Chunk*** chunks;
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
 
-static CombinedMesh combined_mesh = {0};
-static unsigned int combined_VAO = 0;
-static unsigned int combined_VBO = 0;
-static unsigned int combined_EBO = 0;
+extern CombinedMesh combined_mesh;
+extern unsigned int combined_VAO;
+extern unsigned int combined_VBO;
+extern unsigned int combined_EBO;
 extern unsigned int model_uniform_location;
 
 // Function prototypes

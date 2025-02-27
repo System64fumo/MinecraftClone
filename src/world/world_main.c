@@ -28,7 +28,7 @@ void deserialize(uint32_t serialized, uint8_t *a, uint8_t *b, uint8_t *c) {
 }
 
 typedef struct {
-    Entity* entity;
+	Entity* entity;
 } ThreadArgs;
 
 pthread_t terrain_thread = 0;
@@ -140,13 +140,14 @@ void load_around_entity_func(Entity* entity) {
 	for (int x = 0; x < RENDER_DISTANCE; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
 			for (int z = 0; z < RENDER_DISTANCE; z++) {
-				if (chunks[x][y][z].vertices == NULL) {
-					load_chunk(x, y, z, x + center_cx, y, z + center_cz);
-					if (x > 0 && chunks[x-1][y][z].vertices != NULL) chunks[x-1][y][z].needs_update = true;
-					if (x < RENDER_DISTANCE-1 && chunks[x+1][y][z].vertices != NULL) chunks[x+1][y][z].needs_update = true;
-					if (z > 0 && chunks[x][y][z-1].vertices != NULL) chunks[x][y][z-1].needs_update = true;
-					if (z < RENDER_DISTANCE-1 && chunks[x][y][z+1].vertices != NULL) chunks[x][y][z+1].needs_update = true;
-				}
+				if (chunks[x][y][z].vertices != NULL)
+					continue;
+
+				load_chunk(x, y, z, x + center_cx, y, z + center_cz);
+				if (x > 0 && chunks[x-1][y][z].vertices != NULL) chunks[x-1][y][z].needs_update = true;
+				if (x < RENDER_DISTANCE-1 && chunks[x+1][y][z].vertices != NULL) chunks[x+1][y][z].needs_update = true;
+				if (z > 0 && chunks[x][y][z-1].vertices != NULL) chunks[x][y][z-1].needs_update = true;
+				if (z < RENDER_DISTANCE-1 && chunks[x][y][z+1].vertices != NULL) chunks[x][y][z+1].needs_update = true;
 			}
 		}
 	}
@@ -165,34 +166,34 @@ void* load_around_entity_thread(void* args) {
 	// #endif
 	pthread_mutex_lock(&terrain_thread_mutex);
 	terrain_thread_busy = true;
-    ThreadArgs* thread_args = (ThreadArgs*)args;
-    load_around_entity_func(thread_args->entity);
+	ThreadArgs* thread_args = (ThreadArgs*)args;
+	load_around_entity_func(thread_args->entity);
 
-    free(args);
+	free(args);
 	// #ifdef DEBUG
 	// profiler_stop(PROFILER_ID_WORLD_GEN);
 	// #endif
 	terrain_thread_busy = false;
 	pthread_mutex_unlock(&terrain_thread_mutex);
 
-    return NULL;
+	return NULL;
 }
 
 void load_around_entity(Entity* entity) {
 	if (terrain_thread_busy)
 		return;
 
-    ThreadArgs* args = (ThreadArgs*)malloc(sizeof(ThreadArgs));
+	ThreadArgs* args = (ThreadArgs*)malloc(sizeof(ThreadArgs));
 
-    args->entity = entity;
+	args->entity = entity;
 
-    int result = pthread_create(&terrain_thread, NULL, load_around_entity_thread, args);
-    if (result != 0) {
-        free(args);
-        return;
-    }
+	int result = pthread_create(&terrain_thread, NULL, load_around_entity_thread, args);
+	if (result != 0) {
+		free(args);
+		return;
+	}
 
-    pthread_detach(terrain_thread);
+	pthread_detach(terrain_thread);
 }
 
 int save_chunk_to_file(const char *filename, const Chunk *chunk) {
