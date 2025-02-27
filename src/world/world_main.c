@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <pthread.h>
 
 int last_cx = -1;
 int last_cz = -1;
@@ -26,7 +27,15 @@ void deserialize(uint32_t serialized, uint8_t *a, uint8_t *b, uint8_t *c) {
 	*c = serialized & 0xFF;
 }
 
-void load_around_entity(Entity* entity) {
+typedef struct {
+    Entity* entity;
+} ThreadArgs;
+
+pthread_t terrain_thread = 0;
+pthread_mutex_t terrain_thread_mutex = PTHREAD_MUTEX_INITIALIZER;
+bool terrain_thread_busy = false;
+
+void load_around_entity_func(Entity* entity) {
 	int center_cx = floorf(entity->x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
 	int center_cz = floorf(entity->z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
 
@@ -35,12 +44,8 @@ void load_around_entity(Entity* entity) {
 
 	if (dx == 0 && dz == 0) return;
 
-	#ifdef DEBUG
-	profiler_start(PROFILER_ID_WORLD_GEN);
-	#endif
-
 	// Allocate and copy temp_chunks manually
-	Chunk ***temp_chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
+	Chunk*** temp_chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 	for (int x = 0; x < RENDER_DISTANCE; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
 			memcpy(temp_chunks[x][y], chunks[x][y], RENDER_DISTANCE * sizeof(Chunk));
@@ -151,10 +156,43 @@ void load_around_entity(Entity* entity) {
 
 	last_cx = center_cx;
 	last_cz = center_cz;
+}
 
-	#ifdef DEBUG
-	profiler_stop(PROFILER_ID_WORLD_GEN);
-	#endif
+void* load_around_entity_thread(void* args) {
+	// Profiler causes threads to hang, Should probably look into it..
+	// #ifdef DEBUG
+	// profiler_start(PROFILER_ID_WORLD_GEN);
+	// #endif
+	pthread_mutex_lock(&terrain_thread_mutex);
+	terrain_thread_busy = true;
+    ThreadArgs* thread_args = (ThreadArgs*)args;
+    load_around_entity_func(thread_args->entity);
+
+    free(args);
+	// #ifdef DEBUG
+	// profiler_stop(PROFILER_ID_WORLD_GEN);
+	// #endif
+	terrain_thread_busy = false;
+	pthread_mutex_unlock(&terrain_thread_mutex);
+
+    return NULL;
+}
+
+void load_around_entity(Entity* entity) {
+	if (terrain_thread_busy)
+		return;
+
+    ThreadArgs* args = (ThreadArgs*)malloc(sizeof(ThreadArgs));
+
+    args->entity = entity;
+
+    int result = pthread_create(&terrain_thread, NULL, load_around_entity_thread, args);
+    if (result != 0) {
+        free(args);
+        return;
+    }
+
+    pthread_detach(terrain_thread);
 }
 
 int save_chunk_to_file(const char *filename, const Chunk *chunk) {
