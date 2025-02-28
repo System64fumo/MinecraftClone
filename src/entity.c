@@ -1,38 +1,37 @@
 #include "main.h"
 #include "world.h"
 
-void get_targeted_block(Entity* entity, int* out_x, int* out_y, int* out_z, char* out_face) {
-	float px = entity->x;
-	float py = entity->y;
-	float pz = entity->z;
+vec3 get_direction(float pitch, float yaw) {
+	vec3 dir;
+	float pitch_rad = pitch * (M_PI / 180.0f);
+	float yaw_rad = (yaw - 90) * (M_PI / 180.0f);
 
-	float pitch_rad = entity->pitch * (M_PI / 180.0f);
-	float yaw_rad = (entity->yaw - 90) * (M_PI / 180.0f);
+	dir.x = -sinf(yaw_rad) * cosf(pitch_rad);
+	dir.y = sinf(pitch_rad);
+	dir.z = cosf(yaw_rad) * cosf(pitch_rad);
+	return dir;
+}
 
-	// Direction vector
-	float dx = -sinf(yaw_rad) * cosf(pitch_rad);
-	float dy = sinf(pitch_rad);
-	float dz = cosf(yaw_rad) * cosf(pitch_rad);
-
+void get_targeted_block(vec3 position, vec3 direction, int* out_x, int* out_y, int* out_z, char* out_face) {
 	// Block coordinates
-	int block_x = (int)floorf(px);
-	int block_y = (int)floorf(py);
-	int block_z = (int)floorf(pz);
+	int block_x = (int)floorf(position.x);
+	int block_y = (int)floorf(position.y);
+	int block_z = (int)floorf(position.z);
 
 	// Step direction
-	int step_x = (dx > 0) ? 1 : -1;
-	int step_y = (dy > 0) ? 1 : -1;
-	int step_z = (dz > 0) ? 1 : -1;
+	int step_x = (direction.x > 0) ? 1 : -1;
+	int step_y = (direction.y > 0) ? 1 : -1;
+	int step_z = (direction.z > 0) ? 1 : -1;
 
 	// Delta distance (avoid division by zero)
-	float delta_x = (dx == 0) ? INFINITY : fabs(1.0f / dx);
-	float delta_y = (dy == 0) ? INFINITY : fabs(1.0f / dy);
-	float delta_z = (dz == 0) ? INFINITY : fabs(1.0f / dz);
+	float delta_x = (direction.x == 0) ? INFINITY : fabs(1.0f / direction.x);
+	float delta_y = (direction.y == 0) ? INFINITY : fabs(1.0f / direction.y);
+	float delta_z = (direction.z == 0) ? INFINITY : fabs(1.0f / direction.z);
 
 	// Initial side distances
-	float side_x = (dx > 0) ? (block_x + 1 - px) * delta_x : (px - block_x) * delta_x;
-	float side_y = (dy > 0) ? (block_y + 1 - py) * delta_y : (py - block_y) * delta_y;
-	float side_z = (dz > 0) ? (block_z + 1 - pz) * delta_z : (pz - block_z) * delta_z;
+	float side_x = (direction.x > 0) ? (block_x + 1 - position.x) * delta_x : (position.x - block_x) * delta_x;
+	float side_y = (direction.y > 0) ? (block_y + 1 - position.y) * delta_y : (position.y - block_y) * delta_y;
+	float side_z = (direction.z > 0) ? (block_z + 1 - position.z) * delta_z : (position.z - block_z) * delta_z;
 
 	// Maximum distance
 	float max_distance = 5.0f;
@@ -87,9 +86,9 @@ void get_targeted_block(Entity* entity, int* out_x, int* out_y, int* out_z, char
 			float block_center_y = block_y + 0.5f;
 			float block_center_z = block_z + 0.5f;
 
-			float dx_intersect = px + dx * distance - block_center_x;
-			float dy_intersect = py + dy * distance - block_center_y;
-			float dz_intersect = pz + dz * distance - block_center_z;
+			float dx_intersect = position.x + direction.x * distance - block_center_x;
+			float dy_intersect = position.y + direction.y * distance - block_center_y;
+			float dz_intersect = position.z + direction.z * distance - block_center_z;
 
 			if (fabs(dx_intersect) > fabs(dy_intersect) && fabs(dx_intersect) > fabs(dz_intersect)) {
 				*out_face = (dx_intersect > 0) ? 'L' : 'R';

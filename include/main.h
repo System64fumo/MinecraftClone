@@ -31,6 +31,10 @@
 // Structs
 typedef struct {
 	float x, y, z;
+} vec3;
+
+typedef struct {
+	float x, y, z;
 	uint8_t face_id;
 	uint8_t texture_id;
 	uint8_t width, height;
@@ -115,7 +119,8 @@ void processInput(GLFWwindow* window);
 void setup_matrices();
 void cleanup();
 
-void get_targeted_block(Entity* entity, int* out_x, int* out_y, int* out_z, char* out_face);
+vec3 get_direction(float pitch, float yaw);
+void get_targeted_block(vec3 position, vec3 direction, int* out_x, int* out_y, int* out_z, char* out_face);
 void draw_block_highlight(float x, float y, float z);
 
 void matrix4_identity(float* mat);
