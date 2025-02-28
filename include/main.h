@@ -34,6 +34,7 @@ typedef struct {
 	uint8_t face_id;
 	uint8_t texture_id;
 	uint8_t width, height;
+	uint32_t light_data;
 } Vertex;
 
 typedef struct {
@@ -44,6 +45,7 @@ typedef struct {
 
 typedef struct {
 	uint8_t id;
+	uint8_t light_data;
 } Block;
 
 typedef struct {
@@ -81,6 +83,7 @@ extern float far;
 extern float aspect;
 
 extern bool frustum_faces[6];
+extern float sky_brightness;
 
 extern int last_cx;
 extern int last_cz;
@@ -147,6 +150,7 @@ void generate_cross_vertices(float x, float y, float z, Block* block, Vertex ver
 void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint32_t* vertex_count);
 void generate_indices(uint32_t base_vertex, uint32_t indices[], uint32_t* index_count);
 void generate_chunk_mesh(Chunk* chunk);
+void set_chunk_lighting(Chunk* chunk);
 
 void init_ui();
 void render_ui();

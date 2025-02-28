@@ -1,9 +1,10 @@
 #version 300 es
 precision mediump float;
 out vec4 FragColor;
-flat in int texID;
 flat in int faceID;
+flat in int texID;
 in vec2 size;
+flat in int lightData;
 
 uniform sampler2D textureAtlas;
 
@@ -47,14 +48,21 @@ vec2 getTextureCoords() {
 	return vec2(x + finalUV.x * texSize, y + finalUV.y * texSize);
 }
 
+float lightLevelToBrightness(int lightLevel) {
+	return float(lightLevel) / 15.0;
+}
+
 void main() {
 	vec4 textureColor = texture(textureAtlas, getTextureCoords());
 	vec3 faceShade = faceShades[faceID];
 
+	float brightness = lightLevelToBrightness(lightData);
+	vec3 litColor = textureColor.rgb * faceShade * brightness;
+
 	// Textures 1 and 53 are affected by biome colors
 	if (texID == 1 || texID == 53) {
-		FragColor = vec4(textureColor.rgb * vec3(0.569, 0.741, 0.349) * faceShade, textureColor.a);
+		FragColor = vec4(litColor * vec3(0.569, 0.741, 0.349), textureColor.a);
 	} else {
-		FragColor = vec4(textureColor.rgb * faceShade, textureColor.a);
+		FragColor = vec4(litColor, textureColor.a);
 	}
 }

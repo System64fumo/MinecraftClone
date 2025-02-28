@@ -28,7 +28,10 @@ void init_gl_buffers() {
 
 		glVertexAttribPointer(3, 2, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, width));
 		glEnableVertexAttribArray(3);
-		
+
+		glVertexAttribPointer(4, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, light_data));
+		glEnableVertexAttribArray(4);
+
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, combined_EBO);
 		
 		// Initial allocation with 0 size
