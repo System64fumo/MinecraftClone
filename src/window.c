@@ -98,7 +98,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 	int world_block_x, world_block_y, world_block_z;
 	char face;
-	get_targeted_block(&global_entities[0], &world_block_x, &world_block_y, &world_block_z, &face);
+	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
+	vec3 pos;
+	pos.x = global_entities[0].x;
+	pos.y = global_entities[0].y;
+	pos.z = global_entities[0].z;
+	get_targeted_block(pos, dir, &world_block_x, &world_block_y, &world_block_z, &face);
 
 	if (face == 'N') return;
 
