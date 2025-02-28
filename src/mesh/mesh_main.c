@@ -86,43 +86,44 @@ void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, u
 	}
 
 	uint8_t block_face_data = block_data[block->id][2+face];
+	uint8_t light_data = block->light_data;
 
 	switch (face) {
 		case 0: // Front (Z+)
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_face_data, width_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_face_data, 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_face_data, 0.0f, height_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_face_data, width_blocks, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_face_data, width_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_face_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_face_data, 0.0f, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_face_data, width_blocks, height_blocks, light_data};
 			break;
 		case 1: // Left (X-)
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_face_data, depth_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_face_data, 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_face_data, 0.0f, height_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_face_data, depth_blocks, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_face_data, depth_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_face_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_face_data, 0.0f, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_face_data, depth_blocks, height_blocks, light_data};
 			break;
 		case 2: // Back (Z-)
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_face_data, width_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_face_data, 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_face_data, 0.0f, height_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_face_data, width_blocks, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_face_data, width_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_face_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_face_data, 0.0f, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_face_data, width_blocks, height_blocks, light_data};
 			break;
 		case 3: // Right (X+)
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_face_data, depth_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_face_data, 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_face_data, 0.0f, height_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_face_data, depth_blocks, height_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_face_data, depth_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_face_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_face_data, 0.0f, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_face_data, depth_blocks, height_blocks, light_data};
 			break;
 		case 4: // Bottom (Y-)
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_face_data, width_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_face_data, 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_face_data, 0.0f, depth_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_face_data, width_blocks, depth_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, block_face_data, width_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, block_face_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, block_face_data, 0.0f, depth_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, block_face_data, width_blocks, depth_blocks, light_data};
 			break;
 		case 5: // Top (Y+)
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_face_data, width_blocks, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_face_data, 0.0f, 0.0f};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_face_data, 0.0f, depth_blocks};
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_face_data, width_blocks, depth_blocks};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, block_face_data, width_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, block_face_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, block_face_data, 0.0f, depth_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, block_face_data, width_blocks, depth_blocks, light_data};
 			break;
 	}
 }
@@ -148,32 +149,8 @@ void generate_chunk_mesh(Chunk* chunk) {
 
 	bool mask[CHUNK_SIZE][CHUNK_SIZE];
 
-	// First pass: Handle special blocks (cross, slab)
-	for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
-		for (uint8_t y = 0; y < CHUNK_SIZE; y++) {
-			for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
-				Block* block = &chunk->blocks[x][y][z];
-				uint8_t block_type = block_data[block->id][0];
-				
-				if (block_type == 0) continue;
-
-				else if (block_type == 2) {
-					uint32_t base_vertex = vertex_count;
-					generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
-					for (uint8_t i = 0; i < 4; i++) {
-						generate_indices(base_vertex + (i * 4), indices, &index_count);
-					}
-				}
-				else if (block_type == 1) {
-					uint32_t base_vertex = vertex_count;
-					generate_slab_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
-					for (uint8_t i = 0; i < 6; i++) {
-						generate_indices(base_vertex + (i * 4), indices, &index_count);
-					}
-				}
-			}
-		}
-	}
+	// First pass: Lighting
+	set_chunk_lighting(chunk);
 
 	// Second pass: Handle regular blocks using greedy meshing
 	for (uint8_t face = 0; face < 6; face++) {
@@ -202,6 +179,33 @@ void generate_chunk_mesh(Chunk* chunk) {
 					uint16_t base_vertex = vertex_count;
 					generate_vertices(face, x + world_x, y + world_y, z + world_z, width, height, block, vertices, &vertex_count);
 					generate_indices(base_vertex, indices, &index_count);
+				}
+			}
+		}
+	}
+
+	// Third pass: Handle special blocks (cross, slab)
+	for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
+		for (uint8_t y = 0; y < CHUNK_SIZE; y++) {
+			for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
+				Block* block = &chunk->blocks[x][y][z];
+				uint8_t block_type = block_data[block->id][0];
+				
+				if (block_type == 0) continue;
+
+				else if (block_type == 2) {
+					uint32_t base_vertex = vertex_count;
+					generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
+					for (uint8_t i = 0; i < 4; i++) {
+						generate_indices(base_vertex + (i * 4), indices, &index_count);
+					}
+				}
+				else if (block_type == 1) {
+					uint32_t base_vertex = vertex_count;
+					generate_slab_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
+					for (uint8_t i = 0; i < 6; i++) {
+						generate_indices(base_vertex + (i * 4), indices, &index_count);
+					}
 				}
 			}
 		}

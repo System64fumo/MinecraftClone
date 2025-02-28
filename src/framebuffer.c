@@ -82,7 +82,7 @@ void init_fullscreen_quad() {
 void render_to_framebuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
-	glClearColor(0.471f, 0.655f, 1.0f, 1.0f);
+	glClearColor(0.471f * sky_brightness, 0.655f * sky_brightness, 1.0f * sky_brightness, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
