@@ -120,8 +120,12 @@ void setup_matrices();
 void cleanup();
 
 vec3 get_direction(float pitch, float yaw);
-void get_targeted_block(vec3 position, vec3 direction, int* out_x, int* out_y, int* out_z, char* out_face);
+void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, int* out_y, int* out_z, char* out_face);
 void draw_block_highlight(float x, float y, float z);
+int is_block_solid(int world_block_x, int world_block_y, int world_block_z);
+void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord);
+bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);
+
 
 void matrix4_identity(float* mat);
 void matrix4_translate(float* mat, float x, float y, float z);

@@ -12,7 +12,7 @@ vec3 get_direction(float pitch, float yaw) {
 	return dir;
 }
 
-void get_targeted_block(vec3 position, vec3 direction, int* out_x, int* out_y, int* out_z, char* out_face) {
+void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, int* out_y, int* out_z, char* out_face) {
 	// Block coordinates
 	int block_x = (int)floorf(position.x);
 	int block_y = (int)floorf(position.y);
@@ -33,11 +33,9 @@ void get_targeted_block(vec3 position, vec3 direction, int* out_x, int* out_y, i
 	float side_y = (direction.y > 0) ? (block_y + 1 - position.y) * delta_y : (position.y - block_y) * delta_y;
 	float side_z = (direction.z > 0) ? (block_z + 1 - position.z) * delta_z : (position.z - block_z) * delta_z;
 
-	// Maximum distance
-	float max_distance = 5.0f;
 	float distance = 0.0f;
 
-	while (distance < max_distance) {
+	while (distance < reach) {
 		// Determine which axis to step on
 		if (side_x < side_y && side_x < side_z) {
 			block_x += step_x;
@@ -106,4 +104,24 @@ void get_targeted_block(vec3 position, vec3 direction, int* out_x, int* out_y, i
 	*out_y = -1;
 	*out_z = -1;
 	*out_face = 'N';
+}
+
+// TODO: Move this elsewhere
+int is_block_solid(int world_block_x, int world_block_y, int world_block_z) {
+	int chunk_x, chunk_z, block_x, block_z;
+	calculate_chunk_and_block(world_block_x, &chunk_x, &block_x);
+	calculate_chunk_and_block(world_block_z, &chunk_z, &block_z);
+
+	int chunk_y = world_block_y / CHUNK_SIZE;
+	int block_y = ((world_block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+
+	int render_x = chunk_x - last_cx;
+	int render_z = chunk_z - last_cz;
+
+	if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
+		Chunk* chunk = &chunks[render_x][chunk_y][render_z];
+		return chunk->blocks[block_x][block_y][block_z].id != 0;
+	}
+
+	return 0;
 }

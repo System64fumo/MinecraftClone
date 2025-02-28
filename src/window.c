@@ -38,26 +38,56 @@ void processInput(GLFWwindow* window) {
 	float yaw = global_entities[0].yaw * (M_PI / 180.0f);
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		global_entities[0].x += cosf(yaw) * moveSpeed;
-		global_entities[0].z += sinf(yaw) * moveSpeed;
+		float px = global_entities[0].x + cosf(yaw) * moveSpeed;
+		float py = global_entities[0].y;
+		float pz = global_entities[0].z + sinf(yaw) * moveSpeed;
+		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
+			global_entities[0].x = px;
+			global_entities[0].z = pz;
+		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		global_entities[0].x -= cosf(yaw) * moveSpeed;
-		global_entities[0].z -= sinf(yaw) * moveSpeed;
+		float px = global_entities[0].x - cosf(yaw) * moveSpeed;
+		float py = global_entities[0].y;
+		float pz = global_entities[0].z - sinf(yaw) * moveSpeed;
+		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
+			global_entities[0].x = px;
+			global_entities[0].z = pz;
+		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		global_entities[0].x += sinf(yaw) * moveSpeed;
-		global_entities[0].z -= cosf(yaw) * moveSpeed;
+		float px = global_entities[0].x + sinf(yaw) * moveSpeed;
+		float py = global_entities[0].y;
+		float pz = global_entities[0].z - cosf(yaw) * moveSpeed;
+		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
+			global_entities[0].x = px;
+			global_entities[0].z = pz;
+		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		global_entities[0].x -= sinf(yaw) * moveSpeed;
-		global_entities[0].z += cosf(yaw) * moveSpeed;
+		float px = global_entities[0].x - sinf(yaw) * moveSpeed;
+		float py = global_entities[0].y;
+		float pz = global_entities[0].z + cosf(yaw) * moveSpeed;
+		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
+			global_entities[0].x = px;
+			global_entities[0].z = pz;
+		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		global_entities[0].y += moveSpeed;
+		float px = global_entities[0].x;
+		float py = global_entities[0].y + moveSpeed;
+		float pz = global_entities[0].z;
+		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
+			global_entities[0].y = py;
+		}
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-		global_entities[0].y -= moveSpeed;
+		float px = global_entities[0].x;
+		float py = global_entities[0].y - moveSpeed;
+		float pz = global_entities[0].z;
+		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
+			global_entities[0].y = py;
+		}
 	}
 }
 
@@ -103,7 +133,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	pos.x = global_entities[0].x;
 	pos.y = global_entities[0].y;
 	pos.z = global_entities[0].z;
-	get_targeted_block(pos, dir, &world_block_x, &world_block_y, &world_block_z, &face);
+	get_targeted_block(pos, dir, 5.0f, &world_block_x, &world_block_y, &world_block_z, &face);
 
 	if (face == 'N') return;
 

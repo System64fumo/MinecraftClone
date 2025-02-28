@@ -106,7 +106,7 @@ void render_to_framebuffer() {
 	pos.x = global_entities[0].x;
 	pos.y = global_entities[0].y;
 	pos.z = global_entities[0].z;
-	get_targeted_block(pos, dir, &world_block_x, &world_block_y, &world_block_z, &block_face);
+	get_targeted_block(pos, dir, 5.0f, &world_block_x, &world_block_y, &world_block_z, &block_face);
 	if (block_face != 'N')
 		draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
 
