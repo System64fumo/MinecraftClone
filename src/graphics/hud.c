@@ -44,23 +44,24 @@ static const float vertices_template[] = {
 	-0.505f, 0.505f, 0.505f, 
 };
 
-static unsigned int vbo = 0, vao = 0;
+unsigned int highlight_vbo = 0, highlight_vao = 0;
+
+void init_highlight() {
+	glGenVertexArrays(1, &highlight_vao);
+	glGenBuffers(1, &highlight_vbo);
+
+	glBindVertexArray(highlight_vao);
+	glBindBuffer(GL_ARRAY_BUFFER, highlight_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_template), vertices_template, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glBindVertexArray(0);
+}
 
 void draw_block_highlight(float x, float y, float z) {
 	glDisable(GL_BLEND);
-	if (vbo == 0) {
-		glGenVertexArrays(1, &vao);
-		glGenBuffers(1, &vbo);
-
-		glBindVertexArray(vao);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_template), vertices_template, GL_STATIC_DRAW);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-		glEnableVertexAttribArray(0);
-
-		glBindVertexArray(0);
-	}
 
 	float translationMatrix[16];
 	matrix4_identity(translationMatrix);
@@ -73,7 +74,7 @@ void draw_block_highlight(float x, float y, float z) {
 
 	glLineWidth(2.0f);
 
-	glBindVertexArray(vao);
+	glBindVertexArray(highlight_vao);
 
 	for (int i = 0; i < 6; i++) {
 		glDrawArrays(GL_LINE_LOOP, i * 5, 5);

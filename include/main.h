@@ -85,12 +85,8 @@ extern unsigned int block_textures, ui_textures;
 
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
 extern Chunk*** chunks;
-extern Entity global_entities[MAX_ENTITIES_PER_CHUNK * RENDER_DISTANCE * CHUNK_SIZE];
+extern Entity global_entities[MAX_ENTITIES_PER_CHUNK];
 
-extern CombinedMesh combined_mesh;
-extern unsigned int combined_VAO;
-extern unsigned int combined_VBO;
-extern unsigned int combined_EBO;
 extern unsigned int model_uniform_location;
 extern bool world_loading;
 
@@ -143,6 +139,7 @@ void generate_indices(uint32_t base_vertex, uint32_t indices[], uint32_t* index_
 void generate_chunk_mesh(Chunk* chunk);
 void set_chunk_lighting(Chunk* chunk);
 
+void init_highlight();
 void init_ui();
 void render_ui();
 void cleanup_ui();
