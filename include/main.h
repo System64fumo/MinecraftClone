@@ -108,6 +108,7 @@ extern unsigned int combined_VAO;
 extern unsigned int combined_VBO;
 extern unsigned int combined_EBO;
 extern unsigned int model_uniform_location;
+extern bool world_loading;
 
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);

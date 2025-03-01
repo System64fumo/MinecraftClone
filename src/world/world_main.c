@@ -10,6 +10,7 @@ int last_cx = -1;
 int last_cz = -1;
 
 const int SEA_LEVEL = 64;
+bool world_loading = false;
 
 const float continent_scale = 0.005f;
 const float mountain_scale = 0.03f;
@@ -137,6 +138,7 @@ void load_around_entity_func(Entity* entity) {
 	}
 
 	// Load new chunks and mark edges for update
+	world_loading = true;
 	for (int x = 0; x < RENDER_DISTANCE; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
 			for (int z = 0; z < RENDER_DISTANCE; z++) {
@@ -151,6 +153,7 @@ void load_around_entity_func(Entity* entity) {
 			}
 		}
 	}
+	world_loading = false;
 
 	// Free temp_chunks
 	free_chunks(temp_chunks, RENDER_DISTANCE, WORLD_HEIGHT);
