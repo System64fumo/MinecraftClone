@@ -1,5 +1,5 @@
 EXECUTABLE = game
-SRC_DIRS := src src/mesh src/world
+SRC_DIRS := src src/graphics src/mesh src/world
 BUILDDIR := build
 INCLUDE_DIR := include
 
