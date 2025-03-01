@@ -69,7 +69,8 @@ void do_time_stuff() {
 		time_previous = time_current;
 		time_counter = 0;
 
-		process_chunks();
+		if (!world_loading)
+			process_chunks();
 	}
 }
 
