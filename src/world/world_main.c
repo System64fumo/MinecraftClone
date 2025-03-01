@@ -163,19 +163,13 @@ void load_around_entity_func(Entity* entity) {
 }
 
 void* load_around_entity_thread(void* args) {
-	// Profiler causes threads to hang, Should probably look into it..
-	// #ifdef DEBUG
-	// profiler_start(PROFILER_ID_WORLD_GEN);
-	// #endif
 	pthread_mutex_lock(&terrain_thread_mutex);
 	terrain_thread_busy = true;
 	ThreadArgs* thread_args = (ThreadArgs*)args;
 	load_around_entity_func(thread_args->entity);
 
 	free(args);
-	// #ifdef DEBUG
-	// profiler_stop(PROFILER_ID_WORLD_GEN);
-	// #endif
+
 	terrain_thread_busy = false;
 	pthread_mutex_unlock(&terrain_thread_mutex);
 
@@ -185,6 +179,10 @@ void* load_around_entity_thread(void* args) {
 void load_around_entity(Entity* entity) {
 	if (terrain_thread_busy)
 		return;
+
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_WORLD_GEN);
+	#endif
 
 	ThreadArgs* args = (ThreadArgs*)malloc(sizeof(ThreadArgs));
 
