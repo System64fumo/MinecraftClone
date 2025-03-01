@@ -158,9 +158,9 @@ void generate_chunk_mesh(Chunk* chunk) {
 	uint32_t vertex_count = 0;
 	uint32_t index_count = 0;
 
-	float world_x = chunk->x * CHUNK_SIZE;
-	float world_y = chunk->y * CHUNK_SIZE;
-	float world_z = chunk->z * CHUNK_SIZE;
+	const float world_x = chunk->x * CHUNK_SIZE;
+	const float world_y = chunk->y * CHUNK_SIZE;
+	const float world_z = chunk->z * CHUNK_SIZE;
 
 	bool mask[CHUNK_SIZE][CHUNK_SIZE];
 
@@ -208,15 +208,13 @@ void generate_chunk_mesh(Chunk* chunk) {
 				
 				if (block_type == 0) continue;
 
-				else if (block_type == 2) {
-					uint32_t base_vertex = vertex_count;
+				uint32_t base_vertex = vertex_count;
+				if (block_type == 2) {
 					generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
 					for (uint8_t i = 0; i < 4; i++) {
 						generate_indices(base_vertex + (i * 4), indices, &index_count);
 					}
-				}
-				else if (block_type == 1) {
-					uint32_t base_vertex = vertex_count;
+				} else if (block_type == 1) {
 					generate_slab_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
 					for (uint8_t i = 0; i < 6; i++) {
 						generate_indices(base_vertex + (i * 4), indices, &index_count);
