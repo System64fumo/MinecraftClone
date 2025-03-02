@@ -84,6 +84,11 @@ void do_time_stuff() {
 			profiler_stop(PROFILER_ID_WORLD_GEN);
 			#endif
 		}
+		#ifdef DEBUG
+		printf("Vertex count: %d\n", combined_mesh.vertex_count);
+		printf("Index count: %d\n", combined_mesh.index_count);
+		printf("VRAM estimate: %ldmb\n", (sizeof(Vertex) * combined_mesh.vertex_count) / 1024 / 1024);
+		#endif
 	}
 }
 

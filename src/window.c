@@ -167,7 +167,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	// Check if the chunk is within bounds
 	if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
 		Chunk* chunk = &chunks[render_x][chunk_y][render_z];
-		chunk->blocks[block_x][block_y][block_z].id = (button == GLFW_MOUSE_BUTTON_LEFT) ? 0 : hotbar_slot;
+		if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			chunk->blocks[block_x][block_y][block_z].id = 0;
+		}
+		else {
+			chunk->blocks[block_x][block_y][block_z].id = hotbar_slot;
+			chunk->blocks[block_x][block_y][block_z].light_data = 0;
+		}
 		chunk->needs_update = true;
 
 		// Update adjacent chunks if necessary

@@ -101,7 +101,24 @@ void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, u
 	}
 
 	uint8_t texture_id = block_data[block->id][2+face];
-	uint8_t light_data = block->light_data;
+
+	// Calculate the coordinates of the adjacent block
+	int adjacent_x = (int)x;
+	int adjacent_y = (int)y;
+	int adjacent_z = (int)z;
+
+	switch (face) {
+		case 0: adjacent_z += 1; break; // Front (Z+)
+		case 1: adjacent_x += 1; break; // Left (X-)
+		case 2: adjacent_z -= 1; break; // Back (Z-)
+		case 3: adjacent_x -= 1; break; // Right (X+)
+		case 4: adjacent_y -= 1; break; // Bottom (Y-)
+		case 5: adjacent_y += 1; break; // Top (Y+)
+	}
+
+	// Get the adjacent block using the get_block_at function
+	Block* adjacent_block = get_block_at(adjacent_x, adjacent_y, adjacent_z);
+	uint8_t light_data = adjacent_block ? adjacent_block->light_data : 15; // Default to max light if no block is found
 
 	switch (face) {
 		case 0: // Front (Z+)
@@ -164,10 +181,7 @@ void generate_chunk_mesh(Chunk* chunk) {
 
 	bool mask[CHUNK_SIZE][CHUNK_SIZE];
 
-	// First pass: Lighting
-	set_chunk_lighting(chunk);
-
-	// Second pass: Handle regular blocks using greedy meshing
+	// First pass: Handle regular blocks using greedy meshing
 	for (uint8_t face = 0; face < 6; face++) {
 		for (uint8_t d = 0; d < CHUNK_SIZE; d++) {
 			memset(mask, 0, sizeof(mask));
@@ -199,7 +213,7 @@ void generate_chunk_mesh(Chunk* chunk) {
 		}
 	}
 
-	// Third pass: Handle special blocks (cross, slab)
+	// Second pass: Handle special blocks (cross, slab)
 	for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
 		for (uint8_t y = 0; y < CHUNK_SIZE; y++) {
 			for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
