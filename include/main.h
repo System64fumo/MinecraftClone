@@ -23,7 +23,7 @@
 // Defines
 #define CHUNK_SIZE 16
 #define WORLD_HEIGHT 16
-#define MAX_ENTITIES_PER_CHUNK 1024
+#define MAX_ENTITIES_PER_CHUNK 128
 #define RENDER_DISTANCE 16
 #define MAX_BLOCK_TYPES 256
 #define MAX_VERTICES 98304 // CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4;
@@ -98,7 +98,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void processInput(GLFWwindow* window);
 void setup_matrices();
-void cleanup();
 
 vec3 get_direction(float pitch, float yaw);
 void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, int* out_y, int* out_z, char* out_face);

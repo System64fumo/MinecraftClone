@@ -4,6 +4,8 @@
 #include <string.h>
 #include <png.h>
 
+double lastFrame = 0.0f;
+double deltaTime = 0.0f;
 double time_current = 0.0f;
 double time_difference = 0.0f;
 double time_previous = 0.0f;
@@ -55,6 +57,8 @@ void matrix4_scale(float* mat, float x, float y, float z) {
 
 void do_time_stuff() {
 	time_current = glfwGetTime();
+	deltaTime = time_current - lastFrame;
+	lastFrame = time_current;
 	time_difference = time_current - time_previous;
 	time_counter++;
 
