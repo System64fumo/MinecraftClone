@@ -19,6 +19,7 @@ extern CombinedMesh combined_mesh;
 extern unsigned int combined_VAO;
 extern unsigned int combined_VBO;
 extern unsigned int combined_EBO;
+extern bool mesh_mode;
 
 void init_gl_buffers();
 void render_chunks();

@@ -29,6 +29,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			case GLFW_KEY_R:
 				load_around_entity(&global_entities[0]);
 				break;
+			case GLFW_KEY_F2:
+				mesh_mode = !mesh_mode;
+				break;
 		}
 	}
 }

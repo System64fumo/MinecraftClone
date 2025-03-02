@@ -6,6 +6,7 @@ CombinedMesh combined_mesh = {0};
 unsigned int combined_VAO = 0;
 unsigned int combined_VBO = 0;
 unsigned int combined_EBO = 0;
+bool mesh_mode = false;
 
 void init_gl_buffers() {
 	if (combined_VAO == 0) {
@@ -43,13 +44,18 @@ void init_gl_buffers() {
 }
 
 void render_chunks() {
+	if (combined_mesh.index_count == 0)
+		return;
 	glUseProgram(shaderProgram);
 	
 	matrix4_identity(model);
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, model);
 
 	glBindVertexArray(combined_VAO);
-	glDrawElements(GL_TRIANGLES, combined_mesh.index_count, GL_UNSIGNED_INT, 0);
+	if (mesh_mode)
+		glDrawElements(GL_LINES, combined_mesh.index_count, GL_UNSIGNED_INT, 0);
+	else
+		glDrawElements(GL_TRIANGLES, combined_mesh.index_count, GL_UNSIGNED_INT, 0);
 }
 
 void cleanup_renderer() {
