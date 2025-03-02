@@ -105,32 +105,3 @@ void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, 
 	*out_z = -1;
 	*out_face = 'N';
 }
-
-// TODO: Move this elsewhere
-Block* get_block_at(int world_block_x, int world_block_y, int world_block_z) {
-	int chunk_x, chunk_z, block_x, block_z;
-	calculate_chunk_and_block(world_block_x, &chunk_x, &block_x);
-	calculate_chunk_and_block(world_block_z, &chunk_z, &block_z);
-
-	int chunk_y = world_block_y / CHUNK_SIZE;
-	int block_y = ((world_block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
-
-	int render_x = chunk_x - last_cx;
-	int render_z = chunk_z - last_cz;
-
-	if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
-		Chunk* chunk = &chunks[render_x][chunk_y][render_z];
-		Block* block = &chunk->blocks[block_x][block_y][block_z];
-		return block;
-	}
-
-	return NULL;
-}
-
-bool is_block_solid(int world_block_x, int world_block_y, int world_block_z) {
-	Block* block = get_block_at(world_block_x, world_block_y, world_block_z);
-	if (block != NULL)
-		return block->id != 0;
-	else
-		return 0;
-}

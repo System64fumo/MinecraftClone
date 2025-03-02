@@ -163,8 +163,6 @@ void load_around_entity_func(Entity* entity) {
 }
 
 void* load_around_entity_thread(void* args) {
-	pthread_mutex_lock(&terrain_thread_mutex);
-	terrain_thread_busy = true;
 	ThreadArgs* thread_args = (ThreadArgs*)args;
 	load_around_entity_func(thread_args->entity);
 
@@ -184,6 +182,8 @@ void load_around_entity(Entity* entity) {
 	profiler_start(PROFILER_ID_WORLD_GEN);
 	#endif
 
+	pthread_mutex_lock(&terrain_thread_mutex);
+	terrain_thread_busy = true;
 	ThreadArgs* args = (ThreadArgs*)malloc(sizeof(ThreadArgs));
 
 	args->entity = entity;
@@ -265,6 +265,10 @@ void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int 
 	 	generate_chunk_terrain(&chunks[ci_x][ci_y][ci_z], cx, cy, cz);
 	// 	save_chunk_to_file(filename, &chunks[ci_x][ci_y][ci_z]);
 	// }
+
+
+	// Abuse terrain thread for lighting (This is terrible and should ideally run on another thread)
+	set_chunk_lighting(&chunks[ci_x][ci_y][ci_z]);
 }
 
 void unload_chunk(Chunk* chunk) {
