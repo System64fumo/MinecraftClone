@@ -1,5 +1,6 @@
 #include "main.h"
 #include "world.h"
+#include <math.h>
 
 vec3 get_direction(float pitch, float yaw) {
 	vec3 dir;

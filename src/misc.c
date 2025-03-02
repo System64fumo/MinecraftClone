@@ -1,5 +1,5 @@
 #include "main.h"
-#include <stdio.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <png.h>
@@ -12,7 +12,6 @@ double time_previous = 0.0f;
 int time_counter = 0;
 float framerate = 0.0f;
 float frametime = 0.0f;
-bool world_loading_previous = false;
 
 void matrix4_identity(float* mat) {
 	mat[0] = mat[5] = mat[10] = mat[15] = 1.0f;
@@ -74,20 +73,8 @@ void do_time_stuff() {
 		time_previous = time_current;
 		time_counter = 0;
 
-		if (world_loading) {
-			world_loading_previous = true;
-		}
+		process_chunks();
 
-		if (!world_loading) {
-			process_chunks();
-		}
-
-		if (!world_loading && world_loading_previous) {
-			world_loading_previous = false;
-			#ifdef DEBUG
-			profiler_stop(PROFILER_ID_WORLD_GEN);
-			#endif
-		}
 		#ifdef DEBUG
 		printf("Vertex count: %d\n", combined_mesh.vertex_count);
 		printf("Index count: %d\n", combined_mesh.index_count);

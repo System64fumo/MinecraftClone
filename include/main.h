@@ -1,7 +1,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
-#include <math.h>
 #include <stdbool.h>
 #include "renderer.h"
 
@@ -88,7 +87,7 @@ extern Chunk*** chunks;
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK];
 
 extern unsigned int model_uniform_location;
-extern bool world_loading;
+extern bool terrain_thread_busy;
 
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -106,7 +105,6 @@ void draw_block_highlight(float x, float y, float z);
 bool is_block_solid(int world_block_x, int world_block_y, int world_block_z);
 void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord);
 bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);
-
 
 void matrix4_identity(float* mat);
 void matrix4_translate(float* mat, float x, float y, float z);
