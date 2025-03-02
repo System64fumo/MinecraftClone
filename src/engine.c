@@ -141,6 +141,19 @@ int initialize() {
 	return 0;
 }
 
+void run() {
+	while (!glfwWindowShouldClose(window)) {
+		do_time_stuff();
+		processInput(window);
+	
+		render_to_framebuffer();
+		render_to_screen();
+	
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+}
+
 void shutdown() {
 	cleanup_framebuffer();
 	cleanup_ui();

@@ -1,6 +1,7 @@
 #include "main.h"
 #include "framebuffer.h"
 #include "world.h"
+#include <math.h>
 
 #define IS_WITHIN_RANGE(num, lower, upper) ((num) >= (lower) && (num) <= (upper))
 bool frustum_faces[6];
