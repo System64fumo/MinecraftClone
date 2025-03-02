@@ -128,7 +128,19 @@ void process_chunks() {
 	
 	bool chunks_updated = false;
 
-	// Process all chunks that need updating
+	// First pass, Set lighting
+	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
+			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
+				Chunk* chunk = &chunks[x][y][z];
+				if (chunk->needs_update) {
+					set_chunk_lighting(chunk);
+				}
+			}
+		}
+	}
+
+	// Second pass, Generate mesh data
 	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
