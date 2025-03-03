@@ -152,6 +152,7 @@ void set_chunk_lighting(Chunk* chunk);
 
 void init_highlight();
 void init_ui();
+void update_ui();
 void render_ui();
 void cleanup_ui();
 
