@@ -4,6 +4,7 @@
 unsigned int highlight_vbo = 0, highlight_vao = 0;
 unsigned int ui_vao, ui_vbo;
 float ortho[16];
+float highlight_matrix[16];
 
 typedef struct {
 	float x;
@@ -17,60 +18,59 @@ typedef struct {
 } ui_element_t;
 
 ui_element_t ui_elements[MAX_UI_ELEMENTS];
+GLuint highlight_vao, highlight_vbo, highlight_ebo;
 
 static const float vertices_template[] = {
 	// Front face (Z+)
-	-0.505f, -0.505f, 0.505f,
-	0.505f, -0.505f, 0.505f,
-	0.505f, 0.505f, 0.505f,
-	-0.505f, 0.505f, 0.505f,
-	-0.505f, -0.505f, 0.505f,
+	-0.505f, -0.505f,  0.505f, // 0
+	 0.505f, -0.505f,  0.505f, // 1
+	 0.505f,  0.505f,  0.505f, // 2
+	-0.505f,  0.505f,  0.505f, // 3
 
 	// Back face (Z-)
-	-0.505f, -0.505f, -0.505f,
-	-0.505f, 0.505f, -0.505f,
-	0.505f, 0.505f, -0.505f,
-	0.505f, -0.505f, -0.505f,
-	-0.505f, -0.505f, -0.505f,
+	-0.505f, -0.505f, -0.505f, // 4
+	 0.505f, -0.505f, -0.505f, // 5
+	 0.505f,  0.505f, -0.505f, // 6
+	-0.505f,  0.505f, -0.505f  // 7
+};
 
-	// Left face (X-)
-	-0.505f, -0.505f, 0.505f,
-	-0.505f, -0.505f, -0.505f,
-	-0.505f, 0.505f, -0.505f,
-	-0.505f, 0.505f, 0.505f,
-	-0.505f, -0.505f, 0.505f,
+static const unsigned int edge_indices[] = {
+	// Front face edges
+	0, 1, // Bottom edge
+	1, 2, // Right edge
+	2, 3, // Top edge
+	3, 0, // Left edge
 
-	// Right face (X+)
-	0.505f, -0.505f, 0.505f,
-	0.505f, 0.505f, 0.505f,
-	0.505f, 0.505f, -0.505f,
-	0.505f, -0.505f, -0.505f,
-	0.505f, -0.505f, 0.505f,
+	// Back face edges
+	4, 5, // Bottom edge
+	5, 6, // Right edge
+	6, 7, // Top edge
+	7, 4, // Left edge
 
-	// Bottom face (Y-)
-	-0.505f, -0.505f, 0.505f,
-	0.505f, -0.505f, 0.505f,
-	0.505f, -0.505f, -0.505f,
-	-0.505f, -0.505f, -0.505f,
-	-0.505f, -0.505f, 0.505f,
-
-	// Top face (Y+)
-	-0.505f, 0.505f, 0.505f,
-	-0.505f, 0.505f, -0.505f,
-	0.505f, 0.505f, -0.505f,
-	0.505f, 0.505f, 0.505f,
-	-0.505f, 0.505f, 0.505f, 
+	// Side edges
+	0, 4, // Bottom-left edge
+	1, 5, // Bottom-right edge
+	2, 6, // Top-right edge
+	3, 7  // Top-left edge
 };
 
 void init_highlight() {
 	glGenVertexArrays(1, &highlight_vao);
 	glGenBuffers(1, &highlight_vbo);
+	glGenBuffers(1, &highlight_ebo);
 
 	glBindVertexArray(highlight_vao);
+
+	// Bind and upload vertex data
 	glBindBuffer(GL_ARRAY_BUFFER, highlight_vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_template), vertices_template, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	// Bind and upload edge index data
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, highlight_ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(edge_indices), edge_indices, GL_STATIC_DRAW);
+
+	// Set up vertex attribute pointers
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	glBindVertexArray(0);
@@ -79,32 +79,24 @@ void init_highlight() {
 void draw_block_highlight(float x, float y, float z) {
 	glDisable(GL_BLEND);
 
-	float translationMatrix[16];
-	matrix4_identity(translationMatrix);
-	matrix4_translate(translationMatrix, x - 0.5f, y - 0.5f, z - 0.5f);
+	matrix4_identity(highlight_matrix);
+	matrix4_translate(highlight_matrix, x - 0.5f, y - 0.5f, z - 0.5f);
 
 	glUseProgram(shaderProgram);
 
-	GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, translationMatrix);
+	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, highlight_matrix);
 
 	glLineWidth(2.0f);
-
 	glBindVertexArray(highlight_vao);
+	glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, (void*)0);
 
-	for (int i = 0; i < 6; i++) {
-		glDrawArrays(GL_LINE_LOOP, i * 5, 5);
-	}
-
-	glBindVertexArray(0);
-	glUseProgram(0);
 	glEnable(GL_BLEND);
 }
 
 // Function to update the UI buffer
 void update_ui_buffer() {
-	// Each UI element requires 6 vertices (2 triangles), each with 4 floats (x, y, tx, ty)
-	float vertices[MAX_UI_ELEMENTS * 6 * 4]; 
+	// Each UI element now requires 4 vertices (1 triangle strip), each with 4 floats (x, y, tx, ty)
+	float vertices[MAX_UI_ELEMENTS * 4 * 4]; 
 
 	for (int i = 0; i < MAX_UI_ELEMENTS; i++) {
 		ui_element_t* element = &ui_elements[i];
@@ -113,39 +105,29 @@ void update_ui_buffer() {
 		float tw = (float)element->tex_width / 256.0f;
 		float th = (float)element->tex_height / 256.0f;
 
-		int offset = i * 6 * 4; // 6 vertices per element, 4 floats per vertex
+		int offset = i * 4 * 4; // 4 vertices per element, 4 floats per vertex
 
-		// First triangle (top-left, bottom-left, bottom-right)
-		vertices[offset + 0] = element->x - element->width;		// x
-		vertices[offset + 1] = element->y + element->height;	// y
-		vertices[offset + 2] = tx;								// tx
-		vertices[offset + 3] = ty;								// ty
+		// Vertex order for a triangle strip:
+		// Top-left -> Bottom-left -> Top-right -> Bottom-right
+		vertices[offset + 0] = element->x - element->width;		// x (top-left)
+		vertices[offset + 1] = element->y + element->height;	// y (top-left)
+		vertices[offset + 2] = tx;								// tx (top-left)
+		vertices[offset + 3] = ty;								// ty (top-left)
 
-		vertices[offset + 4] = element->x - element->width;		// x
-		vertices[offset + 5] = element->y - element->height;	// y
-		vertices[offset + 6] = tx;								// tx
-		vertices[offset + 7] = ty + th;							// ty + th
+		vertices[offset + 4] = element->x - element->width;		// x (bottom-left)
+		vertices[offset + 5] = element->y - element->height;	// y (bottom-left)
+		vertices[offset + 6] = tx;								// tx (bottom-left)
+		vertices[offset + 7] = ty + th;							// ty (bottom-left)
 
-		vertices[offset + 8] = element->x + element->width;		// x
-		vertices[offset + 9] = element->y - element->height;	// y
-		vertices[offset + 10] = tx + tw;						// tx + tw
-		vertices[offset + 11] = ty + th;						// ty + th
+		vertices[offset + 8] = element->x + element->width;		// x (top-right)
+		vertices[offset + 9] = element->y + element->height;	// y (top-right)
+		vertices[offset + 10] = tx + tw;						// tx (top-right)
+		vertices[offset + 11] = ty;								// ty (top-right)
 
-		// Second triangle (top-left, bottom-right, top-right)
-		vertices[offset + 12] = element->x - element->width;	// x
-		vertices[offset + 13] = element->y + element->height;	// y
-		vertices[offset + 14] = tx;								// tx
-		vertices[offset + 15] = ty;								// ty
-
-		vertices[offset + 16] = element->x + element->width;	// x
-		vertices[offset + 17] = element->y - element->height;	// y
-		vertices[offset + 18] = tx + tw;						// tx + tw
-		vertices[offset + 19] = ty + th;						// ty + th
-
-		vertices[offset + 20] = element->x + element->width;	// x
-		vertices[offset + 21] = element->y + element->height;	// y
-		vertices[offset + 22] = tx + tw;						// tx + tw
-		vertices[offset + 23] = ty;								// ty
+		vertices[offset + 12] = element->x + element->width;	// x (bottom-right)
+		vertices[offset + 13] = element->y - element->height;	// y (bottom-right)
+		vertices[offset + 14] = tx + tw;						// tx (bottom-right)
+		vertices[offset + 15] = ty + th;						// ty (bottom-right)
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, ui_vbo);
@@ -209,14 +191,9 @@ void init_ui() {
 void render_ui() {
 	glUseProgram(ui_shader);
 	glUniformMatrix4fv(glGetUniformLocation(ui_shader, "projection"), 1, GL_FALSE, ortho);
-
 	glBindVertexArray(ui_vao);
 	glBindTexture(GL_TEXTURE_2D, ui_textures);
-
-	glDrawArrays(GL_TRIANGLES, 0, MAX_UI_ELEMENTS * 6);
-
-	glBindVertexArray(0);
-	glUseProgram(0);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, MAX_UI_ELEMENTS * 4);
 }
 
 void cleanup_ui() {

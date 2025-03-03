@@ -55,13 +55,10 @@ void resize_framebuffer(int width, int height) {
 void init_fullscreen_quad() {
 	float quadVertices[] = {
 		// positions   // texCoords
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		-1.0f, -1.0f,  0.0f, 0.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
-
-		-1.0f,  1.0f,  0.0f, 1.0f,
-		 1.0f, -1.0f,  1.0f, 0.0f,
-		 1.0f,  1.0f,  1.0f, 1.0f
+		-1.0f,  1.0f,  0.0f, 1.0f, // Top-left
+		-1.0f, -1.0f,  0.0f, 0.0f, // Bottom-left
+		 1.0f,  1.0f,  1.0f, 1.0f, // Top-right
+		 1.0f, -1.0f,  1.0f, 0.0f  // Bottom-right
 	};
 
 	glGenVertexArrays(1, &quadVAO);
@@ -122,7 +119,7 @@ void render_to_screen() {
 	glUseProgram(postProcessingShader);
 	glBindVertexArray(quadVAO);
 	glBindTexture(GL_TEXTURE_2D, colorTexture);
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);
 
 	#ifdef DEBUG
 	profiler_start(PROFILER_ID_UI);
