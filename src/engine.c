@@ -106,6 +106,7 @@ int initialize() {
 	init_gl_buffers();
 	model_uniform_location = glGetUniformLocation(shaderProgram, "model");
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
+	init_chunk_loader();
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -136,12 +137,11 @@ int initialize() {
 	snprintf(chunks_dir, sizeof(chunks_dir), "%s/chunks", saves_dir);
 	mkdir(chunks_dir, 0766);*/
 
-	load_around_entity(&player);
-
 	return 0;
 }
 
 void run() {
+	load_around_entity(&global_entities[0]);
 	while (!glfwWindowShouldClose(window)) {
 		do_time_stuff();
 		processInput(window);
@@ -158,6 +158,7 @@ void shutdown() {
 	cleanup_framebuffer();
 	cleanup_ui();
 	cleanup_renderer();
+	destroy_chunk_loader();
 
 	for(uint8_t cx = 0; cx < RENDER_DISTANCE; cx++) {
 		for(uint8_t cy = 0; cy < WORLD_HEIGHT; cy++) {

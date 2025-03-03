@@ -116,9 +116,12 @@ void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, u
 		case 5: adjacent_y += 1; break; // Top (Y+)
 	}
 
+	// Temporarily disabled due to block at pos issues
 	// Get the adjacent block using the get_block_at function
-	Block* adjacent_block = get_block_at(adjacent_x, adjacent_y, adjacent_z);
-	uint8_t light_data = adjacent_block ? adjacent_block->light_data : 15; // Default to max light if no block is found
+	//Block* adjacent_block = get_block_at(adjacent_x, adjacent_y, adjacent_z);
+	//uint8_t light_data = adjacent_block ? adjacent_block->light_data : 15; // Default to max light if no block is found
+
+	uint8_t light_data = 15;
 
 	switch (face) {
 		case 0: // Front (Z+)

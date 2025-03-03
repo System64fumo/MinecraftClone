@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "renderer.h"
+#include <pthread.h>
 
 #ifdef DEBUG
 #include "profiler.h"
@@ -55,6 +56,15 @@ typedef struct {
 	uint32_t* indices;
 } Chunk;
 
+typedef struct {
+	Entity* entity;
+	bool running;
+	bool should_load;
+	pthread_t thread;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+} chunk_loader_t;
+
 // Externs
 extern unsigned short screen_width;
 extern unsigned short screen_height;
@@ -85,6 +95,7 @@ extern unsigned int block_textures, ui_textures;
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
 extern Chunk*** chunks;
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK];
+extern chunk_loader_t chunk_loader;
 
 extern unsigned int model_uniform_location;
 extern bool terrain_thread_busy;
@@ -125,6 +136,8 @@ void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int 
 void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z);
 void process_chunks();
+void init_chunk_loader();
+void destroy_chunk_loader();
 
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);
 void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, uint8_t* y, uint8_t* z);

@@ -73,7 +73,9 @@ void do_time_stuff() {
 		time_previous = time_current;
 		time_counter = 0;
 
+		pthread_mutex_lock(&chunk_loader.mutex);
 		process_chunks();
+		pthread_mutex_unlock(&chunk_loader.mutex);
 
 		#ifdef DEBUG
 		printf("Vertex count: %d\n", combined_mesh.vertex_count);
