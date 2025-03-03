@@ -22,6 +22,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	matrix4_identity(projection);
 	matrix4_perspective(projection, fov * M_PI / 180.0f, aspect, near, far);
 	resize_framebuffer(width, height);
+	update_ui();
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -186,6 +187,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	int8_t offset = yoffset;
 	hotbar_slot -= offset;
 	printf("Slot: %d\n", hotbar_slot);
+	update_ui();
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
