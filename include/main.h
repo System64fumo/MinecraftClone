@@ -82,8 +82,6 @@ extern float aspect;
 extern bool frustum_faces[6];
 extern float sky_brightness;
 
-extern int last_cx;
-extern int last_cz;
 extern double deltaTime;
 extern float framerate;
 extern float frametime;
