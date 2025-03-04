@@ -107,6 +107,7 @@ int initialize() {
 	model_uniform_location = glGetUniformLocation(shaderProgram, "model");
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 	init_chunk_loader();
+	init_chunk_processor();
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
