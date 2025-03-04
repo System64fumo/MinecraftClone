@@ -42,57 +42,48 @@ void processInput(GLFWwindow* window) {
 	float moveSpeed = global_entities[0].speed * deltaTime;
 	float yaw = global_entities[0].yaw * (M_PI / 180.0f);
 
+	float dx = 0.0f, dy = 0.0f, dz = 0.0f;
+
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		float px = global_entities[0].x + cosf(yaw) * moveSpeed;
-		float py = global_entities[0].y;
-		float pz = global_entities[0].z + sinf(yaw) * moveSpeed;
-		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
-			global_entities[0].x = px;
-			global_entities[0].z = pz;
-		}
+		dx += cosf(yaw) * moveSpeed;
+		dz += sinf(yaw) * moveSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		float px = global_entities[0].x - cosf(yaw) * moveSpeed;
-		float py = global_entities[0].y;
-		float pz = global_entities[0].z - sinf(yaw) * moveSpeed;
-		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
-			global_entities[0].x = px;
-			global_entities[0].z = pz;
-		}
+		dx -= cosf(yaw) * moveSpeed;
+		dz -= sinf(yaw) * moveSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		float px = global_entities[0].x + sinf(yaw) * moveSpeed;
-		float py = global_entities[0].y;
-		float pz = global_entities[0].z - cosf(yaw) * moveSpeed;
-		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
-			global_entities[0].x = px;
-			global_entities[0].z = pz;
-		}
+		dx += sinf(yaw) * moveSpeed;
+		dz -= cosf(yaw) * moveSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		float px = global_entities[0].x - sinf(yaw) * moveSpeed;
-		float py = global_entities[0].y;
-		float pz = global_entities[0].z + cosf(yaw) * moveSpeed;
-		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
-			global_entities[0].x = px;
-			global_entities[0].z = pz;
-		}
+		dx -= sinf(yaw) * moveSpeed;
+		dz += cosf(yaw) * moveSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		float px = global_entities[0].x;
-		float py = global_entities[0].y + moveSpeed;
-		float pz = global_entities[0].z;
-		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
-			global_entities[0].y = py;
-		}
+		dy += moveSpeed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-		float px = global_entities[0].x;
-		float py = global_entities[0].y - moveSpeed;
-		float pz = global_entities[0].z;
-		if (!is_block_solid((int)floorf(px), (int)floorf(py), (int)floorf(pz))) {
-			global_entities[0].y = py;
-		}
+		dy -= moveSpeed;
+	}
+
+	// Check X-axis collision
+	float newX = global_entities[0].x + dx;
+	float newY = global_entities[0].y + dy;
+	float newZ = global_entities[0].z + dz;
+
+	if (!is_block_solid((int)floorf(newX), (int)floorf(global_entities[0].y), (int)floorf(global_entities[0].z))) {
+		global_entities[0].x = newX;
+	}
+
+	// Check Y-axis collision
+	if (!is_block_solid((int)floorf(global_entities[0].x), (int)floorf(newY), (int)floorf(global_entities[0].z))) {
+		global_entities[0].y = newY;
+	}
+
+	// Check Z-axis collision
+	if (!is_block_solid((int)floorf(global_entities[0].x), (int)floorf(global_entities[0].y), (int)floorf(newZ))) {
+		global_entities[0].z = newZ;
 	}
 }
 
