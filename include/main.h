@@ -97,6 +97,7 @@ extern chunk_loader_t chunk_loader;
 
 extern unsigned int model_uniform_location;
 extern bool terrain_thread_busy;
+extern pthread_mutex_t mesh_mutex;
 
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -137,6 +138,7 @@ void process_chunks();
 void init_chunk_loader();
 void destroy_chunk_loader();
 void init_chunk_processor();
+void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz);
 
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);
 void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, uint8_t* y, uint8_t* z);

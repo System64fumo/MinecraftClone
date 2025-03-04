@@ -57,26 +57,31 @@ void* chunk_loader_thread(void* arg) {
 			int center_cz = floorf(entity->z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
 
 			int dx, dz;
+			int local_last_cx, local_last_cz;
 
 			pthread_mutex_lock(&loader->mutex);
-			dx = center_cx - last_cx;
-			dz = center_cz - last_cz;
+			local_last_cx = last_cx;
+			local_last_cz = last_cz;
 			pthread_mutex_unlock(&loader->mutex);
+
+			dx = center_cx - local_last_cx;
+			dz = center_cz - local_last_cz;
 
 			if (dx == 0 && dz == 0) continue;
 
 			// Allocate and copy temp_chunks manually
 			Chunk*** temp_chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
+			if (!temp_chunks) continue;
 
-			pthread_mutex_lock(&loader->mutex);
+			pthread_mutex_lock(&mesh_mutex);
 			for (int x = 0; x < RENDER_DISTANCE; x++) {
 				for (int y = 0; y < WORLD_HEIGHT; y++) {
 					memcpy(temp_chunks[x][y], chunks[x][y], RENDER_DISTANCE * sizeof(Chunk));
 				}
 			}
-			pthread_mutex_unlock(&loader->mutex);
+			pthread_mutex_unlock(&mesh_mutex);
 
-			// Clear old chunks and mark boundaries for update
+			// Process old chunks
 			if (dx > 0) { // Moving East
 				for (int x = 0; x < dx && x < RENDER_DISTANCE; x++) {
 					for (int y = 0; y < WORLD_HEIGHT; y++) {
@@ -135,7 +140,7 @@ void* chunk_loader_thread(void* arg) {
 				}
 			}
 
-			pthread_mutex_lock(&loader->mutex);
+			pthread_mutex_lock(&mesh_mutex);
 			// Clear chunks array
 			for (int x = 0; x < RENDER_DISTANCE; x++) {
 				for (int y = 0; y < WORLD_HEIGHT; y++) {
@@ -160,27 +165,37 @@ void* chunk_loader_thread(void* arg) {
 					}
 				}
 			}
-			pthread_mutex_unlock(&loader->mutex);
+			pthread_mutex_unlock(&mesh_mutex);
 
 			// Load new chunks and mark edges for update
 			for (int x = 0; x < RENDER_DISTANCE; x++) {
 				for (int y = 0; y < WORLD_HEIGHT; y++) {
 					for (int z = 0; z < RENDER_DISTANCE; z++) {
-						pthread_mutex_lock(&loader->mutex);
-						bool should_skip = chunks[x][y][z].vertices != NULL;
-						pthread_mutex_unlock(&loader->mutex);
+						bool should_skip = false;
+						
+						pthread_mutex_lock(&mesh_mutex);
+						should_skip = chunks[x][y][z].vertices != NULL;
+						pthread_mutex_unlock(&mesh_mutex);
 						
 						if (should_skip)
 							continue;
 						
-						load_chunk(x, y, z, x + center_cx, y, z + center_cz);
+						// Load chunk atomically
+						Chunk temp_chunk = {0};
+						load_chunk_data(&temp_chunk, x, y, z, x + center_cx, y, z + center_cz);
 						
-						pthread_mutex_lock(&loader->mutex);
-						if (x > 0 && chunks[x-1][y][z].vertices != NULL) chunks[x-1][y][z].needs_update = true;
-						if (x < RENDER_DISTANCE-1 && chunks[x+1][y][z].vertices != NULL) chunks[x+1][y][z].needs_update = true;
-						if (z > 0 && chunks[x][y][z-1].vertices != NULL) chunks[x][y][z-1].needs_update = true;
-						if (z < RENDER_DISTANCE-1 && chunks[x][y][z+1].vertices != NULL) chunks[x][y][z+1].needs_update = true;
-						pthread_mutex_unlock(&loader->mutex);
+						pthread_mutex_lock(&mesh_mutex);
+						chunks[x][y][z] = temp_chunk;
+						
+						if (x > 0 && chunks[x-1][y][z].vertices != NULL) 
+							chunks[x-1][y][z].needs_update = true;
+						if (x < RENDER_DISTANCE-1 && chunks[x+1][y][z].vertices != NULL) 
+							chunks[x+1][y][z].needs_update = true;
+						if (z > 0 && chunks[x][y][z-1].vertices != NULL) 
+							chunks[x][y][z-1].needs_update = true;
+						if (z < RENDER_DISTANCE-1 && chunks[x][y][z+1].vertices != NULL) 
+							chunks[x][y][z+1].needs_update = true;
+						pthread_mutex_unlock(&mesh_mutex);
 					}
 				}
 			}
@@ -273,6 +288,19 @@ int load_chunk_from_file(const char *filename, Chunk *chunk) {
 	free(data);
 
 	return 0; // Success
+}
+
+void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz) {
+	chunk->ci_x = ci_x;
+	chunk->ci_y = ci_y;
+	chunk->ci_z = ci_z;
+	chunk->x = cx;
+	chunk->y = cy;
+	chunk->z = cz;
+	chunk->needs_update = true;
+
+	generate_chunk_terrain(chunk, cx, cy, cz);
+	set_chunk_lighting(chunk);
 }
 
 void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz) {

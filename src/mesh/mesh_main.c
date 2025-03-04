@@ -46,10 +46,7 @@ void* chunk_processor_thread(void* arg) {
 						bool needs_update = false;
 						Chunk* chunk = NULL;
 						
-						// Lock both mutexes in specific order to prevent deadlocks
-						pthread_mutex_lock(&processor->mutex);
 						pthread_mutex_lock(&mesh_mutex);
-						
 						chunk = &chunks[x][y][z];
 						needs_update = chunk->needs_update;
 						
@@ -58,9 +55,7 @@ void* chunk_processor_thread(void* arg) {
 							chunk->needs_update = false;
 							chunks_updated = true;
 						}
-						
 						pthread_mutex_unlock(&mesh_mutex);
-						pthread_mutex_unlock(&processor->mutex);
 					}
 				}
 			}
@@ -92,7 +87,6 @@ void destroy_chunk_processor() {
 }
 
 void combine_meshes() {
-
 	pthread_mutex_lock(&mesh_mutex);
 	
 	uint32_t total_vertices = 0;
@@ -215,10 +209,17 @@ void combine_meshes() {
 }
 
 void process_chunks() {
+	static pthread_mutex_t processing_mutex = PTHREAD_MUTEX_INITIALIZER;
 	static bool processing = false;
-	if (processing) return;
-
+	
+	// Prevent multiple threads from entering this section
+	pthread_mutex_lock(&processing_mutex);
+	if (processing) {
+		pthread_mutex_unlock(&processing_mutex);
+		return;
+	}
 	processing = true;
+	pthread_mutex_unlock(&processing_mutex);
 
 	static bool initialized = false;
 	if (!initialized) {
@@ -227,7 +228,6 @@ void process_chunks() {
 	}
 
 	pthread_mutex_lock(&chunk_processor.mutex);
-
 	if (!chunk_processor.running) {
 		chunk_processor.running = true;
 		pthread_create(&chunk_processor.thread, NULL, chunk_processor_thread, &chunk_processor);
@@ -238,11 +238,12 @@ void process_chunks() {
 
 	bool chunks_ready = chunk_processor.chunks_ready_to_combine;
 	chunk_processor.chunks_ready_to_combine = false;
-
 	pthread_mutex_unlock(&chunk_processor.mutex);
 
 	if (chunks_ready)
 		combine_meshes();
 
+	pthread_mutex_lock(&processing_mutex);
 	processing = false;
+	pthread_mutex_unlock(&processing_mutex);
 }
