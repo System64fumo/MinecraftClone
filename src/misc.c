@@ -73,14 +73,14 @@ void do_time_stuff() {
 		time_previous = time_current;
 		time_counter = 0;
 
-		pthread_mutex_lock(&chunk_loader.mutex);
 		process_chunks();
-		pthread_mutex_unlock(&chunk_loader.mutex);
 
 		#ifdef DEBUG
+		pthread_mutex_lock(&mesh_mutex);
 		printf("Vertex count: %d\n", combined_mesh.vertex_count);
 		printf("Index count: %d\n", combined_mesh.index_count);
 		printf("VRAM estimate: %ldmb\n", (sizeof(Vertex) * combined_mesh.vertex_count) / 1024 / 1024);
+		pthread_mutex_unlock(&mesh_mutex);
 		#endif
 	}
 }
