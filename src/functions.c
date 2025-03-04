@@ -1,4 +1,5 @@
 #include "main.h"
+#include "world.h"
 #include <stdlib.h>
 
 Chunk*** allocate_chunks(int render_distance, int world_height) {
