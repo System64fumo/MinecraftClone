@@ -37,6 +37,8 @@ typedef struct {
 typedef struct {
 	float x, y, z;
 	float yaw, pitch;
+	float width, height;
+	float eye_level;
 	uint8_t speed;
 } Entity;
 

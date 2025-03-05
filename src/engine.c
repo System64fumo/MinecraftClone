@@ -125,6 +125,9 @@ int initialize() {
 		.z = 0.0f,
 		.yaw = 90.0f,
 		.pitch = 0.0f,
+		.width = 0.9375f,
+		.height = 1.875f,
+		.eye_level = 1.625f,
 		.speed = 20
 	};
 	global_entities[0] = player;
