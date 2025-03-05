@@ -67,6 +67,11 @@ void* chunk_loader_thread(void* arg) {
 			dx = center_cx - local_last_cx;
 			dz = center_cz - local_last_cz;
 
+			pthread_mutex_lock(&loader->mutex);
+			last_cx = center_cx;
+			last_cz = center_cz;
+			pthread_mutex_unlock(&loader->mutex);
+
 			if (dx == 0 && dz == 0) continue;
 
 			// Allocate and copy temp_chunks manually
@@ -202,11 +207,6 @@ void* chunk_loader_thread(void* arg) {
 
 			// Free temp_chunks
 			free_chunks(temp_chunks, RENDER_DISTANCE, WORLD_HEIGHT);
-
-			pthread_mutex_lock(&loader->mutex);
-			last_cx = center_cx;
-			last_cz = center_cz;
-			pthread_mutex_unlock(&loader->mutex);
 		}
 	}
 

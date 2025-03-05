@@ -117,6 +117,7 @@ void draw_block_highlight(float x, float y, float z);
 bool is_block_solid(int world_block_x, int world_block_y, int world_block_z);
 void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord);
 bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);
+void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x, int block_y, int block_z);
 
 void matrix4_identity(float* mat);
 void matrix4_translate(float* mat, float x, float y, float z);
