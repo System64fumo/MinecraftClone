@@ -101,7 +101,7 @@ void render_to_framebuffer() {
 	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
 	vec3 pos;
 	pos.x = global_entities[0].x;
-	pos.y = global_entities[0].y;
+	pos.y = global_entities[0].y + global_entities[0].eye_level;
 	pos.z = global_entities[0].z;
 	get_targeted_block(pos, dir, 5.0f, &world_block_x, &world_block_y, &world_block_z, &block_face);
 	if (block_face != 'N')
