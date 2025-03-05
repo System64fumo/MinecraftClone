@@ -87,37 +87,6 @@ void processInput(GLFWwindow* window) {
 	}
 }
 
-// Helper function to calculate chunk and block coordinates
-void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord) {
-	*chunk_coord = (world_coord < 0) ? ((world_coord + 1) / CHUNK_SIZE - 1) : (world_coord / CHUNK_SIZE);
-	*block_coord = ((world_coord % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
-}
-
-// Helper function to check if a chunk is within bounds
-bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z) {
-	return (render_x >= 0 && render_x < RENDER_DISTANCE &&
-			chunk_y >= 0 && chunk_y < WORLD_HEIGHT &&
-			render_z >= 0 && render_z < RENDER_DISTANCE);
-}
-
-// Helper function to update adjacent chunks
-void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x, int block_y, int block_z) {
-	if (block_x == 0 && render_x > 0)
-		chunks[render_x - 1][chunk_y][render_z].needs_update = true;
-	else if (block_x == CHUNK_SIZE - 1 && render_x < RENDER_DISTANCE - 1)
-		chunks[render_x + 1][chunk_y][render_z].needs_update = true;
-
-	if (block_y == 0 && chunk_y > 0)
-		chunks[render_x][chunk_y - 1][render_z].needs_update = true;
-	else if (block_y == CHUNK_SIZE - 1 && chunk_y < WORLD_HEIGHT - 1)
-		chunks[render_x][chunk_y + 1][render_z].needs_update = true;
-
-	if (block_z == 0 && render_z > 0)
-		chunks[render_x][chunk_y][render_z - 1].needs_update = true;
-	else if (block_z == CHUNK_SIZE - 1 && render_z < RENDER_DISTANCE - 1)
-		chunks[render_x][chunk_y][render_z + 1].needs_update = true;
-}
-
 // Main callback function
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
 	if (action != GLFW_PRESS) return;

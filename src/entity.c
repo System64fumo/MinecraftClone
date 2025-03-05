@@ -6,10 +6,11 @@ vec3 get_direction(float pitch, float yaw) {
 	vec3 dir;
 	float pitch_rad = pitch * (M_PI / 180.0f);
 	float yaw_rad = (yaw - 90) * (M_PI / 180.0f);
+	float pitch_cos = cosf(pitch_rad);
 
-	dir.x = -sinf(yaw_rad) * cosf(pitch_rad);
+	dir.x = -sinf(yaw_rad) * pitch_cos;
 	dir.y = sinf(pitch_rad);
-	dir.z = cosf(yaw_rad) * cosf(pitch_rad);
+	dir.z = cosf(yaw_rad) * pitch_cos;
 	return dir;
 }
 
@@ -55,26 +56,10 @@ void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, 
 		// Skip if out of bounds
 		if (block_y < 0 || block_y >= WORLD_HEIGHT * CHUNK_SIZE) continue;
 
-		// Calculate chunk and local coordinates
-		int chunk_x = block_x >> 4; // Equivalent to block_x / CHUNK_SIZE
-		int chunk_z = block_z >> 4; // Equivalent to block_z / CHUNK_SIZE
-		int chunk_y = block_y >> 4; // Equivalent to block_y / CHUNK_SIZE
+		Block* block = get_block_at(block_x, block_y, block_z);
+		if (block == NULL) continue;
+		uint8_t intersecting_block_id = block->id;
 
-		uint8_t local_x = block_x & 0xF; // Equivalent to block_x % CHUNK_SIZE
-		uint8_t local_y = block_y & 0xF; // Equivalent to block_y % CHUNK_SIZE
-		uint8_t local_z = block_z & 0xF; // Equivalent to block_z % CHUNK_SIZE
-
-		// Convert chunk world coords to render distance array indices
-		int render_x = chunk_x - last_cx;
-		int render_z = chunk_z - last_cz;
-
-		// Skip if out of render distance
-		if (render_x < 0 || render_x >= RENDER_DISTANCE ||
-			chunk_y < 0 || chunk_y >= WORLD_HEIGHT ||
-			render_z < 0 || render_z >= RENDER_DISTANCE) continue;
-
-		// Check block ID
-		uint8_t intersecting_block_id = chunks[render_x][chunk_y][render_z].blocks[local_x][local_y][local_z].id;
 		if (intersecting_block_id != 0 && intersecting_block_id != 8 && intersecting_block_id != 9) {
 			*out_x = block_x;
 			*out_y = block_y;
