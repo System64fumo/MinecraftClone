@@ -102,7 +102,8 @@ void render_to_framebuffer() {
 	pos.y = global_entities[0].y + global_entities[0].eye_level;
 	pos.z = global_entities[0].z;
 
-	print_rendered_chunks(pos, dir);
+	update_chunks_visibility(pos, dir);
+	//print_rendered_chunks(pos, dir);
 	render_chunks();
 
 	get_targeted_block(pos, dir, 5.0f, &world_block_x, &world_block_y, &world_block_z, &block_face);

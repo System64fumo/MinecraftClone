@@ -9,6 +9,8 @@ unsigned int combined_VAO = 0;
 unsigned int combined_VBO = 0;
 unsigned int combined_EBO = 0;
 bool mesh_mode = false;
+bool frustum_culling_enabled = true;
+float frustum_offset = CHUNK_SIZE;
 
 void init_gl_buffers() {
 	glGenVertexArrays(1, &combined_VAO);
@@ -41,6 +43,74 @@ void init_gl_buffers() {
 	glBindVertexArray(0);
 }
 
+bool is_chunk_in_frustum(vec3 pos, vec3 dir, int chunk_x, int chunk_z, float fov_angle) {
+	float dir_length = sqrt(dir.x * dir.x + dir.z * dir.z);
+	if (dir_length < 0.001f) {
+		return true;
+	}
+
+	vec3 normalized_dir = {dir.x / dir_length, 0, dir.z / dir_length};
+
+	vec3 frustum_origin = {
+		pos.x - normalized_dir.x * frustum_offset,
+		pos.y,
+		pos.z - normalized_dir.z * frustum_offset
+	};
+
+	vec3 chunk_pos = {
+		chunk_x * CHUNK_SIZE + CHUNK_SIZE / 2, 
+		0, 
+		chunk_z * CHUNK_SIZE + CHUNK_SIZE / 2
+	};
+
+	vec3 origin_to_chunk = {
+		chunk_pos.x - frustum_origin.x,
+		0,
+		chunk_pos.z - frustum_origin.z
+	};
+
+	float origin_to_chunk_length = sqrt(origin_to_chunk.x * origin_to_chunk.x + origin_to_chunk.z * origin_to_chunk.z);
+
+	if (origin_to_chunk_length < 0.001f) {
+		return true;
+	}
+
+	vec3 normalized_origin_to_chunk = {
+		origin_to_chunk.x / origin_to_chunk_length, 
+		0, 
+		origin_to_chunk.z / origin_to_chunk_length
+	};
+
+	float dot_product = normalized_dir.x * normalized_origin_to_chunk.x + 
+						normalized_dir.z * normalized_origin_to_chunk.z;
+
+	return dot_product >= fov_angle;
+}
+
+void update_chunks_visibility(vec3 pos, vec3 dir) {
+	int center_cx = last_cx + (RENDER_DISTANCE / 2);
+	int center_cz = last_cz + (RENDER_DISTANCE / 2);
+
+	float fov_angle = cos(fov * M_PI / 180.0f);
+
+	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+		for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
+			int chunk_x = center_cx - (RENDER_DISTANCE / 2) + x;
+			int chunk_z = center_cz - (RENDER_DISTANCE / 2) + z;
+
+			bool visible = true;
+
+			if (frustum_culling_enabled) {
+				visible = is_chunk_in_frustum(pos, dir, chunk_x, chunk_z, fov_angle);
+			}
+
+			for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
+				chunk_render_data[x][y][z].visible = visible;
+			}
+		}
+	}
+}
+
 void print_rendered_chunks(vec3 pos, vec3 dir) {
 	printf("\e[1;1H\e[2J");
 	printf("Rendered chunks:\n");
@@ -58,24 +128,14 @@ void print_rendered_chunks(vec3 pos, vec3 dir) {
 	printf("Player chunk: (%d, %d)\n", player_cx, player_cz);
 	printf("Center chunk: (%d, %d)\n", center_cx, center_cz);
 
-	float dir_length = sqrt(dir.x * dir.x + dir.z * dir.z);
-	vec3 normalized_dir = {dir.x / dir_length, dir.y / dir_length, dir.z / dir_length};
+	float fov_angle = cos(fov * M_PI / 180.0f);
 
 	for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
 		for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 			int chunk_x = center_cx - (RENDER_DISTANCE / 2) + x;
 			int chunk_z = center_cz - (RENDER_DISTANCE / 2) + z;
-			vec3 chunk_pos = {chunk_x * CHUNK_SIZE + CHUNK_SIZE / 2, 0, chunk_z * CHUNK_SIZE + CHUNK_SIZE / 2};
-			vec3 player_to_chunk = {chunk_pos.x - pos.x, 0, chunk_pos.z - pos.z};
-
-			float player_to_chunk_length = sqrt(player_to_chunk.x * player_to_chunk.x + player_to_chunk.z * player_to_chunk.z);
-			vec3 normalized_player_to_chunk = {player_to_chunk.x / player_to_chunk_length, 0, player_to_chunk.z / player_to_chunk_length};
-
-			float dot_product = normalized_dir.x * normalized_player_to_chunk.x + normalized_dir.z * normalized_player_to_chunk.z;
-
-			float fov_angle = cos(45.0f * M_PI / 180.0f);
-
-			bool is_in_frustum = dot_product >= fov_angle;
+			
+			bool is_in_frustum = is_chunk_in_frustum(pos, dir, chunk_x, chunk_z, fov_angle);
 
 			if (x == relative_cx && z == relative_cz) {
 				printf("[o]");
