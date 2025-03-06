@@ -121,14 +121,14 @@ int initialize() {
 	// Initialize player
 	Entity player = {
 		.x = 0.0f,
-		.y = 74.0f,
+		.y = 100.0f,
 		.z = 0.0f,
 		.yaw = 90.0f,
 		.pitch = 0.0f,
 		.width = 0.9375f,
 		.height = 1.875f,
 		.eye_level = 1.625f,
-		.speed = 20
+		.speed = 10
 	};
 	global_entities[0] = player;
 
@@ -149,7 +149,7 @@ void run() {
 	load_around_entity(&global_entities[0]);
 	while (!glfwWindowShouldClose(window)) {
 		do_time_stuff();
-		processInput(window);
+		process_input(window);
 	
 		render_to_framebuffer();
 		render_to_screen();
