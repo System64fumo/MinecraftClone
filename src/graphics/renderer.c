@@ -99,10 +99,23 @@ void render_chunks() {
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, model);
 
 	glBindVertexArray(combined_VAO);
-	if (mesh_mode)
-		glDrawElements(GL_LINES, combined_mesh.index_count, GL_UNSIGNED_INT, 0);
-	else
-		glDrawElements(GL_TRIANGLES, combined_mesh.index_count, GL_UNSIGNED_INT, 0);
+
+	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
+			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
+				ChunkRenderData* render_data = &chunk_render_data[x][y][z];
+				if (!render_data->visible || render_data->index_count == 0)
+					continue;
+					
+				if (mesh_mode)
+					glDrawElements(GL_LINES, render_data->index_count, GL_UNSIGNED_INT, 
+								 (void*)(render_data->start_index * sizeof(uint32_t)));
+				else
+					glDrawElements(GL_TRIANGLES, render_data->index_count, GL_UNSIGNED_INT, 
+								 (void*)(render_data->start_index * sizeof(uint32_t)));
+			}
+		}
+	}
 }
 
 void cleanup_renderer() {

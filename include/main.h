@@ -67,6 +67,12 @@ typedef struct {
 	pthread_cond_t cond;
 } chunk_loader_t;
 
+typedef struct {
+	uint32_t start_index;
+	uint32_t index_count;
+	bool visible;
+} ChunkRenderData;
+
 // Externs
 extern unsigned short screen_width;
 extern unsigned short screen_height;
@@ -94,6 +100,7 @@ extern unsigned int block_textures, ui_textures;
 
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
 extern Chunk*** chunks;
+extern ChunkRenderData chunk_render_data[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK];
 extern chunk_loader_t chunk_loader;
 
@@ -121,6 +128,7 @@ void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x
 
 void matrix4_identity(float* mat);
 void matrix4_translate(float* mat, float x, float y, float z);
+void matrix4_multiply(float result[16], const float mat1[16], const float mat2[16]);
 void matrix4_rotate(float* mat, float angle, float x, float y, float z);
 void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far);
 void matrix4_scale(float* mat, float x, float y, float z);

@@ -24,6 +24,17 @@ void matrix4_translate(float* mat, float x, float y, float z) {
 	mat[14] = z;
 }
 
+void matrix4_multiply(float result[16], const float mat1[16], const float mat2[16]) {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            result[i * 4 + j] = 0.0f;
+            for (int k = 0; k < 4; k++) {
+                result[i * 4 + j] += mat1[i * 4 + k] * mat2[k * 4 + j];
+            }
+        }
+    }
+}
+
 void matrix4_rotate(float* mat, float angle, float x, float y, float z) {
 	float c = cosf(angle);
 	float s = sinf(angle);
