@@ -96,13 +96,15 @@ void render_to_framebuffer() {
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, view);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, projection);
 
-	render_chunks();
-
 	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
 	vec3 pos;
 	pos.x = global_entities[0].x;
 	pos.y = global_entities[0].y + global_entities[0].eye_level;
 	pos.z = global_entities[0].z;
+
+	print_rendered_chunks(pos, dir);
+	render_chunks();
+
 	get_targeted_block(pos, dir, 5.0f, &world_block_x, &world_block_y, &world_block_z, &block_face);
 	if (block_face != 'N')
 		draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
