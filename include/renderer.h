@@ -22,5 +22,6 @@ extern unsigned int combined_EBO;
 extern bool mesh_mode;
 
 void init_gl_buffers();
+void print_rendered_chunks();
 void render_chunks();
 void cleanup_renderer();
