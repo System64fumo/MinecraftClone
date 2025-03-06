@@ -84,7 +84,7 @@ extern float aspect;
 extern bool frustum_faces[6];
 extern float sky_brightness;
 
-extern double deltaTime;
+extern double delta_time;
 extern float framerate;
 extern float frametime;
 extern float model[16], view[16], projection[16];
@@ -107,7 +107,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-void processInput(GLFWwindow* window);
+void process_input(GLFWwindow* window);
 void setup_matrices();
 
 vec3 get_direction(float pitch, float yaw);

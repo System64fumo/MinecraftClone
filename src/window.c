@@ -10,6 +10,16 @@ float lastX = 1280.0f / 2.0f;
 float lastY = 720.0f / 2.0f;
 bool firstMouse = true;
 
+#define GRAVITY 40.0f
+#define MAX_FALL_SPEED 78.4f
+
+typedef struct {
+	int is_grounded;
+	float vertical_velocity;
+} physics_state;
+
+physics_state player_physics = {0, 0.0f};
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	screen_width = width;
 	screen_height = height;
@@ -38,53 +48,135 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
-void processInput(GLFWwindow* window) {
-	float moveSpeed = global_entities[0].speed * deltaTime;
+int check_entity_collision(float x, float y, float z, float width, float height) {
+	float half_width = width / 2.0f;
+
+	float check_points[][3] = {
+		{x - half_width, y, z - half_width},
+		{x + half_width, y, z - half_width},
+		{x - half_width, y, z + half_width},
+		{x + half_width, y, z + half_width},
+		{x - half_width, y + height, z - half_width},
+		{x + half_width, y + height, z - half_width},
+		{x - half_width, y + height, z + half_width},
+		{x + half_width, y + height, z + half_width}
+	};
+
+	// Check each point for collision
+	for (int i = 0; i < 8; i++) {
+		if (is_block_solid(
+			(int)floorf(check_points[i][0]), 
+			(int)floorf(check_points[i][1]), 
+			(int)floorf(check_points[i][2])
+		)) {
+			return 0;  // Collision detected
+		}
+	}
+
+	return 1;  // No collision
+}
+
+void update_player_physics(Entity* player, float delta_time) {
+	if (!player_physics.is_grounded) {
+		player_physics.vertical_velocity -= GRAVITY * delta_time;
+		player_physics.vertical_velocity = fmaxf(
+			-MAX_FALL_SPEED, 
+			player_physics.vertical_velocity
+		);
+	}
+
+	float new_y = player->y + player_physics.vertical_velocity * delta_time;
+
+	int collision_points_count = 4;
+	float half_width = player->width / 2.0f;
+	float ground_check_points[][2] = {
+		{player->x - half_width, player->z - half_width},
+		{player->x + half_width, player->z - half_width},
+		{player->x - half_width, player->z + half_width},
+		{player->x + half_width, player->z + half_width}
+	};
+
+	player_physics.is_grounded = 0;
+
+	for (int i = 0; i < collision_points_count; i++) {
+		int ground_collision = is_block_solid(
+			(int)floorf(ground_check_points[i][0]), 
+			(int)floorf(new_y), 
+			(int)floorf(ground_check_points[i][1])
+		);
+
+		if (ground_collision) {
+			new_y = ceilf(new_y);
+			player_physics.vertical_velocity = 0.0f;
+			player_physics.is_grounded = 1;
+			break;
+		}
+	}
+
+	player->y = new_y;
+}
+
+void process_input(GLFWwindow* window) {
+	float move_speed = global_entities[0].speed * delta_time;
 	float yaw = global_entities[0].yaw * (M_PI / 180.0f);
 
 	float dx = 0.0f, dy = 0.0f, dz = 0.0f;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		dx += cosf(yaw) * moveSpeed;
-		dz += sinf(yaw) * moveSpeed;
+		dx += cosf(yaw) * move_speed;
+		dz += sinf(yaw) * move_speed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		dx -= cosf(yaw) * moveSpeed;
-		dz -= sinf(yaw) * moveSpeed;
+		dx -= cosf(yaw) * move_speed;
+		dz -= sinf(yaw) * move_speed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		dx += sinf(yaw) * moveSpeed;
-		dz -= cosf(yaw) * moveSpeed;
+		dx += sinf(yaw) * move_speed;
+		dz -= cosf(yaw) * move_speed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		dx -= sinf(yaw) * moveSpeed;
-		dz += cosf(yaw) * moveSpeed;
+		dx -= sinf(yaw) * move_speed;
+		dz += cosf(yaw) * move_speed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		dy += moveSpeed;
+		dy += move_speed;
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-		dy -= moveSpeed;
+		dy -= move_speed;
 	}
 
-	// Check X-axis collision
-	float newX = global_entities[0].x + dx;
-	float newY = global_entities[0].y + dy;
-	float newZ = global_entities[0].z + dz;
+	float new_x = global_entities[0].x + dx;
+	float new_y = global_entities[0].y + dy;
+	float new_z = global_entities[0].z + dz;
 
-	if (!is_block_solid((int)floorf(newX), (int)floorf(global_entities[0].y), (int)floorf(global_entities[0].z))) {
-		global_entities[0].x = newX;
-	}
+	int can_move_x = check_entity_collision(
+		new_x, 
+		global_entities[0].y, 
+		global_entities[0].z, 
+		global_entities[0].width, 
+		global_entities[0].height
+	);
 
-	// Check Y-axis collision
-	if (!is_block_solid((int)floorf(global_entities[0].x), (int)floorf(newY), (int)floorf(global_entities[0].z))) {
-		global_entities[0].y = newY;
-	}
+	int can_move_y = check_entity_collision(
+		global_entities[0].x, 
+		new_y, 
+		global_entities[0].z, 
+		global_entities[0].width, 
+		global_entities[0].height
+	);
 
-	// Check Z-axis collision
-	if (!is_block_solid((int)floorf(global_entities[0].x), (int)floorf(global_entities[0].y), (int)floorf(newZ))) {
-		global_entities[0].z = newZ;
-	}
+	int can_move_z = check_entity_collision(
+		global_entities[0].x, 
+		global_entities[0].y, 
+		new_z, 
+		global_entities[0].width, 
+		global_entities[0].height
+	);
+
+	if (can_move_x) global_entities[0].x = new_x;
+	if (can_move_y) global_entities[0].y = new_y;
+	if (can_move_z) global_entities[0].z = new_z;
+	update_player_physics(&global_entities[0], delta_time);
 }
 
 // Main callback function
