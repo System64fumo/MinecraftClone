@@ -19,6 +19,7 @@ chunk_processor_t chunk_processor = {
 };
 
 pthread_mutex_t mesh_mutex;
+ChunkRenderData chunk_render_data[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
 
 void* chunk_processor_thread(void* arg) {
 	chunk_processor_t* processor = (chunk_processor_t*)arg;
@@ -149,8 +150,15 @@ void combine_meshes() {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
 				Chunk* chunk = &chunks[x][y][z];
-				if (chunk->vertex_count == 0 || chunk->vertices == NULL)
+				if (chunk->vertex_count == 0 || chunk->vertices == NULL) {
+					chunk_render_data[x][y][z].index_count = 0;
+					chunk_render_data[x][y][z].visible = false;
 					continue;
+				}
+
+				chunk_render_data[x][y][z].start_index = index_offset;
+				chunk_render_data[x][y][z].index_count = chunk->index_count;
+				chunk_render_data[x][y][z].visible = true;
 
 				// Copy vertices
 				memcpy(combined_mesh.vertices + vertex_offset, chunk->vertices,
