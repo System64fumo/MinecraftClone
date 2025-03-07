@@ -52,6 +52,7 @@ typedef struct {
 	int32_t x, y, z;
 	uint8_t ci_x, ci_y, ci_z;
 	bool needs_update;
+	bool is_loaded;
 	uint32_t vertex_count;
 	uint32_t index_count;
 	Vertex* vertices;

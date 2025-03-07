@@ -117,6 +117,26 @@ void update_player_physics(Entity* player, float delta_time) {
 }
 
 void process_input(GLFWwindow* window) {
+	int player_cx = (int)(global_entities[0].x / CHUNK_SIZE);
+	int player_cy = (int)(global_entities[0].y / CHUNK_SIZE);
+	int player_cz = (int)(global_entities[0].z / CHUNK_SIZE);
+
+	int center_cx = last_cx + (RENDER_DISTANCE / 2);
+	int center_cz = last_cz + (RENDER_DISTANCE / 2);
+
+	int relative_cx = player_cx - (center_cx - (RENDER_DISTANCE / 2));
+	int relative_cz = player_cz - (center_cz - (RENDER_DISTANCE / 2));
+
+	if (relative_cx < 0 || relative_cx >= RENDER_DISTANCE || relative_cz < 0 || relative_cz >= RENDER_DISTANCE || player_cy < 0 || player_cy >= WORLD_HEIGHT) {
+		return;
+	}
+
+	Chunk* chunk = &chunks[relative_cx][player_cy][relative_cz];
+
+	if (!chunk->is_loaded || chunk->needs_update) {
+		return;
+	}
+
 	float move_speed = global_entities[0].speed * delta_time;
 	float yaw = global_entities[0].yaw * (M_PI / 180.0f);
 
@@ -176,6 +196,7 @@ void process_input(GLFWwindow* window) {
 	if (can_move_x) global_entities[0].x = new_x;
 	if (can_move_y) global_entities[0].y = new_y;
 	if (can_move_z) global_entities[0].z = new_z;
+
 	update_player_physics(&global_entities[0], delta_time);
 }
 
