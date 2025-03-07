@@ -1,4 +1,5 @@
 extern int last_cx;
+extern int last_cy;
 extern int last_cz;
 
 extern const int SEA_LEVEL;

@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 int last_cx = -1;
+int last_cy = -1;
 int last_cz = -1;
 
 const int SEA_LEVEL = 64;
@@ -54,21 +55,25 @@ void* chunk_loader_thread(void* arg) {
 		if (entity != NULL && should_load) {
 			// Perform actual chunk loading
 			int center_cx = floorf(entity->x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
+			int center_cy = floorf(entity->y / CHUNK_SIZE) - (WORLD_HEIGHT / 2);
 			int center_cz = floorf(entity->z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
 
-			int dx, dz;
-			int local_last_cx, local_last_cz;
+			int dx, dy, dz;
+			int local_last_cx, local_last_cy, local_last_cz;
 
 			pthread_mutex_lock(&loader->mutex);
 			local_last_cx = last_cx;
+			local_last_cy = last_cy;
 			local_last_cz = last_cz;
 			pthread_mutex_unlock(&loader->mutex);
 
 			dx = center_cx - local_last_cx;
+			dy = center_cy - local_last_cy;
 			dz = center_cz - local_last_cz;
 
 			pthread_mutex_lock(&loader->mutex);
 			last_cx = center_cx;
+			last_cy = center_cy;
 			last_cz = center_cz;
 			pthread_mutex_unlock(&loader->mutex);
 
