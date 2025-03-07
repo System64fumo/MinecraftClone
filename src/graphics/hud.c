@@ -89,6 +89,7 @@ void draw_block_highlight(float x, float y, float z) {
 	glLineWidth(2.0f);
 	glBindVertexArray(highlight_vao);
 	glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, (void*)0);
+	draw_calls++;
 
 	glEnable(GL_BLEND);
 }
@@ -194,6 +195,7 @@ void render_ui() {
 	glBindVertexArray(ui_vao);
 	glBindTexture(GL_TEXTURE_2D, ui_textures);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, MAX_UI_ELEMENTS * 4);
+	draw_calls++;
 }
 
 void cleanup_ui() {

@@ -91,6 +91,7 @@ void do_time_stuff() {
 		printf("Vertex count: %d\n", combined_mesh.vertex_count);
 		printf("Index count: %d\n", combined_mesh.index_count);
 		printf("VRAM estimate: %ldmb\n", (sizeof(Vertex) * combined_mesh.vertex_count) / 1024 / 1024);
+		printf("Draw calls: %d\n", draw_calls);
 		pthread_mutex_unlock(&mesh_mutex);
 		#endif
 	}

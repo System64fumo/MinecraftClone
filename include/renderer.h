@@ -20,6 +20,7 @@ extern unsigned int combined_VAO;
 extern unsigned int combined_VBO;
 extern unsigned int combined_EBO;
 extern bool mesh_mode;
+extern uint16_t draw_calls;
 
 void init_gl_buffers();
 void update_chunks_visibility();
