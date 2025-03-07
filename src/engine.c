@@ -78,6 +78,7 @@ int initialize() {
 	glfwSetKeyCallback(window, key_callback);
 
 	glewInit();
+	framebuffer_size_callback(window, screen_width, screen_height);
 
 	// Debugging
 	#ifdef DEBUG
