@@ -17,8 +17,10 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * Render distance (Only keep track of chunks that matter not the whole world)
 * Single large VBO
 * Greedy meshing
-* Basic face culling
 * Multithreading (Terrain generates on another thread, So does meshing)
+* DDA raycasting
+* Basic face culling
+* 3D Frustum culling
 
 # Note
 At the time of writing my main PC is an Orange Pi 5 Plus, So code may cater to it.<br>
