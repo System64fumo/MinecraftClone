@@ -9,6 +9,7 @@ unsigned int combined_VAO = 0;
 unsigned int combined_VBO = 0;
 unsigned int combined_EBO = 0;
 bool mesh_mode = false;
+uint16_t draw_calls = 0;
 bool frustum_culling_enabled = true;
 float frustum_offset = CHUNK_SIZE * 2;
 
@@ -165,6 +166,7 @@ void print_rendered_chunks(vec3 pos, vec3 dir) {
 }
 
 void render_chunks() {
+	draw_calls = 0;
 	if (combined_mesh.index_count == 0)
 		return;
 
@@ -188,6 +190,8 @@ void render_chunks() {
 				else
 					glDrawElements(GL_TRIANGLES, render_data->index_count, GL_UNSIGNED_INT, 
 								 (void*)(render_data->start_index * sizeof(uint32_t)));
+
+				 draw_calls++;
 			}
 		}
 	}
