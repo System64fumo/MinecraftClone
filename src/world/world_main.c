@@ -188,6 +188,7 @@ void* chunk_loader_thread(void* arg) {
 						// Load chunk atomically
 						Chunk temp_chunk = {0};
 						load_chunk_data(&temp_chunk, x, y, z, x + center_cx, y, z + center_cz);
+						temp_chunk.is_loaded = true;
 						
 						pthread_mutex_lock(&mesh_mutex);
 						chunks[x][y][z] = temp_chunk;
@@ -311,6 +312,7 @@ void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int 
 	chunks[ci_x][ci_y][ci_z].y = cy;
 	chunks[ci_x][ci_y][ci_z].z = cz;
 	chunks[ci_x][ci_y][ci_z].needs_update = true;
+	chunks[ci_x][ci_y][ci_z].is_loaded = false;
 
 	// char filename[255];
 	// snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(cx, cy, cz));
