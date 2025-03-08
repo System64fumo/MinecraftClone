@@ -52,6 +52,7 @@ void* chunk_processor_thread(void* arg) {
 						needs_update = chunk->needs_update;
 						
 						if (needs_update) {
+							set_chunk_lighting(chunk);
 							generate_chunk_mesh(chunk);
 							chunk->needs_update = false;
 							chunks_updated = true;

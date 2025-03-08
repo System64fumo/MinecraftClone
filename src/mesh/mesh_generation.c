@@ -84,7 +84,7 @@ void generate_slab_vertices(float x, float y, float z, Block* block, Vertex vert
 	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, 3, texture_id, 1, 1, light_data};
 }
 
-void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint32_t* vertex_count) {
+void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint32_t* vertex_count, uint8_t light_data) {
 	uint8_t width_blocks = (face == 1 || face == 3) ? 1 : width;
 	uint8_t height_blocks = (face >= 4) ? 1 : height;
 	uint8_t depth_blocks = (face == 0 || face == 2) ? 1 : (face >= 4 ? height : width);
@@ -101,27 +101,6 @@ void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, u
 	}
 
 	uint8_t texture_id = block_data[block->id][2+face];
-
-	// Calculate the coordinates of the adjacent block
-	int adjacent_x = (int)x;
-	int adjacent_y = (int)y;
-	int adjacent_z = (int)z;
-
-	switch (face) {
-		case 0: adjacent_z += 1; break; // Front (Z+)
-		case 1: adjacent_x += 1; break; // Left (X-)
-		case 2: adjacent_z -= 1; break; // Back (Z-)
-		case 3: adjacent_x -= 1; break; // Right (X+)
-		case 4: adjacent_y -= 1; break; // Bottom (Y-)
-		case 5: adjacent_y += 1; break; // Top (Y+)
-	}
-
-	// Temporarily disabled due to block at pos issues
-	// Get the adjacent block using the get_block_at function
-	//Block* adjacent_block = get_block_at(adjacent_x, adjacent_y, adjacent_z);
-	//uint8_t light_data = adjacent_block ? adjacent_block->light_data : 15; // Default to max light if no block is found
-
-	uint8_t light_data = 15;
 
 	switch (face) {
 		case 0: // Front (Z+)
@@ -208,8 +187,43 @@ void generate_chunk_mesh(Chunk* chunk) {
 						memset(&mask[v + dy][u], true, width * sizeof(bool));
 					}
 
+					// int adjacent_x, adjacent_y, adjacent_z;
+					// if (face == 'R') {
+					// 	adjacent_x = world_x + x - 1;
+					// 	adjacent_y = world_y + y;
+					// 	adjacent_z = world_z + z;
+					// }
+					// else if (face == 'L') {
+					// 	adjacent_x = world_x + x + 1;
+					// 	adjacent_y = world_y + y;
+					// 	adjacent_z = world_z + z;
+					// }
+					// else if (face == 'F') {
+					// 	adjacent_x = world_x + x;
+					// 	adjacent_y = world_y + y;
+					// 	adjacent_z = world_z + z + 1;
+					// }
+					// else if (face == 'K') {
+					// 	adjacent_x = world_x + x;
+					// 	adjacent_y = world_y + y;
+					// 	adjacent_z = world_z + z - 1;
+					// }
+					// else if (face == 'T') {
+					// 	adjacent_x = world_x + x;
+					// 	adjacent_y = world_y + y + 1;
+					// 	adjacent_z = world_z + z;
+					// }
+					// else if (face == 'B') {
+					// 	adjacent_x = world_x + x;
+					// 	adjacent_y = world_y + y - 1;
+					// 	adjacent_z = world_z + z;
+					// }
+					// Block* adjacent_block = get_block_at(adjacent_x, adjacent_y, adjacent_z);
+					// uint8_t adjacent_light_data = adjacent_block ? adjacent_block->light_data : 6;
+					uint8_t adjacent_light_data = 15;
+
 					uint16_t base_vertex = vertex_count;
-					generate_vertices(face, x + world_x, y + world_y, z + world_z, width, height, block, vertices, &vertex_count);
+					generate_vertices(face, x + world_x, y + world_y, z + world_z, width, height, block, vertices, &vertex_count, adjacent_light_data);
 					generate_indices(base_vertex, indices, &index_count);
 				}
 			}

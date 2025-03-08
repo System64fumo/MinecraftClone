@@ -309,7 +309,6 @@ void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsig
 	chunk->needs_update = true;
 
 	generate_chunk_terrain(chunk, cx, cy, cz);
-	set_chunk_lighting(chunk);
 }
 
 void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz) {
@@ -336,10 +335,6 @@ void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int 
 	 	generate_chunk_terrain(&chunks[ci_x][ci_y][ci_z], cx, cy, cz);
 	// 	save_chunk_to_file(filename, &chunks[ci_x][ci_y][ci_z]);
 	// }
-
-
-	// Abuse terrain thread for lighting (This is terrible and should ideally run on another thread)
-	set_chunk_lighting(&chunks[ci_x][ci_y][ci_z]);
 }
 
 void unload_chunk(Chunk* chunk) {
