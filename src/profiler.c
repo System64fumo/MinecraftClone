@@ -21,43 +21,48 @@ int profiler_create(const char* name) {
 	return idx;
 }
 
-void profiler_start(int timer_id) {
+void profiler_start(int timer_id, bool time_gpu) {
 	if (timer_id < 0 || timer_id >= num_timers || !timers[timer_id].active) return;
 	
 	// Start CPU timing
 	clock_gettime(CLOCK_MONOTONIC, &timers[timer_id].cpu_start_time);
 	
 	// Start GPU timing
-	glQueryCounter(timers[timer_id].gpu_query_start, GL_TIMESTAMP);
+	if (time_gpu)
+		glQueryCounter(timers[timer_id].gpu_query_start, GL_TIMESTAMP);
 }
 
-void profiler_stop(int timer_id) {
+void profiler_stop(int timer_id, bool time_gpu) {
 	if (timer_id < 0 || timer_id >= num_timers || !timers[timer_id].active) return;
 	
 	// Stop CPU timing
 	clock_gettime(CLOCK_MONOTONIC, &timers[timer_id].cpu_end_time);
 	
 	// Stop GPU timing
-	glQueryCounter(timers[timer_id].gpu_query_end, GL_TIMESTAMP);
+	if (time_gpu)
+		glQueryCounter(timers[timer_id].gpu_query_end, GL_TIMESTAMP);
 	
 	// Wait for GPU queries to be available
-	GLint gpu_available = 0;
-	while (!gpu_available) {
-		glGetQueryObjectiv(timers[timer_id].gpu_query_end, GL_QUERY_RESULT_AVAILABLE, &gpu_available);
-	}
-	
-	// Get GPU timing results
 	GLuint64 start_time, end_time;
-	glGetQueryObjectui64v(timers[timer_id].gpu_query_start, GL_QUERY_RESULT, &start_time);
-	glGetQueryObjectui64v(timers[timer_id].gpu_query_end, GL_QUERY_RESULT, &end_time);
-	
+	if (time_gpu) {
+		GLint gpu_available = 0;
+		while (!gpu_available) {
+			glGetQueryObjectiv(timers[timer_id].gpu_query_end, GL_QUERY_RESULT_AVAILABLE, &gpu_available);
+		}
+
+		// Get GPU timing results
+		glGetQueryObjectui64v(timers[timer_id].gpu_query_start, GL_QUERY_RESULT, &start_time);
+		glGetQueryObjectui64v(timers[timer_id].gpu_query_end, GL_QUERY_RESULT, &end_time);
+	}
+
 	// Calculate CPU time in milliseconds
 	timers[timer_id].cpu_time = 
 		(timers[timer_id].cpu_end_time.tv_sec - timers[timer_id].cpu_start_time.tv_sec) * 1000.0 +
 		(timers[timer_id].cpu_end_time.tv_nsec - timers[timer_id].cpu_start_time.tv_nsec) / 1000000.0;
 	
 	// Calculate GPU time in milliseconds
-	timers[timer_id].gpu_time = (end_time - start_time) / 1000000.0;
+	if (time_gpu)
+		timers[timer_id].gpu_time = (end_time - start_time) / 1000000.0;
 }
 
 void profiler_print_all() {

@@ -24,6 +24,5 @@ extern uint16_t draw_calls;
 
 void init_gl_buffers();
 void update_chunks_visibility();
-void print_rendered_chunks();
 void render_chunks();
 void cleanup_renderer();

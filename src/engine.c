@@ -88,11 +88,11 @@ int initialize() {
 
 	profiler_init();
 	profiler_create("Shaders");
-	profiler_create("Baking");
+	profiler_create("Mesh");
 	profiler_create("Merge");
-	profiler_create("Rendering");
-	profiler_create("UI");
-	profiler_create("World Gen");
+	profiler_create("Render");
+	profiler_create("GUI");
+	profiler_create("World");
 	#endif
 
 	// Textures

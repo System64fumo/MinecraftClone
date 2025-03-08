@@ -116,6 +116,15 @@ void update_player_physics(Entity* player, float delta_time) {
 	player->y = new_y;
 }
 
+void update_frustum() {
+	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
+	vec3 pos;
+	pos.x = global_entities[0].x;
+	pos.y = global_entities[0].y + global_entities[0].eye_level;
+	pos.z = global_entities[0].z;
+	update_chunks_visibility(pos, dir);
+}
+
 void process_input(GLFWwindow* window) {
 	int player_cx = (int)(global_entities[0].x / CHUNK_SIZE);
 	int player_cy = (int)(global_entities[0].y / CHUNK_SIZE);
@@ -145,24 +154,30 @@ void process_input(GLFWwindow* window) {
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		dx += cosf(yaw) * move_speed;
 		dz += sinf(yaw) * move_speed;
+		update_frustum();
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 		dx -= cosf(yaw) * move_speed;
 		dz -= sinf(yaw) * move_speed;
+		update_frustum();
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 		dx += sinf(yaw) * move_speed;
 		dz -= cosf(yaw) * move_speed;
+		update_frustum();
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 		dx -= sinf(yaw) * move_speed;
 		dz += cosf(yaw) * move_speed;
+		update_frustum();
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 		dy += move_speed;
+		update_frustum();
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
 		dy -= move_speed;
+		update_frustum();
 	}
 
 	float new_x = global_entities[0].x + dx;
@@ -245,9 +260,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			chunk->blocks[block_x][block_y][block_z].id = 0;
 		}
-		else {
+		else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 			chunk->blocks[block_x][block_y][block_z].id = hotbar_slot;
 			chunk->blocks[block_x][block_y][block_z].light_data = 0;
+		}
+		else {
+			return;
 		}
 		chunk->needs_update = true;
 
@@ -297,12 +315,13 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 		global_entities[0].yaw += 360.0f;
 	}
 
-	frustum_faces[0] = IS_WITHIN_RANGE(global_entities[0].yaw, 45, 135);
-	frustum_faces[1] = (IS_WITHIN_RANGE(global_entities[0].yaw, 0, 45) || IS_WITHIN_RANGE(global_entities[0].yaw, 315, 360));
-	frustum_faces[2] = IS_WITHIN_RANGE(global_entities[0].yaw, 225, 315);
-	frustum_faces[3] = IS_WITHIN_RANGE(global_entities[0].yaw, 135, 225);
-	frustum_faces[4] = IS_WITHIN_RANGE(global_entities[0].pitch, -90, -45);
-	frustum_faces[5] = IS_WITHIN_RANGE(global_entities[0].pitch, 45, 90);
+	// frustum_faces[0] = IS_WITHIN_RANGE(global_entities[0].yaw, 45, 135);
+	// frustum_faces[1] = (IS_WITHIN_RANGE(global_entities[0].yaw, 0, 45) || IS_WITHIN_RANGE(global_entities[0].yaw, 315, 360));
+	// frustum_faces[2] = IS_WITHIN_RANGE(global_entities[0].yaw, 225, 315);
+	// frustum_faces[3] = IS_WITHIN_RANGE(global_entities[0].yaw, 135, 225);
+	// frustum_faces[4] = IS_WITHIN_RANGE(global_entities[0].pitch, -90, -45);
+	// frustum_faces[5] = IS_WITHIN_RANGE(global_entities[0].pitch, 45, 90);
+	update_frustum();
 }
 
 void setup_matrices() {
