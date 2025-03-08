@@ -226,6 +226,9 @@ void process_chunks() {
 		pthread_mutex_unlock(&processing_mutex);
 		return;
 	}
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_MERGE, false);
+	#endif
 	processing = true;
 	pthread_mutex_unlock(&processing_mutex);
 
@@ -254,4 +257,7 @@ void process_chunks() {
 	pthread_mutex_lock(&processing_mutex);
 	processing = false;
 	pthread_mutex_unlock(&processing_mutex);
+	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_MERGE, false);
+	#endif
 }

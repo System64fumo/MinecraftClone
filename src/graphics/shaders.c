@@ -34,12 +34,12 @@ unsigned int load_shader(const char* vertex_path, const char* fragment_path) {
 
 void load_shaders() {
 	#ifdef DEBUG
-	profiler_start(PROFILER_ID_SHADER);
+	profiler_start(PROFILER_ID_SHADER, false);
 	#endif
 	shaderProgram = load_shader("../shaders/vertex.vert", "../shaders/fragment.frag");
 	postProcessingShader = load_shader("../shaders/postprocess.vert", "../shaders/postprocess.frag");
 	ui_shader = load_shader("../shaders/ui.vert", "../shaders/ui.frag");
 	#ifdef DEBUG
-	profiler_stop(PROFILER_ID_SHADER);
+	profiler_stop(PROFILER_ID_SHADER, false);
 	#endif
 }

@@ -45,7 +45,6 @@ void init_gl_buffers() {
 }
 
 bool is_chunk_in_frustum(vec3 pos, vec3 dir, int chunk_x, int chunk_y, int chunk_z, float fov_angle) {
-	float dir_length_xz = sqrt(dir.x * dir.x + dir.z * dir.z);
 	float dir_length = sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
 	
 	if (dir_length < 0.001f) {
@@ -97,11 +96,11 @@ bool is_chunk_in_frustum(vec3 pos, vec3 dir, int chunk_x, int chunk_y, int chunk
 }
 
 void update_chunks_visibility(vec3 pos, vec3 dir) {
+	float fov_angle = cos(fov * M_PI / 180.0f);
+
 	int center_cx = last_cx + (RENDER_DISTANCE / 2);
 	int center_cy = last_cy + (WORLD_HEIGHT / 2);
 	int center_cz = last_cz + (RENDER_DISTANCE / 2);
-
-	float fov_angle = cos(fov * M_PI / 180.0f);
 
 	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
@@ -119,49 +118,6 @@ void update_chunks_visibility(vec3 pos, vec3 dir) {
 				chunk_render_data[x][y][z].visible = visible;
 			}
 		}
-	}
-}
-
-void print_rendered_chunks(vec3 pos, vec3 dir) {
-	printf("\e[1;1H\e[2J");
-	printf("Rendered chunks:\n");
-
-	int player_cx = (int)(pos.x / CHUNK_SIZE);
-	int player_cy = (int)(pos.y / CHUNK_SIZE);
-	int player_cz = (int)(pos.z / CHUNK_SIZE);
-
-	int center_cx = last_cx + (RENDER_DISTANCE / 2);
-	int center_cy = last_cy + (WORLD_HEIGHT / 2);
-	int center_cz = last_cz + (RENDER_DISTANCE / 2);
-
-	int relative_cx = player_cx - (center_cx - (RENDER_DISTANCE / 2));
-	int relative_cy = player_cy - (center_cy - (WORLD_HEIGHT / 2));
-	int relative_cz = player_cz - (center_cz - (RENDER_DISTANCE / 2));
-
-	printf("Position: (%f, %f, %f)\n", pos.x, pos.y, pos.z);
-	printf("Player chunk: (%d, %d, %d)\n", player_cx, player_cy, player_cz);
-	printf("Center chunk: (%d, %d, %d)\n", center_cx, center_cy, center_cz);
-
-	float fov_angle = cos(fov * M_PI / 180.0f);
-
-	printf("Layer y=%d:\n", center_cy);
-	for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
-		for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
-			int chunk_x = center_cx - (RENDER_DISTANCE / 2) + x;
-			int chunk_y = center_cy;
-			int chunk_z = center_cz - (RENDER_DISTANCE / 2) + z;
-			
-			bool is_in_frustum = is_chunk_in_frustum(pos, dir, chunk_x, chunk_y, chunk_z, fov_angle);
-
-			if (x == relative_cx && z == relative_cz) {
-				printf("[o]");
-			} else if (is_in_frustum) {
-				printf("[x]");
-			} else {
-				printf("[ ]");
-			}
-		}
-		printf("\n");
 	}
 }
 
