@@ -1,10 +1,11 @@
 #include <time.h>
+#include <stdbool.h>
 
 #define MAX_TIMERS 32
 #define MAX_NAME_LENGTH 64
 
 #define PROFILER_ID_SHADER 0
-#define PROFILER_ID_BAKE 1
+#define PROFILER_ID_MESH 1
 #define PROFILER_ID_MERGE 2
 #define PROFILER_ID_RENDER 3
 #define PROFILER_ID_UI 4
@@ -24,7 +25,7 @@ typedef struct {
 
 void profiler_init();
 int profiler_create(const char* name);
-void profiler_start(int timer_id);
-void profiler_stop(int timer_id);
+void profiler_start(int timer_id, bool time_gpu);
+void profiler_stop(int timer_id, bool time_gpu);
 void profiler_print_all();
 void profiler_cleanup();
