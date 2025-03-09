@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include "renderer.h"
 #include <pthread.h>
+#include "misc.h"
 
 #ifdef DEBUG
 #include "profiler.h"
@@ -20,20 +21,7 @@
 	#define USE_ARM_OPTIMIZED_CODE 0
 #endif
 
-// Defines
-#define CHUNK_SIZE 16
-#define WORLD_HEIGHT 16
-#define MAX_ENTITIES_PER_CHUNK 128
-#define RENDER_DISTANCE 16
-#define MAX_BLOCK_TYPES 256
-#define MAX_VERTICES 98304 // CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4;
-#define UI_SCALING 2.5f
-
-// Structs
-typedef struct {
-	float x, y, z;
-} vec3;
-
+// Typedefs
 typedef struct {
 	float x, y, z;
 	float yaw, pitch;
@@ -155,12 +143,6 @@ void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, u
 void generate_indices(uint32_t base_vertex, uint32_t indices[], uint32_t* index_count);
 void generate_chunk_mesh(Chunk* chunk);
 void set_chunk_lighting(Chunk* chunk);
-
-void init_highlight();
-void init_ui();
-void update_ui();
-void render_ui();
-void cleanup_ui();
 
 Chunk*** allocate_chunks(int render_distance, int world_height);
 void free_chunks(Chunk ***chunks, int render_distance, int world_height);

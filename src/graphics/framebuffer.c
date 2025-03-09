@@ -1,4 +1,5 @@
 #include "main.h"
+#include "gui.h"
 
 // Framebuffer objects
 unsigned int FBO, colorTexture, RBO;
@@ -92,7 +93,7 @@ void render_to_framebuffer() {
 	profiler_start(PROFILER_ID_RENDER, true);
 	#endif
 
-	setup_matrices(view, projection);
+	setup_matrices();
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, view);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, projection);
 

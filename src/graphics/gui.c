@@ -1,21 +1,10 @@
 #include "main.h"
+#include "gui.h"
 
-#define MAX_UI_ELEMENTS 3
 unsigned int highlight_vbo = 0, highlight_vao = 0;
 unsigned int ui_vao, ui_vbo;
 float ortho[16];
 float highlight_matrix[16];
-
-typedef struct {
-	float x;
-	float y;
-	float width;
-	float height;
-	int tex_x;
-	int tex_y;
-	int tex_width;
-	int tex_height;
-} ui_element_t;
 
 ui_element_t ui_elements[MAX_UI_ELEMENTS];
 GLuint highlight_vao, highlight_vbo, highlight_ebo;
@@ -54,7 +43,7 @@ static const unsigned int edge_indices[] = {
 	3, 7  // Top-left edge
 };
 
-void init_highlight() {
+void init_block_highlight() {
 	glGenVertexArrays(1, &highlight_vao);
 	glGenBuffers(1, &highlight_vbo);
 	glGenBuffers(1, &highlight_ebo);
@@ -76,6 +65,21 @@ void init_highlight() {
 	glBindVertexArray(0);
 }
 
+void init_ui() {
+	init_block_highlight();
+	glGenVertexArrays(1, &ui_vao);
+	glGenBuffers(1, &ui_vbo);
+	glBindVertexArray(ui_vao);
+	glBindBuffer(GL_ARRAY_BUFFER, ui_vbo);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+
+	setup_ui_elements();
+}
+
 void draw_block_highlight(float x, float y, float z) {
 	glDisable(GL_BLEND);
 
@@ -94,7 +98,6 @@ void draw_block_highlight(float x, float y, float z) {
 	glEnable(GL_BLEND);
 }
 
-// Function to update the UI buffer
 void update_ui_buffer() {
 	// Each UI element now requires 4 vertices (1 triangle strip), each with 4 floats (x, y, tx, ty)
 	float vertices[MAX_UI_ELEMENTS * 4 * 4]; 
@@ -175,20 +178,6 @@ void setup_ui_elements() {
 	update_ui_buffer();
 }
 
-void init_ui() {
-	glGenVertexArrays(1, &ui_vao);
-	glGenBuffers(1, &ui_vbo);
-	glBindVertexArray(ui_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, ui_vbo);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-	setup_ui_elements();
-}
-
 void render_ui() {
 	glUseProgram(ui_shader);
 	glUniformMatrix4fv(glGetUniformLocation(ui_shader, "projection"), 1, GL_FALSE, ortho);
@@ -196,12 +185,6 @@ void render_ui() {
 	glBindTexture(GL_TEXTURE_2D, ui_textures);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, MAX_UI_ELEMENTS * 4);
 	draw_calls++;
-}
-
-void cleanup_ui() {
-	glDeleteVertexArrays(1, &ui_vao);
-	glDeleteBuffers(1, &ui_vbo);
-	glDeleteProgram(ui_shader);
 }
 
 void update_ui() {
@@ -222,4 +205,10 @@ void update_ui() {
 	matrix4_identity(ortho);
 	matrix4_translate(ortho, -1.0f, -1.0f, 0.0f);
 	matrix4_scale(ortho, UI_SCALING / screen_width, UI_SCALING / screen_height, 1.0f);
+}
+
+void cleanup_ui() {
+	glDeleteVertexArrays(1, &ui_vao);
+	glDeleteBuffers(1, &ui_vbo);
+	glDeleteProgram(ui_shader);
 }
