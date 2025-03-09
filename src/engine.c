@@ -1,5 +1,6 @@
 #include "main.h"
 #include "world.h"
+#include "gui.h"
 #include "framebuffer.h"
 
 unsigned short screen_width = 1280;

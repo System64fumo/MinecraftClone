@@ -1,3 +1,5 @@
+#include "misc.h"
+
 typedef struct {
 	float x, y, z;
 	uint8_t face_id;
@@ -23,6 +25,6 @@ extern bool mesh_mode;
 extern uint16_t draw_calls;
 
 void init_gl_buffers();
-void update_chunks_visibility();
+void update_chunks_visibility(vec3 pos, vec3 dir);
 void render_chunks();
 void cleanup_renderer();
