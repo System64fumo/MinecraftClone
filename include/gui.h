@@ -12,6 +12,8 @@ typedef struct {
 } ui_element_t;
 
 void init_ui();
+void init_block_highlight();
+void setup_ui_elements();
 void update_ui();
 void render_ui();
 void cleanup_ui();

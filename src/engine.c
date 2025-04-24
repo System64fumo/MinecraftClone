@@ -105,7 +105,7 @@ int initialize() {
 	init_framebuffer();
 	init_fullscreen_quad();
 	init_ui();
-	init_highlight();
+	init_block_highlight();
 	init_gl_buffers();
 	model_uniform_location = glGetUniformLocation(shaderProgram, "model");
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
