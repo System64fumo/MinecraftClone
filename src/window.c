@@ -32,7 +32,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, screen_width, screen_height);
 	matrix4_identity(projection);
 	matrix4_perspective(projection, fov * M_PI / 180.0f, aspect, near, far);
-	resize_framebuffer(width, height);
+	setup_framebuffer(width, height);
 	update_ui();
 }
 
@@ -317,12 +317,6 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 		global_entities[0].yaw += 360.0f;
 	}
 
-	// frustum_faces[0] = IS_WITHIN_RANGE(global_entities[0].yaw, 45, 135);
-	// frustum_faces[1] = (IS_WITHIN_RANGE(global_entities[0].yaw, 0, 45) || IS_WITHIN_RANGE(global_entities[0].yaw, 315, 360));
-	// frustum_faces[2] = IS_WITHIN_RANGE(global_entities[0].yaw, 225, 315);
-	// frustum_faces[3] = IS_WITHIN_RANGE(global_entities[0].yaw, 135, 225);
-	// frustum_faces[4] = IS_WITHIN_RANGE(global_entities[0].pitch, -90, -45);
-	// frustum_faces[5] = IS_WITHIN_RANGE(global_entities[0].pitch, 45, 90);
 	update_frustum();
 }
 
