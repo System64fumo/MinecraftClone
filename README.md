@@ -22,10 +22,9 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * Basic face culling
 * 3D Frustum culling
 
-# Note
-At the time of writing my main PC is an Orange Pi 5 Plus, So code may cater to it.<br>
-That also means i will be targetting the ARM architecture.<br>
-This project uses original Minecraft Assets, So in order to avoid copyright issues, This repo will provide simplified versions of the assets.<br>
+# Notes
+This project has been tested on ARM64 only, It should still work on x86_64 though. (In theory)<br>
+This project aims to use original Minecraft Assets, So in order to avoid copyright issues i've provided simplified versions of the assets.<br>
 This project is not affiliated with Mojang or Microsoft in any way.<br>
 
 # Dependencies

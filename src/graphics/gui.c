@@ -1,5 +1,6 @@
 #include "main.h"
 #include "gui.h"
+#include <math.h>
 
 unsigned int highlight_vbo = 0, highlight_vao = 0;
 unsigned int ui_vao, ui_vbo;
@@ -111,27 +112,33 @@ void update_ui_buffer() {
 
 		int offset = i * 4 * 4; // 4 vertices per element, 4 floats per vertex
 
-		// Vertex order for a triangle strip:
+		// Calculate pixel-perfect coordinates with 0.375 offset
+		float x0 = floor(element->x - element->width) + 0.375f;
+		float x1 = floor(element->x + element->width) + 0.375f;
+		float y0 = floor(element->y - element->height) + 0.375f;
+		float y1 = floor(element->y + element->height) + 0.375f;
+
+		// Vertex order for triangle strip:
 		// Top-left -> Bottom-left -> Top-right -> Bottom-right
-		vertices[offset + 0] = element->x - element->width;		// x (top-left)
-		vertices[offset + 1] = element->y + element->height;	// y (top-left)
-		vertices[offset + 2] = tx;								// tx (top-left)
-		vertices[offset + 3] = ty;								// ty (top-left)
+		vertices[offset + 0] = x0;  // top-left x
+		vertices[offset + 1] = y1;  // top-left y
+		vertices[offset + 2] = tx;
+		vertices[offset + 3] = ty;
 
-		vertices[offset + 4] = element->x - element->width;		// x (bottom-left)
-		vertices[offset + 5] = element->y - element->height;	// y (bottom-left)
-		vertices[offset + 6] = tx;								// tx (bottom-left)
-		vertices[offset + 7] = ty + th;							// ty (bottom-left)
+		vertices[offset + 4] = x0;  // bottom-left x
+		vertices[offset + 5] = y0;  // bottom-left y
+		vertices[offset + 6] = tx;
+		vertices[offset + 7] = ty + th;
 
-		vertices[offset + 8] = element->x + element->width;		// x (top-right)
-		vertices[offset + 9] = element->y + element->height;	// y (top-right)
-		vertices[offset + 10] = tx + tw;						// tx (top-right)
-		vertices[offset + 11] = ty;								// ty (top-right)
+		vertices[offset + 8] = x1;  // top-right x
+		vertices[offset + 9] = y1;  // top-right y
+		vertices[offset + 10] = tx + tw;
+		vertices[offset + 11] = ty;
 
-		vertices[offset + 12] = element->x + element->width;	// x (bottom-right)
-		vertices[offset + 13] = element->y - element->height;	// y (bottom-right)
-		vertices[offset + 14] = tx + tw;						// tx (bottom-right)
-		vertices[offset + 15] = ty + th;						// ty (bottom-right)
+		vertices[offset + 12] = x1;  // bottom-right x
+		vertices[offset + 13] = y0;  // bottom-right y
+		vertices[offset + 14] = tx + tw;
+		vertices[offset + 15] = ty + th;
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, ui_vbo);
