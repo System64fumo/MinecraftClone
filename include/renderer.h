@@ -26,5 +26,7 @@ extern uint16_t draw_calls;
 
 void init_gl_buffers();
 void update_chunks_visibility(vec3 pos, vec3 dir);
+void render_chunks_combined();
+void rebuild_combined_visible_mesh();
 void render_chunks();
 void cleanup_renderer();

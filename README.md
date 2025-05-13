@@ -15,7 +15,7 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 
 # Optimizations
 * Render distance (Only keep track of chunks that matter not the whole world)
-* Single large VBO
+* Batch rendering
 * Greedy meshing
 * Multithreading (Terrain generates on another thread, So does meshing)
 * DDA raycasting
