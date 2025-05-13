@@ -102,7 +102,7 @@ int initialize() {
 
 	// Initialization
 	load_shaders();
-	init_framebuffer();
+	setup_framebuffer(screen_width, screen_height);
 	init_fullscreen_quad();
 	init_ui();
 	init_block_highlight();

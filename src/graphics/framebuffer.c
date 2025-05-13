@@ -10,33 +10,19 @@ int world_block_x;
 int world_block_y;
 int world_block_z;
 
-void init_framebuffer() {
-	glGenFramebuffers(1, &FBO);
+void setup_framebuffer(int width, int height) {
+	// Delete existing resources if they exist
+	if (colorTexture)
+		glDeleteTextures(1, &colorTexture);
+	if (RBO)
+		glDeleteRenderbuffers(1, &RBO);
+
+	// Create or recreate framebuffer if it doesn't exist
+	if (!FBO)
+		glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
-	// Create color attachment texture
-	glGenTextures(1, &colorTexture);
-	glBindTexture(GL_TEXTURE_2D, colorTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screen_width, screen_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
-
-	// Create depth/stencil renderbuffer
-	glGenRenderbuffers(1, &RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, screen_width, screen_height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void resize_framebuffer(int width, int height) {
-	glDeleteTextures(1, &colorTexture);
-	glDeleteRenderbuffers(1, &RBO);
-	
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-	// Recreate color texture with new size
+	// Create/recreate color attachment texture
 	glGenTextures(1, &colorTexture);
 	glBindTexture(GL_TEXTURE_2D, colorTexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
@@ -44,7 +30,7 @@ void resize_framebuffer(int width, int height) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
 
-	// Recreate depth/stencil renderbuffer with new size
+	// Create/recreate depth/stencil renderbuffer
 	glGenRenderbuffers(1, &RBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);

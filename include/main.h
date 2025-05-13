@@ -76,7 +76,6 @@ extern float near;
 extern float far;
 extern float aspect;
 
-extern bool frustum_faces[6];
 extern float sky_brightness;
 
 extern double delta_time;
