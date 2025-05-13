@@ -57,7 +57,8 @@ void main() {
 	vec3 faceShade = faceShades[faceID];
 
 	float brightness = lightLevelToBrightness(lightData);
-	vec3 litColor = textureColor.rgb * faceShade * brightness;
+	// TODO: Re enable lighting
+	vec3 litColor = textureColor.rgb * faceShade;
 
 	// Textures 1 and 53 are affected by biome colors
 	if (texID == 1 || texID == 53) {
