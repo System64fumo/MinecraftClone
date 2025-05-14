@@ -93,6 +93,11 @@ extern Entity global_entities[MAX_ENTITIES_PER_CHUNK];
 extern chunk_loader_t chunk_loader;
 
 extern unsigned int model_uniform_location;
+extern unsigned int atlas_uniform_location;
+extern unsigned int view_uniform_location;
+extern unsigned int projection_uniform_location;
+extern unsigned int ui_projection_uniform_location;
+
 extern bool terrain_thread_busy;
 extern pthread_mutex_t mesh_mutex;
 

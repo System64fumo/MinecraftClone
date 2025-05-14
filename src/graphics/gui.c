@@ -187,7 +187,7 @@ void setup_ui_elements() {
 
 void render_ui() {
 	glUseProgram(ui_shader);
-	glUniformMatrix4fv(glGetUniformLocation(ui_shader, "projection"), 1, GL_FALSE, ortho);
+	glUniformMatrix4fv(ui_projection_uniform_location, 1, GL_FALSE, ortho);
 	glBindVertexArray(ui_vao);
 	glBindTexture(GL_TEXTURE_2D, ui_textures);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, MAX_UI_ELEMENTS * 4);

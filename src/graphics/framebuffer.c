@@ -73,15 +73,15 @@ void render_to_framebuffer() {
 	glUseProgram(shaderProgram);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, block_textures);
-	glUniform1i(glGetUniformLocation(shaderProgram, "textureAtlas"), 0);
+	glUniform1i(atlas_uniform_location, 0);
 
 	#ifdef DEBUG
 	profiler_start(PROFILER_ID_RENDER, true);
 	#endif
 
 	setup_matrices();
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, view);
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, projection);
+	glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, view);
+	glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, projection);
 
 	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
 	vec3 pos;

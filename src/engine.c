@@ -50,6 +50,10 @@ uint8_t block_data[MAX_BLOCK_TYPES][8] = {
 Chunk*** chunks = NULL;
 Entity global_entities[MAX_ENTITIES_PER_CHUNK];
 unsigned int model_uniform_location = -1;
+unsigned int atlas_uniform_location = -1;
+unsigned int view_uniform_location = -1;
+unsigned int projection_uniform_location = -1;
+unsigned int ui_projection_uniform_location = -1;
 GLFWwindow* window = NULL;
 
 int initialize() {
@@ -107,7 +111,14 @@ int initialize() {
 	init_ui();
 	init_block_highlight();
 	init_gl_buffers();
+
+	// Cache uniform locations
 	model_uniform_location = glGetUniformLocation(shaderProgram, "model");
+	atlas_uniform_location = glGetUniformLocation(shaderProgram, "textureAtlas");
+	view_uniform_location = glGetUniformLocation(shaderProgram, "view");
+	projection_uniform_location = glGetUniformLocation(shaderProgram, "projection");
+	ui_projection_uniform_location = glGetUniformLocation(ui_shader, "projection");
+
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 	init_chunk_loader();
 	init_chunk_processor();
