@@ -49,7 +49,7 @@ vec2 getTextureCoords() {
 }
 
 float lightLevelToBrightness(int lightLevel) {
-	return float(lightLevel) / 15.0;
+	return clamp(float(lightLevel) / 15.0, 0.0, 1.0);
 }
 
 void main() {
@@ -57,13 +57,13 @@ void main() {
 	vec3 faceShade = faceShades[faceID];
 
 	float brightness = lightLevelToBrightness(lightData);
-	// TODO: Re enable lighting
-	vec3 litColor = textureColor.rgb * faceShade;
+	vec3 litColor = textureColor.rgb * faceShade * brightness;
 
 	// Textures 1 and 53 are affected by biome colors
 	if (texID == 1 || texID == 53) {
-		FragColor = vec4(litColor * vec3(0.569, 0.741, 0.349), textureColor.a);
-	} else {
-		FragColor = vec4(litColor, textureColor.a);
+		vec3 biomeColor = vec3(0.569, 0.741, 0.349);
+		litColor *= biomeColor;
 	}
+
+	FragColor = vec4(litColor, textureColor.a);
 }

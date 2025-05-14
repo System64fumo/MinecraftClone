@@ -149,35 +149,38 @@ void process_input(GLFWwindow* window) {
 
 	float move_speed = global_entities[0].speed * delta_time;
 	float yaw = global_entities[0].yaw * (M_PI / 180.0f);
-
 	float dx = 0.0f, dy = 0.0f, dz = 0.0f;
+	bool frustum_needs_update = false;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		dx += cosf(yaw) * move_speed;
 		dz += sinf(yaw) * move_speed;
-		update_frustum();
+		frustum_needs_update = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 		dx -= cosf(yaw) * move_speed;
 		dz -= sinf(yaw) * move_speed;
-		update_frustum();
+		frustum_needs_update = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 		dx += sinf(yaw) * move_speed;
 		dz -= cosf(yaw) * move_speed;
-		update_frustum();
+		frustum_needs_update = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 		dx -= sinf(yaw) * move_speed;
 		dz += cosf(yaw) * move_speed;
-		update_frustum();
+		frustum_needs_update = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 		dy += move_speed;
-		update_frustum();
+		frustum_needs_update = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
 		dy -= move_speed;
+		frustum_needs_update = true;
+	}
+	if (frustum_needs_update) {
 		update_frustum();
 	}
 
