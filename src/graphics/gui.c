@@ -11,17 +11,17 @@ ui_element_t ui_elements[MAX_UI_ELEMENTS];
 GLuint highlight_vao, highlight_vbo, highlight_ebo;
 
 static const float vertices_template[] = {
-    // Front face (Z+)
-    -1.001f, -1.001f,  0.001f,
-     0.001f, -1.001f,  0.001f,
-     0.001f, -0.001f,  0.001f,
-    -1.001f, -0.001f,  0.001f,
+	// Front face (Z+)
+	-1.001f, -1.001f,  0.001f,
+	0.001f, -1.001f,  0.001f,
+	0.001f, -0.001f,  0.001f,
+	-1.001f, -0.001f,  0.001f,
 
-    // Back face (Z-)
-    -1.001f, -1.001f, -1.001f,
-     0.001f, -1.001f, -1.001f,
-     0.001f, -0.001f, -1.001f,
-    -1.001f, -0.001f, -1.001f
+	// Back face (Z-)
+	-1.001f, -1.001f, -1.001f,
+	0.001f, -1.001f, -1.001f,
+	0.001f, -0.001f, -1.001f,
+	-1.001f, -0.001f, -1.001f
 };
 
 static const uint8_t edge_indices[] = {

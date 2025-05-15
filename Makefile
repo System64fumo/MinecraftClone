@@ -4,7 +4,7 @@ BUILDDIR := build
 INCLUDE_DIR := include
 
 CFLAGS := -I$(INCLUDE_DIR)
-LDFLAGS := -lGL -lGLEW -lglfw -lm -lpng
+LDFLAGS := -lGL -lGLEW -lglfw -lm -lwebp
 
 SRCS := $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))
 OBJS := $(patsubst %.c, $(BUILDDIR)/%.o, $(SRCS))
@@ -14,7 +14,7 @@ $(foreach dir, $(SRC_DIRS), $(shell mkdir -p $(BUILDDIR)/$(dir)))
 
 VPATH := $(SRC_DIRS)
 
-JOB_COUNT := $(EXECUTABLE) $(OBJS)
+JOB_COUNT := $(EXECUTABLE) $(OBJS) resources
 JOBS_DONE := $(shell ls -l $(JOB_COUNT) 2> /dev/null | wc -l)
 
 define progress
@@ -37,9 +37,15 @@ debug: game
 clean:
 	rm -rf $(BUILDDIR)
 
-game: $(OBJS)
+game: $(OBJS) resources
 	$(call progress, Linking $@)
 	@$(CC) -o $(BUILDDIR)/$(EXECUTABLE) $(OBJS) $(CFLAGS) $(LDFLAGS)
+
+resources:
+	$(call progress, Compressing assets)
+	@mkdir -p $(BUILDDIR)/assets
+	@cwebp -lossless -quiet ./assets/gui.png -o $(BUILDDIR)/assets/gui.webp
+	@cwebp -lossless -quiet ./assets/atlas.png -o $(BUILDDIR)/assets/atlas.webp
 
 $(BUILDDIR)/%.o: %.c
 	$(call progress, Compiling $@)

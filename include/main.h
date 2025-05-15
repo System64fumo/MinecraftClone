@@ -28,6 +28,8 @@ typedef struct {
 	float width, height;
 	float eye_level;
 	uint8_t speed;
+	bool is_grounded;
+	float vertical_velocity;
 } Entity;
 
 typedef struct {
@@ -112,6 +114,7 @@ void process_input(GLFWwindow* window);
 void setup_matrices();
 
 vec3 get_direction(float pitch, float yaw);
+void update_frustum();
 void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, int* out_y, int* out_z, char* out_face);
 Block* get_block_at(int world_block_x, int world_block_y, int world_block_z);
 void draw_block_highlight(float x, float y, float z);
@@ -119,18 +122,8 @@ bool is_block_solid(int world_block_x, int world_block_y, int world_block_z);
 void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord);
 bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);
 void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x, int block_y, int block_z);
-
-void matrix4_identity(float* mat);
-void matrix4_translate(float* mat, float x, float y, float z);
-void matrix4_multiply(float result[16], const float mat1[16], const float mat2[16]);
-void matrix4_rotate(float* mat, float angle, float x, float y, float z);
-void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far);
-void matrix4_scale(float* mat, float x, float y, float z);
-void do_time_stuff();
-const char* load_file(const char* filename);
-unsigned int loadTexture(const char* path);
-int write_binary_file(const char *filename, const void *data, size_t size);
-void *read_binary_file(const char *filename, size_t *size);
+bool check_entity_collision(float x, float y, float z, float width, float height);
+void update_entity_physics(Entity* player, float delta_time);
 
 unsigned int load_shader(const char* vertex_path, const char* fragment_path);
 void load_shaders();

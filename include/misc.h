@@ -13,4 +13,17 @@ typedef struct {
 	float x, y, z;
 } vec3;
 
+void setup_matrices();
+void matrix4_identity(float* mat);
+void matrix4_translate(float* mat, float x, float y, float z);
+void matrix4_multiply(float result[16], const float mat1[16], const float mat2[16]);
+void matrix4_rotate(float* mat, float angle, float x, float y, float z);
+void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far);
+void matrix4_scale(float* mat, float x, float y, float z);
+void do_time_stuff();
+const char* load_file(const char* filename);
+unsigned int loadTexture(const char* path);
+int write_binary_file(const char *filename, const void *data, size_t size);
+void *read_binary_file(const char *filename, size_t *size);
+
 #endif // _MISC_H_
