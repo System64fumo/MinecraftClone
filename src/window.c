@@ -45,11 +45,18 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			case GLFW_KEY_F2:
 				mesh_mode = !mesh_mode;
 				break;
+			case GLFW_KEY_ESCAPE:
+				glfwSetWindowShouldClose(window, true);
+				break;
 		}
+
+		// Hotbar
+		if (key >= 49 && key <= 57)
+			set_hotbar_slot(key - 49);
 	}
 }
 
-int check_entity_collision(float x, float y, float z, float width, float height) {
+bool check_entity_collision(float x, float y, float z, float width, float height) {
 	float half_width = width / 2.0f;
 
 	float check_points[][3] = {
@@ -70,11 +77,11 @@ int check_entity_collision(float x, float y, float z, float width, float height)
 			(int)floorf(check_points[i][1]), 
 			(int)floorf(check_points[i][2])
 		)) {
-			return 0;  // Collision detected
+			return false;  // Collision detected
 		}
 	}
 
-	return 1;  // No collision
+	return true;  // No collision
 }
 
 void update_player_physics(Entity* player, float delta_time) {
@@ -188,7 +195,7 @@ void process_input(GLFWwindow* window) {
 	float new_y = global_entities[0].y + dy;
 	float new_z = global_entities[0].z + dz;
 
-	int can_move_x = check_entity_collision(
+	bool can_move_x = check_entity_collision(
 		new_x, 
 		global_entities[0].y, 
 		global_entities[0].z, 
@@ -196,7 +203,7 @@ void process_input(GLFWwindow* window) {
 		global_entities[0].height
 	);
 
-	int can_move_y = check_entity_collision(
+	bool can_move_y = check_entity_collision(
 		global_entities[0].x, 
 		new_y, 
 		global_entities[0].z, 
@@ -204,7 +211,7 @@ void process_input(GLFWwindow* window) {
 		global_entities[0].height
 	);
 
-	int can_move_z = check_entity_collision(
+	bool can_move_z = check_entity_collision(
 		global_entities[0].x, 
 		global_entities[0].y, 
 		new_z, 
@@ -282,7 +289,12 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	int8_t offset = yoffset;
 	hotbar_slot -= offset;
+	set_hotbar_slot(hotbar_slot);
+}
+
+void set_hotbar_slot(uint8_t slot) {
 	printf("Slot: %d\n", hotbar_slot);
+	hotbar_slot = slot;
 	update_ui();
 }
 

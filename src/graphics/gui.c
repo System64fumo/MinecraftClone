@@ -11,20 +11,20 @@ ui_element_t ui_elements[MAX_UI_ELEMENTS];
 GLuint highlight_vao, highlight_vbo, highlight_ebo;
 
 static const float vertices_template[] = {
-	// Front face (Z+)
-	-0.505f, -0.505f,  0.505f, // 0
-	 0.505f, -0.505f,  0.505f, // 1
-	 0.505f,  0.505f,  0.505f, // 2
-	-0.505f,  0.505f,  0.505f, // 3
+    // Front face (Z+)
+    -1.001f, -1.001f,  0.001f,
+     0.001f, -1.001f,  0.001f,
+     0.001f, -0.001f,  0.001f,
+    -1.001f, -0.001f,  0.001f,
 
-	// Back face (Z-)
-	-0.505f, -0.505f, -0.505f, // 4
-	 0.505f, -0.505f, -0.505f, // 5
-	 0.505f,  0.505f, -0.505f, // 6
-	-0.505f,  0.505f, -0.505f  // 7
+    // Back face (Z-)
+    -1.001f, -1.001f, -1.001f,
+     0.001f, -1.001f, -1.001f,
+     0.001f, -0.001f, -1.001f,
+    -1.001f, -0.001f, -1.001f
 };
 
-static const unsigned int edge_indices[] = {
+static const uint8_t edge_indices[] = {
 	// Front face edges
 	0, 1, // Bottom edge
 	1, 2, // Right edge
@@ -85,7 +85,7 @@ void draw_block_highlight(float x, float y, float z) {
 	glDisable(GL_BLEND);
 
 	matrix4_identity(highlight_matrix);
-	matrix4_translate(highlight_matrix, x - 0.5f, y - 0.5f, z - 0.5f);
+	matrix4_translate(highlight_matrix, x, y + 0.001f, z);
 
 	glUseProgram(shaderProgram);
 
@@ -93,7 +93,7 @@ void draw_block_highlight(float x, float y, float z) {
 
 	glLineWidth(2.0f);
 	glBindVertexArray(highlight_vao);
-	glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, (void*)0);
+	glDrawElements(GL_LINES, sizeof(edge_indices), GL_UNSIGNED_BYTE, (void*)0);
 	draw_calls++;
 
 	glEnable(GL_BLEND);
@@ -103,14 +103,14 @@ void update_ui_buffer() {
 	// Each UI element now requires 4 vertices (1 triangle strip), each with 4 floats (x, y, tx, ty)
 	float vertices[MAX_UI_ELEMENTS * 4 * 4]; 
 
-	for (int i = 0; i < MAX_UI_ELEMENTS; i++) {
+	for (uint8_t i = 0; i < MAX_UI_ELEMENTS; i++) {
 		ui_element_t* element = &ui_elements[i];
 		float tx = (float)element->tex_x / 256.0f;
 		float ty = (float)element->tex_y / 256.0f;
 		float tw = (float)element->tex_width / 256.0f;
 		float th = (float)element->tex_height / 256.0f;
 
-		int offset = i * 4 * 4; // 4 vertices per element, 4 floats per vertex
+		uint8_t offset = i * 4 * 4; // 4 vertices per element, 4 floats per vertex
 
 		// Calculate pixel-perfect coordinates with 0.375 offset
 		float x0 = floor(element->x - element->width) + 0.375f;
@@ -150,8 +150,8 @@ void setup_ui_elements() {
 	ui_elements[0] = (ui_element_t) {
 		.x = screen_width / UI_SCALING,
 		.y = screen_height / UI_SCALING,
-		.width = 16.0f,
-		.height = 16.0f,
+		.width = 16,
+		.height = 16,
 		.tex_x = 240,
 		.tex_y = 0,
 		.tex_width = 16,
