@@ -2,7 +2,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <png.h>
+#include <webp/decode.h>
 
 double lastFrame = 0.0f;
 double delta_time = 0.0f;
@@ -12,6 +12,77 @@ double time_previous = 0.0f;
 int time_counter = 0;
 float framerate = 0.0f;
 float frametime = 0.0f;
+
+void setup_matrices() {
+	matrix4_identity(view);
+
+	float pitch = global_entities[0].pitch * (M_PI / 180.0f);
+	float yaw = global_entities[0].yaw * (M_PI / 180.0f);
+
+	#if USE_ARM_OPTIMIZED_CODE
+
+	float cos_pitch = cosf(pitch);
+	float sin_pitch = sinf(pitch);
+	float cos_yaw = cosf(yaw);
+	float sin_yaw = sinf(yaw);
+
+	float32x4_t f = {cos_yaw * cos_pitch, sin_pitch, sin_yaw * cos_pitch, 0.0f};
+	float32x4_t len_sq = vmulq_f32(f, f);
+	float len = sqrtf(vaddvq_f32(len_sq));
+	f = vdivq_f32(f, vdupq_n_f32(len));
+
+	float32x4_t s = {-vgetq_lane_f32(f, 2), 0.0f, vgetq_lane_f32(f, 0), 0.0f};
+	len_sq = vmulq_f32(s, s);
+	len = sqrtf(vaddvq_f32(len_sq));
+	s = vdivq_f32(s, vdupq_n_f32(len));
+
+	float32x4_t u = {
+		vgetq_lane_f32(s, 1) * vgetq_lane_f32(f, 2) - vgetq_lane_f32(s, 2) * vgetq_lane_f32(f, 1),
+		vgetq_lane_f32(s, 2) * vgetq_lane_f32(f, 0) - vgetq_lane_f32(s, 0) * vgetq_lane_f32(f, 2),
+		vgetq_lane_f32(s, 0) * vgetq_lane_f32(f, 1) - vgetq_lane_f32(s, 1) * vgetq_lane_f32(f, 0),
+		0.0f
+	};
+
+	view[0] = vgetq_lane_f32(s, 0); view[4] = vgetq_lane_f32(s, 1); view[8] = vgetq_lane_f32(s, 2);
+	view[1] = vgetq_lane_f32(u, 0); view[5] = vgetq_lane_f32(u, 1); view[9] = vgetq_lane_f32(u, 2);
+	view[2] = -vgetq_lane_f32(f, 0); view[6] = -vgetq_lane_f32(f, 1); view[10] = -vgetq_lane_f32(f, 2);
+
+	float32x4_t pos = {global_entities[0].x, global_entities[0].y + global_entities[0].eye_level, global_entities[0].z, 0.0f};
+	view[12] = -vaddvq_f32(vmulq_f32(s, pos));
+	view[13] = -vaddvq_f32(vmulq_f32(u, pos));
+	view[14] = vaddvq_f32(vmulq_f32(f, pos));
+
+	#else // Non ARM platforms
+
+	float f[3];
+	f[0] = cosf(yaw) * cosf(pitch);
+	f[1] = sinf(pitch);
+	f[2] = sinf(yaw) * cosf(pitch);
+	float len = sqrtf(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]);
+	f[0] /= len; f[1] /= len; f[2] /= len;
+
+	float s[3] = {
+		f[1] * 0 - f[2] * 1,
+		f[2] * 0 - f[0] * 0,
+		f[0] * 1 - f[1] * 0
+	};
+	len = sqrtf(s[0] * s[0] + s[1] * s[1] + s[2] * s[2]);
+	s[0] /= len; s[1] /= len; s[2] /= len;
+
+	float u[3] = {
+		s[1] * f[2] - s[2] * f[1],
+		s[2] * f[0] - s[0] * f[2],
+		s[0] * f[1] - s[1] * f[0]
+	};
+
+	view[0] = s[0]; view[4] = s[1]; view[8] = s[2];
+	view[1] = u[0]; view[5] = u[1]; view[9] = u[2];
+	view[2] = -f[0]; view[6] = -f[1]; view[10] = -f[2];
+	view[12] = -(s[0] * global_entities[0].x + s[1] * global_entities[0].y + global_entities[0].eye_level + s[2] * global_entities[0].z);
+	view[13] = -(u[0] * global_entities[0].x + u[1] * global_entities[0].y + global_entities[0].eye_level + u[2] * global_entities[0].z);
+	view[14] = (f[0] * global_entities[0].x + f[1] * global_entities[0].y + global_entities[0].eye_level + f[2] * global_entities[0].z);
+	#endif
+}
 
 void matrix4_identity(float* mat) {
 	mat[0] = mat[5] = mat[10] = mat[15] = 1.0f;
@@ -25,14 +96,14 @@ void matrix4_translate(float* mat, float x, float y, float z) {
 }
 
 void matrix4_multiply(float result[16], const float mat1[16], const float mat2[16]) {
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            result[i * 4 + j] = 0.0f;
-            for (int k = 0; k < 4; k++) {
-                result[i * 4 + j] += mat1[i * 4 + k] * mat2[k * 4 + j];
-            }
-        }
-    }
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			result[i * 4 + j] = 0.0f;
+			for (int k = 0; k < 4; k++) {
+				result[i * 4 + j] += mat1[i * 4 + k] * mat2[k * 4 + j];
+			}
+		}
+	}
 }
 
 void matrix4_rotate(float* mat, float angle, float x, float y, float z) {
@@ -43,9 +114,9 @@ void matrix4_rotate(float* mat, float angle, float x, float y, float z) {
 	float len = sqrtf(x*x + y*y + z*z);
 	x /= len; y /= len; z /= len;
 
-	mat[0] = x*x*nc + c;    mat[4] = x*y*nc - z*s;  mat[8] = x*z*nc + y*s;
-	mat[1] = y*x*nc + z*s;  mat[5] = y*y*nc + c;    mat[9] = y*z*nc - x*s;
-	mat[2] = x*z*nc - y*s;  mat[6] = y*z*nc + x*s;  mat[10] = z*z*nc + c;
+	mat[0] = x*x*nc + c;	mat[4] = x*y*nc - z*s;	mat[8] = x*z*nc + y*s;
+	mat[1] = y*x*nc + z*s;	mat[5] = y*y*nc + c;	mat[9] = y*z*nc - x*s;
+	mat[2] = x*z*nc - y*s;	mat[6] = y*z*nc + x*s;	mat[10] = z*z*nc + c;
 }
 
 void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far) {
@@ -153,112 +224,53 @@ unsigned int loadTexture(const char* path) {
 	unsigned int textureID;
 	glGenTextures(1, &textureID);
 
+	// Read the entire file into memory
 	FILE* file = fopen(path, "rb");
 	if (!file) {
 		printf("Failed to open file: %s\n", path);
 		return 0;
 	}
 
-	png_byte header[8];
-	fread(header, 1, 8, file);
-	if (png_sig_cmp(header, 0, 8)) {
-		printf("File is not a valid PNG: %s\n", path);
+	fseek(file, 0, SEEK_END);
+	size_t file_size = ftell(file);
+	fseek(file, 0, SEEK_SET);
+		
+	uint8_t* file_data = (uint8_t*)malloc(file_size);
+	if (!file_data) {
+		printf("Failed to allocate memory for file data\n");
 		fclose(file);
 		return 0;
 	}
-
-	png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-	if (!png) {
-		printf("Failed to create PNG read struct\n");
+		
+	if (fread(file_data, 1, file_size, file) != file_size) {
+		printf("Failed to read file data\n");
+		free(file_data);
 		fclose(file);
 		return 0;
 	}
+	fclose(file);
 
-	png_infop info = png_create_info_struct(png);
-	if (!info) {
-		printf("Failed to create PNG info struct\n");
-		png_destroy_read_struct(&png, NULL, NULL);
-		fclose(file);
+	// Decode WebP
+	int width, height;
+	uint8_t* image_data = WebPDecodeRGBA(file_data, file_size, &width, &height);
+	free(file_data);
+		
+	if (!image_data) {
+		printf("Failed to decode WebP image: %s\n", path);
 		return 0;
 	}
 
-	if (setjmp(png_jmpbuf(png))) {
-		printf("Error during PNG reading\n");
-		png_destroy_read_struct(&png, &info, NULL);
-		fclose(file);
-		return 0;
-	}
-
-	png_init_io(png, file);
-	png_set_sig_bytes(png, 8);
-	png_read_info(png, info);
-
-	int width = png_get_image_width(png, info);
-	int height = png_get_image_height(png, info);
-	png_byte color_type = png_get_color_type(png, info);
-	png_byte bit_depth = png_get_bit_depth(png, info);
-
-	if (bit_depth == 16)
-		png_set_strip_16(png);
-
-	if (color_type == PNG_COLOR_TYPE_PALETTE)
-		png_set_palette_to_rgb(png);
-
-	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
-		png_set_expand_gray_1_2_4_to_8(png);
-
-	if (png_get_valid(png, info, PNG_INFO_tRNS))
-		png_set_tRNS_to_alpha(png);
-
-	if (color_type == PNG_COLOR_TYPE_RGB ||
-		color_type == PNG_COLOR_TYPE_GRAY ||
-		color_type == PNG_COLOR_TYPE_PALETTE)
-		png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
-
-	if (color_type == PNG_COLOR_TYPE_GRAY ||
-		color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-		png_set_gray_to_rgb(png);
-
-	png_read_update_info(png, info);
-
-	png_bytep* row_pointers = (png_bytep*)malloc(sizeof(png_bytep) * height);
-	int row_bytes = png_get_rowbytes(png, info);
-	png_bytep image_data = (png_bytep)malloc(row_bytes * height);
-
-	for (int y = 0; y < height; y++) {
-		row_pointers[y] = image_data + y * row_bytes;
-	}
-
-	png_read_image(png, row_pointers);
-
-	GLenum format;
-	if (color_type == PNG_COLOR_TYPE_RGB)
-		format = GL_RGB;
-	else if (color_type == PNG_COLOR_TYPE_RGBA)
-		format = GL_RGBA;
-	else {
-		printf("Unsupported PNG color type\n");
-		free(image_data);
-		free(row_pointers);
-		png_destroy_read_struct(&png, &info, NULL);
-		fclose(file);
-		return 0;
-	}
-
+	// Upload to OpenGL
 	glBindTexture(GL_TEXTURE_2D, textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, image_data);
-	//glGenerateMipmap(GL_TEXTURE_2D);
-
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+		
+	// Set texture parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	// Clean up
-	free(image_data);
-	free(row_pointers);
-	png_destroy_read_struct(&png, &info, NULL);
-	fclose(file);
+	WebPFree(image_data);
 
 	return textureID;
 }

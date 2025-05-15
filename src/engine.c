@@ -2,6 +2,9 @@
 #include "world.h"
 #include "gui.h"
 #include "framebuffer.h"
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 
 unsigned short screen_width = 1280;
 unsigned short screen_height = 720;
@@ -101,8 +104,20 @@ int initialize() {
 	#endif
 
 	// Textures
-	block_textures = loadTexture("./assets/atlas.png");
-	ui_textures = loadTexture("./assets/gui.png");
+	char exec_path[1024];
+	ssize_t len = readlink("/proc/self/exe", exec_path, sizeof(exec_path) - 1);
+	exec_path[len] = '\0';
+	char* lastSlash = strrchr(exec_path, '/');
+	*lastSlash = '\0';
+	char* exeDir = strdup(exec_path);
+
+	char atlas_path[1024];
+	snprintf(atlas_path, sizeof(atlas_path), "%s/%s", exec_path, "assets/atlas.webp");
+	block_textures = loadTexture(atlas_path);
+
+	char gui_path[1024];
+	snprintf(gui_path, sizeof(gui_path), "%s/%s", exec_path, "assets/gui.webp");
+	ui_textures = loadTexture(gui_path);
 
 	// Initialization
 	load_shaders();

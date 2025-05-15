@@ -1,6 +1,10 @@
 #include "main.h"
 #include "world.h"
+#include "gui.h"
 #include <math.h>
+
+#define GRAVITY 40.0f
+#define MAX_FALL_SPEED 78.4f
 
 vec3 get_direction(float pitch, float yaw) {
 	vec3 dir;
@@ -12,6 +16,15 @@ vec3 get_direction(float pitch, float yaw) {
 	dir.y = sinf(pitch_rad);
 	dir.z = cosf(yaw_rad) * pitch_cos;
 	return dir;
+}
+
+void update_frustum() {
+	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
+	vec3 pos;
+	pos.x = global_entities[0].x;
+	pos.y = global_entities[0].y + global_entities[0].eye_level;
+	pos.z = global_entities[0].z;
+	update_chunks_visibility(pos, dir);
 }
 
 void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, int* out_y, int* out_z, char* out_face) {
@@ -90,4 +103,78 @@ void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, 
 	*out_y = -1;
 	*out_z = -1;
 	*out_face = 'N';
+}
+
+bool check_entity_collision(float x, float y, float z, float width, float height) {
+	float half_width = width / 2.0f;
+
+	float check_points[][3] = {
+		{x - half_width, y, z - half_width},
+		{x + half_width, y, z - half_width},
+		{x - half_width, y, z + half_width},
+		{x + half_width, y, z + half_width},
+		{x - half_width, y + height, z - half_width},
+		{x + half_width, y + height, z - half_width},
+		{x - half_width, y + height, z + half_width},
+		{x + half_width, y + height, z + half_width}
+	};
+
+	// Check each point for collision
+	for (int i = 0; i < 8; i++) {
+		if (is_block_solid(
+			(int)floorf(check_points[i][0]), 
+			(int)floorf(check_points[i][1]), 
+			(int)floorf(check_points[i][2])
+		)) {
+			return false;  // Collision detected
+		}
+	}
+
+	return true;  // No collision
+}
+
+void update_entity_physics(Entity* entity, float delta_time) {
+	if (!entity->is_grounded) {
+		entity->vertical_velocity -= GRAVITY * delta_time;
+		entity->vertical_velocity = fmaxf(
+			-MAX_FALL_SPEED, 
+			entity->vertical_velocity
+		);
+	}
+
+	float new_y = entity->y + entity->vertical_velocity * delta_time;
+
+	int collision_points_count = 4;
+	float half_width = entity->width / 2.0f;
+	float ground_check_points[][2] = {
+		{entity->x - half_width, entity->z - half_width},
+		{entity->x + half_width, entity->z - half_width},
+		{entity->x - half_width, entity->z + half_width},
+		{entity->x + half_width, entity->z + half_width}
+	};
+
+	entity->is_grounded = false;
+
+	for (int i = 0; i < collision_points_count; i++) {
+		int ground_collision = is_block_solid(
+			(int)floorf(ground_check_points[i][0]), 
+			(int)floorf(new_y), 
+			(int)floorf(ground_check_points[i][1])
+		);
+
+		if (ground_collision) {
+			new_y = ceilf(new_y);
+			entity->vertical_velocity = 0.0f;
+			entity->is_grounded = 1;
+			break;
+		}
+	}
+
+	entity->y = new_y;
+}
+
+void set_hotbar_slot(uint8_t slot) {
+	printf("Slot: %d\n", hotbar_slot);
+	hotbar_slot = slot;
+	update_ui();
 }
