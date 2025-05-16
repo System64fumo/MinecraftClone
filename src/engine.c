@@ -60,6 +60,10 @@ unsigned int ui_projection_uniform_location = -1;
 GLFWwindow* window = NULL;
 
 int initialize() {
+	// Config
+	initialize_config();
+	// TODO: Apply config
+
 	if (!glfwInit()) {
 		printf("Failed to initialize GLFW\n");
 		return -1;

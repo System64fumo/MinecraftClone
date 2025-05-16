@@ -5,6 +5,7 @@
 #include "renderer.h"
 #include <pthread.h>
 #include "misc.h"
+#include "config.h"
 
 #ifdef DEBUG
 #include "profiler.h"
