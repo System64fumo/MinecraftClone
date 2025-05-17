@@ -89,6 +89,9 @@ void destroy_chunk_processor() {
 }
 
 void combine_meshes() {
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_MESH, false);
+	#endif
 	pthread_mutex_lock(&mesh_mutex);
 	
 	uint32_t total_vertices = 0;
@@ -215,6 +218,9 @@ void combine_meshes() {
 	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, required_ebo_size, combined_mesh.indices);
 	
 	glBindVertexArray(0);
+	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_MESH, false);
+	#endif
 }
 
 void process_chunks() {

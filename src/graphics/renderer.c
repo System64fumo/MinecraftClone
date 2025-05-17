@@ -177,36 +177,48 @@ void rebuild_combined_visible_mesh() {
 		return;
 	}
 
-	// Reuse existing buffers if they're large enough
-	if (combined_mesh.capacity_vertices < total_vertices) {
-		void* new_vertices = malloc(total_vertices * sizeof(Vertex));
-		if (new_vertices) {
-			free(combined_mesh.vertices);
-			combined_mesh.vertices = new_vertices;
-			combined_mesh.capacity_vertices = total_vertices;
-		}
-		else {
-			pthread_mutex_unlock(&mesh_mutex);
-			fprintf(stderr, "Failed to allocate vertex memory for visible mesh\n");
-			return;
-		}
+	// Update buffer data
+	glBindVertexArray(combined_VAO);
+	
+	// Check if buffer sizes need to be increased
+	GLint current_vbo_size = 0;
+	GLint current_ebo_size = 0;
+	glBindBuffer(GL_ARRAY_BUFFER, combined_VBO);
+	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &current_vbo_size);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, combined_EBO);
+	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &current_ebo_size);
+	
+	size_t required_vbo_size = total_vertices * sizeof(Vertex);
+	size_t required_ebo_size = total_indices * sizeof(uint32_t);
+	
+	// Resize buffers if needed
+	if (current_vbo_size < required_vbo_size) {
+		glBindBuffer(GL_ARRAY_BUFFER, combined_VBO);
+		glBufferData(GL_ARRAY_BUFFER, required_vbo_size, NULL, GL_DYNAMIC_DRAW);
 	}
-
-	if (combined_mesh.capacity_indices < total_indices) {
-		void* new_indices = malloc(total_indices * sizeof(uint32_t));
-		if (new_indices) {
-			free(combined_mesh.indices);
-			combined_mesh.indices = new_indices;
-			combined_mesh.capacity_indices = total_indices;
-		}
-		else {
-			pthread_mutex_unlock(&mesh_mutex);
-			fprintf(stderr, "Failed to allocate index memory for visible mesh\n");
-			return;
-		}
+	
+	if (current_ebo_size < required_ebo_size) {
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, combined_EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, required_ebo_size, NULL, GL_DYNAMIC_DRAW);
 	}
-
-	// Combine only visible meshes
+	
+	// Map buffers for direct writing
+	glBindBuffer(GL_ARRAY_BUFFER, combined_VBO);
+	Vertex* vbo_ptr = (Vertex*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, combined_EBO);
+	uint32_t* ebo_ptr = (uint32_t*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+	
+	if (!vbo_ptr || !ebo_ptr) {
+		fprintf(stderr, "Failed to map OpenGL buffers\n");
+		if (vbo_ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
+		if (ebo_ptr) glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+		glBindVertexArray(0);
+		pthread_mutex_unlock(&mesh_mutex);
+		return;
+	}
+	
+	// Combine only visible meshes directly into GPU buffers
 	uint32_t vertex_offset = 0;
 	uint32_t index_offset = 0;
 	uint32_t base_vertex = 0;
@@ -222,13 +234,13 @@ void rebuild_combined_visible_mesh() {
 				if (chunk->vertex_count == 0 || chunk->vertices == NULL)
 					continue;
 
-				// Copy vertices
-				memcpy(combined_mesh.vertices + vertex_offset, chunk->vertices,
+				// Copy vertices directly to mapped buffer
+				memcpy(vbo_ptr + vertex_offset, chunk->vertices,
 					   chunk->vertex_count * sizeof(Vertex));
 
-				// Copy and adjust indices
+				// Copy and adjust indices directly to mapped buffer
 				for (uint32_t i = 0; i < chunk->index_count; i++) {
-					combined_mesh.indices[index_offset + i] = chunk->indices[i] + base_vertex;
+					ebo_ptr[index_offset + i] = chunk->indices[i] + base_vertex;
 				}
 
 				vertex_offset += chunk->vertex_count;
@@ -241,42 +253,12 @@ void rebuild_combined_visible_mesh() {
 	combined_mesh.vertex_count = vertex_offset;
 	combined_mesh.index_count = index_offset;
 	
-	pthread_mutex_unlock(&mesh_mutex);
-
-	// Update buffer data
-	glBindVertexArray(combined_VAO);
-	
-	// Check if buffer sizes need to be increased
-	GLint current_vbo_size = 0;
-	GLint current_ebo_size = 0;
-	glBindBuffer(GL_ARRAY_BUFFER, combined_VBO);
-	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &current_vbo_size);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, combined_EBO);
-	glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &current_ebo_size);
-	
-	size_t required_vbo_size = combined_mesh.vertex_count * sizeof(Vertex);
-	size_t required_ebo_size = combined_mesh.index_count * sizeof(uint32_t);
-	
-	// Resize buffers if needed
-	if (current_vbo_size < required_vbo_size) {
-		glBindBuffer(GL_ARRAY_BUFFER, combined_VBO);
-		glBufferData(GL_ARRAY_BUFFER, required_vbo_size, NULL, GL_DYNAMIC_DRAW);
-	}
-	
-	if (current_ebo_size < required_ebo_size) {
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, combined_EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, required_ebo_size, NULL, GL_DYNAMIC_DRAW);
-	}
-	
-	// Update buffer contents
-	glBindBuffer(GL_ARRAY_BUFFER, combined_VBO);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, required_vbo_size, combined_mesh.vertices);
-	
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, combined_EBO);
-	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, required_ebo_size, combined_mesh.indices);
-	
+	// Unmap buffers
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 	glBindVertexArray(0);
 	
+	pthread_mutex_unlock(&mesh_mutex);
 	mesh_needs_rebuild = false;
 }
 
