@@ -8,6 +8,7 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * Keyboard movement
 * "Infinite" world size
 * Procedural world generation
+* Ordered chunk loading
 * Block Highlights
 * FPS Counter & Several profiling utils
 * Vignette effect
