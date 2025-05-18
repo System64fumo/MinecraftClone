@@ -66,15 +66,13 @@ typedef struct {
 } ChunkRenderData;
 
 // Externs
-extern unsigned short screen_width;
-extern unsigned short screen_height;
+extern config settings;
 extern unsigned short screen_center_x;
 extern unsigned short screen_center_y;
 
 extern uint8_t hotbar_slot;
 extern char game_dir[255];
 
-extern float fov;
 extern float near;
 extern float far;
 extern float aspect;

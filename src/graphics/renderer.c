@@ -97,7 +97,7 @@ bool is_chunk_in_frustum(vec3 pos, vec3 dir, int chunk_x, int chunk_y, int chunk
 }
 
 void update_chunks_visibility(vec3 pos, vec3 dir) {
-	float fov_angle = cos(fov * M_PI / 180.0f);
+	float fov_angle = cos(settings.fov * M_PI / 180.0f);
 
 	int center_cx = last_cx + (RENDER_DISTANCE / 2);
 	int center_cy = last_cy + (WORLD_HEIGHT / 2);

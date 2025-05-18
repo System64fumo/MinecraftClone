@@ -31,7 +31,7 @@ This project is not affiliated with Mojang or Microsoft in any way.<br>
 # Dependencies
 * [GLFW](https://github.com/glfw/glfw)
 * [GLEW](https://github.com/nigels-com/glew)
-* [libpng](https://github.com/glennrp/libpng)
+* [libwebp](https://chromium.googlesource.com/webm/libwebp)
 * OpenGL 3.0 ES (or newer)
 * UPX (optional)
 
