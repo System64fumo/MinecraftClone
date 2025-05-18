@@ -6,15 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-unsigned short screen_width = 1280;
-unsigned short screen_height = 720;
 unsigned short screen_center_x = 640;
 unsigned short screen_center_y = 360;
 
 uint8_t hotbar_slot = 0;
 char game_dir[255];
 
-float fov = 70.0f;
 float near = 0.1f;
 float far = 300.0f;
 float aspect = 1.7f;
@@ -62,7 +59,6 @@ GLFWwindow* window = NULL;
 int initialize() {
 	// Config
 	initialize_config();
-	// TODO: Apply config
 
 	if (!glfwInit()) {
 		printf("Failed to initialize GLFW\n");
@@ -74,7 +70,7 @@ int initialize() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_SAMPLES, 8);*/
 
-	window = glfwCreateWindow(screen_width, screen_height, "Minecraft Clone", NULL, NULL);
+	window = glfwCreateWindow(settings.window_width, settings.window_height, "Minecraft Clone", NULL, NULL);
 	if (!window) {
 		printf("Failed to create GLFW window\n");
 		glfwTerminate();
@@ -90,7 +86,7 @@ int initialize() {
 	glfwSetKeyCallback(window, key_callback);
 
 	glewInit();
-	framebuffer_size_callback(window, screen_width, screen_height);
+	framebuffer_size_callback(window, settings.window_width, settings.window_height);
 
 	// Debugging
 	#ifdef DEBUG
@@ -125,7 +121,7 @@ int initialize() {
 
 	// Initialization
 	load_shaders();
-	setup_framebuffer(screen_width, screen_height);
+	setup_framebuffer(settings.window_width, settings.window_height);
 	init_fullscreen_quad();
 	init_ui();
 	init_block_highlight();
@@ -182,10 +178,10 @@ void run() {
 	while (!glfwWindowShouldClose(window)) {
 		do_time_stuff();
 		process_input(window);
-	
+
 		render_to_framebuffer();
 		render_to_screen();
-	
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

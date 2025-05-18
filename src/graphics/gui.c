@@ -148,8 +148,8 @@ void update_ui_buffer() {
 void setup_ui_elements() {
 	// Crosshair
 	ui_elements[0] = (ui_element_t) {
-		.x = screen_width / UI_SCALING,
-		.y = screen_height / UI_SCALING,
+		.x = settings.window_width / UI_SCALING,
+		.y = settings.window_height / UI_SCALING,
 		.width = 16,
 		.height = 16,
 		.tex_x = 240,
@@ -160,7 +160,7 @@ void setup_ui_elements() {
 
 	// Hotbar
 	ui_elements[1] = (ui_element_t) {
-		.x = screen_width / UI_SCALING,
+		.x = settings.window_width / UI_SCALING,
 		.y = 22,
 		.width = 182,
 		.height = 22,
@@ -172,7 +172,7 @@ void setup_ui_elements() {
 
 	// Hotbar slot
 	ui_elements[2] = (ui_element_t) {
-		.x = screen_width / UI_SCALING - 182 + 22 + (40 * (hotbar_slot % 9)),
+		.x = settings.window_width / UI_SCALING - 182 + 22 + (40 * (hotbar_slot % 9)),
 		.y = 22,
 		.width = 24,
 		.height = 24,
@@ -196,22 +196,22 @@ void render_ui() {
 
 void update_ui() {
 	// Crosshair
-	ui_elements[0].x = screen_width / UI_SCALING;
-	ui_elements[0].y = screen_height / UI_SCALING;
+	ui_elements[0].x = settings.window_width / UI_SCALING;
+	ui_elements[0].y = settings.window_height / UI_SCALING;
 
 	// Hotbar
-	ui_elements[1].x = screen_width / UI_SCALING;
+	ui_elements[1].x = settings.window_width / UI_SCALING;
 	ui_elements[1].y = 22;
 
 	// Hotbar slot
-	ui_elements[2].x = screen_width / UI_SCALING - 182 + 22 + (40 * (hotbar_slot % 9));
+	ui_elements[2].x = settings.window_width / UI_SCALING - 182 + 22 + (40 * (hotbar_slot % 9));
 	ui_elements[2].y = 22;
 
 	update_ui_buffer();
 
 	matrix4_identity(ortho);
 	matrix4_translate(ortho, -1.0f, -1.0f, 0.0f);
-	matrix4_scale(ortho, UI_SCALING / screen_width, UI_SCALING / screen_height, 1.0f);
+	matrix4_scale(ortho, UI_SCALING / settings.window_width, UI_SCALING / settings.window_height, 1.0f);
 }
 
 void cleanup_ui() {

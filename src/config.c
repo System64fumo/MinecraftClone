@@ -8,168 +8,162 @@
 #include <limits.h>
 #include <pthread.h>
 #include <poll.h>
+#include <ctype.h>
 
-void ini_parse(IniFile* ini) {
-	FILE* f = fopen(ini->filepath, "r");
+config settings;
+
+static char* trim(char* str) {
+	while (isspace(*str)) str++;
+	char* end = str + strlen(str) - 1;
+	while (end > str && isspace(*end)) *end-- = '\0';
+	return str;
+}
+
+static void ini_load_file(IniFile* ini) {
+	FILE* f = fopen(ini->filename, "r");
 	if (!f) return;
 
-	char line[MAX_LINE];
-	IniSection* current = NULL;
 	ini->section_count = 0;
+	char line[512];
+	IniSection* current = NULL;
 
 	while (fgets(line, sizeof(line), f)) {
-		char* trimmed = line;
-		while (*trimmed == ' ' || *trimmed == '\t') trimmed++;
-
-		if (*trimmed == '#' || *trimmed == ';' || *trimmed == '\n') continue;
+		char* trimmed = trim(line);
+		if (*trimmed == ';' || *trimmed == '#' || *trimmed == '\0') continue;
 
 		if (*trimmed == '[') {
 			char* end = strchr(trimmed, ']');
-			if (end) {
-				*end = 0;
-				if (ini->section_count < MAX_SECTIONS) {
-					current = &ini->sections[ini->section_count++];
-					strncpy(current->name, trimmed + 1, sizeof(current->name));
-					current->kv_count = 0;
-				}
+			if (end && ini->section_count < MAX_SECTIONS) {
+				*end = '\0';
+				current = &ini->sections[ini->section_count++];
+				strncpy(current->name, trimmed + 1, MAX_NAME);
+				current->key_count = 0;
 			}
-		} else {
-			char* eq = strchr(trimmed, '=');
-			if (eq && current && current->kv_count < MAX_KEYS) {
-				*eq = 0;
-				char* key = trimmed;
-				char* value = eq + 1;
-				key[strcspn(key, "\r\n")] = 0;
-				value[strcspn(value, "\r\n")] = 0;
-				IniKeyValue* kv = &current->kv[current->kv_count++];
-				strncpy(kv->key, key, sizeof(kv->key));
-				strncpy(kv->value, value, sizeof(kv->value));
+		} else if (current && strchr(trimmed, '=')) {
+			if (current->key_count < MAX_KEYS) {
+				char* eq = strchr(trimmed, '=');
+				*eq = '\0';
+				char* key = trim(trimmed);
+				char* value = trim(eq + 1);
+				IniKey* k = &current->keys[current->key_count++];
+				strncpy(k->key, key, MAX_NAME);
+				strncpy(k->value, value, MAX_VALUE);
 			}
 		}
 	}
 
 	fclose(f);
+	ini->ready = 1;
+	parse_config(ini);
 }
 
-const char* ini_get(IniFile* ini, const char* section, const char* key) {
-	for (int i = 0; i < ini->section_count; i++) {
-		if (strcmp(ini->sections[i].name, section) == 0) {
-			for (int j = 0; j < ini->sections[i].kv_count; j++) {
-				if (strcmp(ini->sections[i].kv[j].key, key) == 0) {
-					return ini->sections[i].kv[j].value;
-				}
-			}
-		}
-	}
-	return NULL;
-}
-
-void* ini_watch_thread(void* arg) {
+static void* ini_thread_func(void* arg) {
 	IniFile* ini = (IniFile*)arg;
 
-	struct pollfd pfd = {
-		.fd = ini->watch_fd,
-		.events = POLLIN
-	};
+	ini_load_file(ini);
 
-	while (ini->watching) {
-		if (poll(&pfd, 1, -1) > 0 && (pfd.revents & POLLIN)) {
-			char buffer[WATCH_BUF_SIZE * 16];
-			int length = read(ini->watch_fd, buffer, sizeof(buffer));
-			if (length <= 0) continue;
+	int fd = inotify_init1(IN_NONBLOCK);
+	if (fd < 0) return NULL;
 
-			int i = 0;
-			while (i < length) {
-				struct inotify_event* event = (struct inotify_event*)&buffer[i];
-				if (event->mask & IN_CLOSE_WRITE) {
-					pthread_mutex_lock(&ini->mutex);
-					ini_parse(ini);
-					parse_config();
-					pthread_mutex_unlock(&ini->mutex);
-				}
-				i += sizeof(struct inotify_event) + event->len;
-			}
+	int wd = inotify_add_watch(fd, ini->filename, IN_MODIFY | IN_CLOSE_WRITE);
+	if (wd < 0) {
+		close(fd);
+		return NULL;
+	}
+
+	char buf[sizeof(struct inotify_event) + NAME_MAX + 1];
+
+	while (1) {
+		int len = read(fd, buf, sizeof(buf));
+		if (len <= 0) {
+			usleep(100000); // avoid busy loop
+			continue;
+		}
+
+		struct inotify_event* event = (struct inotify_event*)buf;
+		if (event->mask & (IN_MODIFY | IN_CLOSE_WRITE)) {
+			ini_load_file(ini);
 		}
 	}
 
+	close(wd);
+	close(fd);
 	return NULL;
 }
 
-void ini_start_watch_thread(IniFile* ini) {
-	ini->watch_fd = inotify_init1(IN_NONBLOCK);
-	if (ini->watch_fd < 0) {
-		perror("inotify_init1");
-		exit(1);
-	}
-
-	ini->watch_desc = inotify_add_watch(ini->watch_fd, ini->filepath, IN_CLOSE_WRITE);
-	if (ini->watch_desc < 0) {
-		perror("inotify_add_watch");
-		close(ini->watch_fd);
-		exit(1);
-	}
-
-	pthread_mutex_init(&ini->mutex, NULL);
-	ini->watching = 1;
-	pthread_t thread;
-	pthread_create(&thread, NULL, ini_watch_thread, ini);
-	pthread_detach(thread);
-}
-
-void ini_stop_watch_thread(IniFile* ini) {
-	ini->watching = 0;
-	inotify_rm_watch(ini->watch_fd, ini->watch_desc);
-	close(ini->watch_fd);
-	pthread_mutex_destroy(&ini->mutex);
-}
-
-int ini_check_reload(IniFile* ini) {
-	char buffer[WATCH_BUF_SIZE * 16];
-	int length = read(ini->watch_fd, buffer, sizeof(buffer));
-	if (length <= 0) return 0;
-
-	int i = 0;
-	while (i < length) {
-		struct inotify_event* event = (struct inotify_event*)&buffer[i];
-		if (event->mask & IN_CLOSE_WRITE) {
-			ini_parse(ini);
-			return 1;
-		}
-		i += sizeof(struct inotify_event) + event->len;
-	}
-
-	return 0;
+void ini_parse_async(const char* filename, IniFile* ini) {
+	memset(ini, 0, sizeof(IniFile));
+	ini->filename = filename;
+	ini->ready = 0;
+	pthread_create(&ini->thread, NULL, ini_thread_func, ini);
+	pthread_detach(ini->thread);
 }
 
 void initialize_config() {
+	settings.window_width = 1280;
+	settings.window_height = 720;
+	settings.fov = 70.0f;
+
 	char config_path[1024];
 	const char* home_path = getenv("HOME");
-	snprintf(config_path, sizeof(config_path), "%s/%s", home_path, ".config/ccraft/config.ini");
-	if (!access(config_path, F_OK) == 0) {
-		char* dir_path = strdup(config_path);
-		char* last_slash = strrchr(dir_path, '/');
-		if (last_slash) {
-			*last_slash = '\0';
-			mkdir(dir_path, 0755);
-		}
-
-		FILE* config_file = fopen(config_path, "w");
-		fprintf(config_file, "[main]\n");
-		fprintf(config_file, "screen_width = %d\n", screen_width);
-		fprintf(config_file, "screen_height = %d\n", screen_height);
-		fprintf(config_file, "fov = %f\n", fov);
-		fprintf(config_file, "near = %f\n", near);
-		fprintf(config_file, "far = %f\n", far);
-		fprintf(config_file, "aspect = %f\n", aspect);
-		fclose(config_file);
+	if (!home_path) {
+		fprintf(stderr, "HOME environment variable not set\n");
+		return;
 	}
 
-	IniFile ini = { .filepath = config_path };
-	ini_parse(&ini);
-	ini_start_watch_thread(&ini);
+	snprintf(config_path, sizeof(config_path), "%s/.config/ccraft/config.ini", home_path);
+
+	char dir_path[1024];
+	snprintf(dir_path, sizeof(dir_path), "%s/.config/ccraft", home_path);
+	mkdir(dir_path, 0755);
+	
+	if (access(config_path, F_OK) != 0) {
+		FILE* config_file = fopen(config_path, "w");
+		if (!config_file) {
+			perror("fopen");
+			return;
+		}
+		
+		fprintf(config_file, "[main]\n");
+		fprintf(config_file, "window_width = %d\n", settings.window_width);
+		fprintf(config_file, "window_height = %d\n", settings.window_height);
+		fprintf(config_file, "fov = %.1f\n", settings.fov);
+		fclose(config_file);
+	}
+	ini_parse_async(config_path, &ini);
 }
 
-void parse_config() {
-	// TODO: Implement config parsing logic here
-	printf("Config reloaded.\n");
+const char* ini_get(IniFile* ini, const char* section, const char* key) {
+	if (!ini->ready) return NULL;
+	for (int i = 0; i < ini->section_count; i++) {
+		if (strcmp(ini->sections[i].name, section) == 0) {
+			for (int j = 0; j < ini->sections[i].key_count; j++) {
+				if (strcmp(ini->sections[i].keys[j].key, key) == 0) {
+					return ini->sections[i].keys[j].value;
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
+
+void parse_config(IniFile* ini) {
+	// TODO: Fix hot-reloading..
+	const char* width = ini_get(ini, "main", "window_width");
+	if (width)
+		settings.window_width = atoi(width);
+
+	const char* height = ini_get(ini, "main", "window_height");
+	if (height)
+		settings.window_height = atoi(height);
+
+	const char* fov = ini_get(ini, "main", "fov");
+	if (fov)
+		settings.fov = atof(fov);
+
+	printf("Config loaded: %dx%d, fov=%.1f\n", 
+		   settings.window_width,
+		   settings.window_height,
+		   settings.fov);
 }
