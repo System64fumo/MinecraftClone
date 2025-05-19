@@ -29,7 +29,7 @@ typedef struct {
 	unsigned short window_height;
 } config;
 
-static IniFile ini;
+extern IniFile ini;
 
 void initialize_config();
 void ini_parse_async(const char* filename, IniFile* ini);

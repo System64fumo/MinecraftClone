@@ -114,9 +114,9 @@ void setup_matrices();
 
 vec3 get_direction(float pitch, float yaw);
 void update_frustum();
-void get_targeted_block(Entity entity, vec3 direction, float reach, int* out_x, int* out_y, int* out_z, char* out_face);
+void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_out, char* out_face);
 Block* get_block_at(int world_block_x, int world_block_y, int world_block_z);
-void draw_block_highlight(float x, float y, float z);
+void draw_block_highlight(vec3 pos);
 bool is_block_solid(int world_block_x, int world_block_y, int world_block_z);
 void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord);
 bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);

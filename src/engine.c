@@ -106,17 +106,28 @@ int initialize() {
 	// Textures
 	char exec_path[1024];
 	ssize_t len = readlink("/proc/self/exe", exec_path, sizeof(exec_path) - 1);
+	if (len == -1) {
+		perror("readlink failed");
+		exit(EXIT_FAILURE);
+	}
 	exec_path[len] = '\0';
+
 	char* lastSlash = strrchr(exec_path, '/');
-	*lastSlash = '\0';
-	char* exeDir = strdup(exec_path);
+	if (lastSlash)
+		*lastSlash = '\0';
 
 	char atlas_path[1024];
-	snprintf(atlas_path, sizeof(atlas_path), "%s/%s", exec_path, "assets/atlas.webp");
+	if (snprintf(atlas_path, sizeof(atlas_path), "%s/%s", exec_path, "assets/atlas.webp") >= sizeof(atlas_path)) {
+		fprintf(stderr, "atlas_path truncated\n");
+		exit(EXIT_FAILURE);
+	}
 	block_textures = loadTexture(atlas_path);
 
 	char gui_path[1024];
-	snprintf(gui_path, sizeof(gui_path), "%s/%s", exec_path, "assets/gui.webp");
+	if (snprintf(gui_path, sizeof(gui_path), "%s/%s", exec_path, "assets/gui.webp") >= sizeof(gui_path)) {
+		fprintf(stderr, "gui_path truncated\n");
+		exit(EXIT_FAILURE);
+	}
 	ui_textures = loadTexture(gui_path);
 
 	// Initialization
@@ -153,10 +164,10 @@ int initialize() {
 		.pos.z = 0.0f,
 		.yaw = 90.0f,
 		.pitch = 0.0f,
-		.width = 0.9375f,
-		.height = 1.875f,
+		.width = 0.6f,
+		.height = 1.8f,
 		.eye_level = 1.625f,
-		.speed = 10
+		.speed = 5
 	};
 	global_entities[0] = player;
 

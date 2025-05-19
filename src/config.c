@@ -10,6 +10,7 @@
 #include <poll.h>
 #include <ctype.h>
 
+IniFile ini;
 config settings;
 
 static char* trim(char* str) {

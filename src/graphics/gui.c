@@ -12,16 +12,16 @@ GLuint highlight_vao, highlight_vbo, highlight_ebo;
 
 static const float vertices_template[] = {
 	// Front face (Z+)
-	-1.001f, -1.001f,  0.001f,
-	0.001f, -1.001f,  0.001f,
-	0.001f, -0.001f,  0.001f,
-	-1.001f, -0.001f,  0.001f,
+	0.0f, 0.0f, 1.0f,
+	1.0f, 0.0f, 1.0f,
+	1.0f, 1.0f, 1.0f,
+	0.0f, 1.0f, 1.0f,
 
 	// Back face (Z-)
-	-1.001f, -1.001f, -1.001f,
-	0.001f, -1.001f, -1.001f,
-	0.001f, -0.001f, -1.001f,
-	-1.001f, -0.001f, -1.001f
+	0.0f, 0.0f, 0.0f,
+	1.0f, 0.0f, 0.0f,
+	1.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f
 };
 
 static const uint8_t edge_indices[] = {
@@ -81,11 +81,11 @@ void init_ui() {
 	setup_ui_elements();
 }
 
-void draw_block_highlight(float x, float y, float z) {
+void draw_block_highlight(vec3 pos) {
 	glDisable(GL_BLEND);
 
 	matrix4_identity(highlight_matrix);
-	matrix4_translate(highlight_matrix, x, y + 0.001f, z);
+	matrix4_translate(highlight_matrix, pos.x, pos.y + 0.001f, pos.z);
 
 	glUseProgram(shaderProgram);
 
