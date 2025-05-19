@@ -7,31 +7,29 @@
 #define MAX_FALL_SPEED 78.4f
 
 vec3 get_direction(float pitch, float yaw) {
-	vec3 dir;
-	float pitch_rad = pitch * (M_PI / 180.0f);
-	float yaw_rad = (yaw - 90) * (M_PI / 180.0f);
-	float pitch_cos = cosf(pitch_rad);
-
-	dir.x = -sinf(yaw_rad) * pitch_cos;
-	dir.y = sinf(pitch_rad);
-	dir.z = cosf(yaw_rad) * pitch_cos;
-	return dir;
+	float pr = pitch * (M_PI / 180.0f);
+	float yr = (yaw - 90.0f) * (M_PI / 180.0f);
+	return (vec3) {
+		.x = -sinf(yr) * cosf(pr),
+		.y = sinf(pr),
+		.z = cosf(yr) * cosf(pr)
+	};
 }
 
 void update_frustum() {
 	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
 	vec3 pos;
-	pos.x = global_entities[0].x;
-	pos.y = global_entities[0].y + global_entities[0].eye_level;
-	pos.z = global_entities[0].z;
+	pos.x = global_entities[0].pos.x;
+	pos.y = global_entities[0].pos.y + global_entities[0].eye_level;
+	pos.z = global_entities[0].pos.z;
 	update_chunks_visibility(pos, dir);
 }
 
-void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, int* out_y, int* out_z, char* out_face) {
+void get_targeted_block(Entity entity, vec3 direction, float reach, int* out_x, int* out_y, int* out_z, char* out_face) {
 	// Block coordinates
-	int block_x = (int)floorf(position.x);
-	int block_y = (int)floorf(position.y);
-	int block_z = (int)floorf(position.z);
+	int block_x = (int)floorf(entity.pos.x);
+	int block_y = (int)floorf(entity.pos.y + entity.eye_level);
+	int block_z = (int)floorf(entity.pos.z);
 
 	// Step direction
 	int step_x = (direction.x > 0) ? 1 : -1;
@@ -44,9 +42,9 @@ void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, 
 	float delta_z = (direction.z == 0) ? INFINITY : fabs(1.0f / direction.z);
 
 	// Initial side distances
-	float side_x = (direction.x > 0) ? (block_x + 1 - position.x) * delta_x : (position.x - block_x) * delta_x;
-	float side_y = (direction.y > 0) ? (block_y + 1 - position.y) * delta_y : (position.y - block_y) * delta_y;
-	float side_z = (direction.z > 0) ? (block_z + 1 - position.z) * delta_z : (position.z - block_z) * delta_z;
+	float side_x = (direction.x > 0) ? (block_x + 1 - entity.pos.x) * delta_x : (entity.pos.x - block_x) * delta_x;
+	float side_y = (direction.y > 0) ? (block_y + 1 - entity.pos.y + entity.eye_level) * delta_y : (entity.pos.y + entity.eye_level - block_y) * delta_y;
+	float side_z = (direction.z > 0) ? (block_z + 1 - entity.pos.z) * delta_z : (entity.pos.z - block_z) * delta_z;
 
 	float distance = 0.0f;
 
@@ -83,9 +81,9 @@ void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, 
 			float block_center_y = block_y + 0.5f;
 			float block_center_z = block_z + 0.5f;
 
-			float dx_intersect = position.x + direction.x * distance - block_center_x;
-			float dy_intersect = position.y + direction.y * distance - block_center_y;
-			float dz_intersect = position.z + direction.z * distance - block_center_z;
+			float dx_intersect = entity.pos.x + direction.x * distance - block_center_x;
+			float dy_intersect = entity.pos.y + entity.eye_level + direction.y * distance - block_center_y;
+			float dz_intersect = entity.pos.z + direction.z * distance - block_center_z;
 
 			if (fabs(dx_intersect) > fabs(dy_intersect) && fabs(dx_intersect) > fabs(dz_intersect)) {
 				*out_face = (dx_intersect > 0) ? 'L' : 'R';
@@ -142,15 +140,15 @@ void update_entity_physics(Entity* entity, float delta_time) {
 		);
 	}
 
-	float new_y = entity->y + entity->vertical_velocity * delta_time;
+	float new_y = entity->pos.y + entity->vertical_velocity * delta_time;
 
 	int collision_points_count = 4;
 	float half_width = entity->width / 2.0f;
 	float ground_check_points[][2] = {
-		{entity->x - half_width, entity->z - half_width},
-		{entity->x + half_width, entity->z - half_width},
-		{entity->x - half_width, entity->z + half_width},
-		{entity->x + half_width, entity->z + half_width}
+		{entity->pos.x - half_width, entity->pos.z - half_width},
+		{entity->pos.x + half_width, entity->pos.z - half_width},
+		{entity->pos.x - half_width, entity->pos.z + half_width},
+		{entity->pos.x + half_width, entity->pos.z + half_width}
 	};
 
 	entity->is_grounded = false;
@@ -170,7 +168,7 @@ void update_entity_physics(Entity* entity, float delta_time) {
 		}
 	}
 
-	entity->y = new_y;
+	entity->pos.y = new_y;
 }
 
 void set_hotbar_slot(uint8_t slot) {

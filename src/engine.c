@@ -148,9 +148,9 @@ int initialize() {
 
 	// Initialize player
 	Entity player = {
-		.x = 0.0f,
-		.y = 100.0f,
-		.z = 0.0f,
+		.pos.x = 0.0f,
+		.pos.y = 100.0f,
+		.pos.z = 0.0f,
 		.yaw = 90.0f,
 		.pitch = 0.0f,
 		.width = 0.9375f,
