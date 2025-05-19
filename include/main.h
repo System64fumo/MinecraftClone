@@ -24,7 +24,7 @@
 
 // Typedefs
 typedef struct {
-	float x, y, z;
+	vec3 pos;
 	float yaw, pitch;
 	float width, height;
 	float eye_level;
@@ -114,7 +114,7 @@ void setup_matrices();
 
 vec3 get_direction(float pitch, float yaw);
 void update_frustum();
-void get_targeted_block(vec3 position, vec3 direction, float reach, int* out_x, int* out_y, int* out_z, char* out_face);
+void get_targeted_block(Entity entity, vec3 direction, float reach, int* out_x, int* out_y, int* out_z, char* out_face);
 Block* get_block_at(int world_block_x, int world_block_y, int world_block_z);
 void draw_block_highlight(float x, float y, float z);
 bool is_block_solid(int world_block_x, int world_block_y, int world_block_z);

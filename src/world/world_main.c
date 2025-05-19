@@ -121,9 +121,9 @@ void* chunk_loader_thread(void* arg) {
 			profiler_start(PROFILER_ID_WORLD_GEN, false);
 			#endif
 			
-			int center_cx = floorf(entity->x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
-			last_cy = floorf(entity->y / CHUNK_SIZE) - (WORLD_HEIGHT / 2);
-			int center_cz = floorf(entity->z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
+			int center_cx = floorf(entity->pos.x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
+			last_cy = floorf(entity->pos.y / CHUNK_SIZE) - (WORLD_HEIGHT / 2);
+			int center_cz = floorf(entity->pos.z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
 
 			int dx, dz;
 			int local_last_cx, local_last_cz;
@@ -231,9 +231,9 @@ void* chunk_loader_thread(void* arg) {
 			int queue_size = 0;
 			
 			// Entity position within chunk coordinates
-			float entity_chunk_x = entity->x / CHUNK_SIZE;
-			float entity_chunk_y = entity->y / CHUNK_SIZE;
-			float entity_chunk_z = entity->z / CHUNK_SIZE;
+			float entity_chunk_x = entity->pos.x / CHUNK_SIZE;
+			float entity_chunk_y = entity->pos.y / CHUNK_SIZE;
+			float entity_chunk_z = entity->pos.z / CHUNK_SIZE;
 			
 			// Calculate which chunks need loading and their distances
 			for (int x = 0; x < RENDER_DISTANCE; x++) {

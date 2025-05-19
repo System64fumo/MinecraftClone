@@ -35,7 +35,7 @@ void setup_matrices() {
 	view[1] = vgetq_lane_f32(u, 0); view[5] = vgetq_lane_f32(u, 1); view[9] = vgetq_lane_f32(u, 2);
 	view[2] = -vgetq_lane_f32(f, 0); view[6] = -vgetq_lane_f32(f, 1); view[10] = -vgetq_lane_f32(f, 2);
 
-	float32x4_t pos = {global_entities[0].x, global_entities[0].y + global_entities[0].eye_level, global_entities[0].z, 0.0f};
+	float32x4_t pos = {global_entities[0].pos.x, global_entities[0].pos.y + global_entities[0].eye_level, global_entities[0].pos.z, 0.0f};
 	view[12] = -vaddvq_f32(vmulq_f32(s, pos));
 	view[13] = -vaddvq_f32(vmulq_f32(u, pos));
 	view[14] = vaddvq_f32(vmulq_f32(f, pos));
@@ -66,9 +66,9 @@ void setup_matrices() {
 	view[0] = s[0]; view[4] = s[1]; view[8] = s[2];
 	view[1] = u[0]; view[5] = u[1]; view[9] = u[2];
 	view[2] = -f[0]; view[6] = -f[1]; view[10] = -f[2];
-	view[12] = -(s[0] * global_entities[0].x + s[1] * global_entities[0].y + global_entities[0].eye_level + s[2] * global_entities[0].z);
-	view[13] = -(u[0] * global_entities[0].x + u[1] * global_entities[0].y + global_entities[0].eye_level + u[2] * global_entities[0].z);
-	view[14] = (f[0] * global_entities[0].x + f[1] * global_entities[0].y + global_entities[0].eye_level + f[2] * global_entities[0].z);
+	view[12] = -(s[0] * global_entities[0].pos.x + s[1] * global_entities[0].pos.y + global_entities[0].eye_level + s[2] * global_entities[0].pos.z);
+	view[13] = -(u[0] * global_entities[0].pos.x + u[1] * global_entities[0].pos.y + global_entities[0].eye_level + u[2] * global_entities[0].pos.z);
+	view[14] = (f[0] * global_entities[0].pos.x + f[1] * global_entities[0].pos.y + global_entities[0].eye_level + f[2] * global_entities[0].pos.z);
 	#endif
 }
 

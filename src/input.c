@@ -59,11 +59,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	int world_block_x, world_block_y, world_block_z;
 	char face;
 	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
-	vec3 pos;
-	pos.x = global_entities[0].x;
-	pos.y = global_entities[0].y + global_entities[0].eye_level;
-	pos.z = global_entities[0].z;
-	get_targeted_block(pos, dir, 5.0f, &world_block_x, &world_block_y, &world_block_z, &face);
+	get_targeted_block(global_entities[0], dir, 5.0f, &world_block_x, &world_block_y, &world_block_z, &face);
 
 	if (face == 'N') return;
 
@@ -137,9 +133,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void process_input(GLFWwindow* window) {
-	int player_cx = (int)(global_entities[0].x / CHUNK_SIZE);
-	int player_cy = (int)(global_entities[0].y / CHUNK_SIZE);
-	int player_cz = (int)(global_entities[0].z / CHUNK_SIZE);
+	int player_cx = (int)(global_entities[0].pos.x / CHUNK_SIZE);
+	int player_cy = (int)(global_entities[0].pos.y / CHUNK_SIZE);
+	int player_cz = (int)(global_entities[0].pos.z / CHUNK_SIZE);
 
 	int center_cx = last_cx + (RENDER_DISTANCE / 2);
 	int center_cz = last_cz + (RENDER_DISTANCE / 2);
@@ -194,37 +190,37 @@ void process_input(GLFWwindow* window) {
 		update_frustum();
 	}
 
-	float new_x = global_entities[0].x + dx;
-	float new_y = global_entities[0].y + dy;
-	float new_z = global_entities[0].z + dz;
+	float new_x = global_entities[0].pos.x + dx;
+	float new_y = global_entities[0].pos.y + dy;
+	float new_z = global_entities[0].pos.z + dz;
 
 	bool can_move_x = check_entity_collision(
 		new_x, 
-		global_entities[0].y, 
-		global_entities[0].z, 
+		global_entities[0].pos.y, 
+		global_entities[0].pos.z, 
 		global_entities[0].width, 
 		global_entities[0].height
 	);
 
 	bool can_move_y = check_entity_collision(
-		global_entities[0].x, 
+		global_entities[0].pos.x, 
 		new_y, 
-		global_entities[0].z, 
+		global_entities[0].pos.z, 
 		global_entities[0].width, 
 		global_entities[0].height
 	);
 
 	bool can_move_z = check_entity_collision(
-		global_entities[0].x, 
-		global_entities[0].y, 
+		global_entities[0].pos.x, 
+		global_entities[0].pos.y, 
 		new_z, 
 		global_entities[0].width, 
 		global_entities[0].height
 	);
 
-	if (can_move_x) global_entities[0].x = new_x;
-	if (can_move_y) global_entities[0].y = new_y;
-	if (can_move_z) global_entities[0].z = new_z;
+	if (can_move_x) global_entities[0].pos.x = new_x;
+	if (can_move_y) global_entities[0].pos.y = new_y;
+	if (can_move_z) global_entities[0].pos.z = new_z;
 
 	update_entity_physics(&global_entities[0], delta_time);
 }
