@@ -2,9 +2,8 @@
 #include "world.h"
 #include <math.h>
 
-float lastX = 1280.0f / 2.0f;
-float lastY = 720.0f / 2.0f;
-bool firstMouse = true;
+float lastX = 0;
+float lastY = 0;
 
 //
 // Mouse
@@ -17,12 +16,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
-	if (firstMouse) {
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
-	}
-
 	float xoffset = xpos - lastX;
 	float yoffset = lastY - ypos;
 	lastX = xpos;
@@ -56,33 +49,33 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
 	if (action != GLFW_PRESS) return;
 
-	int world_block_x, world_block_y, world_block_z;
+	vec3 block_pos;
 	char face;
 	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
-	get_targeted_block(global_entities[0], dir, 5.0f, &world_block_x, &world_block_y, &world_block_z, &face);
+	get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &face);
 
 	if (face == 'N') return;
 
 	// Adjust block coordinates based on face for right-click
 	if (button == GLFW_MOUSE_BUTTON_RIGHT || button == GLFW_MOUSE_BUTTON_MIDDLE) {
 		switch (face) {
-			case 'R': world_block_x--; break;
-			case 'L': world_block_x++; break;
-			case 'F': world_block_z++; break;
-			case 'K': world_block_z--; break;
-			case 'T': world_block_y++; break;
-			case 'B': world_block_y--; break;
+			case 'R': block_pos.x--; break;
+			case 'L': block_pos.x++; break;
+			case 'F': block_pos.z++; break;
+			case 'K': block_pos.z--; break;
+			case 'T': block_pos.y++; break;
+			case 'B': block_pos.y--; break;
 		}
 	}
 
-	Block* block = get_block_at(world_block_x, world_block_y, world_block_z);
+	Block* block = get_block_at(block_pos.x, block_pos.y, block_pos.z);
 
 	int chunk_x, chunk_z, block_x, block_z;
-	calculate_chunk_and_block(world_block_x, &chunk_x, &block_x);
-	calculate_chunk_and_block(world_block_z, &chunk_z, &block_z);
+	calculate_chunk_and_block(block_pos.x, &chunk_x, &block_x);
+	calculate_chunk_and_block(block_pos.z, &chunk_z, &block_z);
 
-	int chunk_y = world_block_y / CHUNK_SIZE;
-	int block_y = ((world_block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+	int chunk_y = block_pos.y / CHUNK_SIZE;
+	int block_y = (((int)block_pos.y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
 
 	int render_x = chunk_x - last_cx;
 	int render_z = chunk_z - last_cz;
@@ -178,8 +171,9 @@ void process_input(GLFWwindow* window) {
 		dz += cosf(yaw) * move_speed;
 		frustum_needs_update = true;
 	}
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		dy += move_speed;
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && global_entities[0].is_grounded) {
+		global_entities[0].vertical_velocity = 10.0f;
+		global_entities[0].is_grounded = false;
 		frustum_needs_update = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {

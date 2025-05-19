@@ -25,11 +25,14 @@ void update_frustum() {
 	update_chunks_visibility(pos, dir);
 }
 
-void get_targeted_block(Entity entity, vec3 direction, float reach, int* out_x, int* out_y, int* out_z, char* out_face) {
+void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_out, char* out_face) {
+	vec3 position = entity.pos;
+	position.y += entity.eye_level;
+
 	// Block coordinates
-	int block_x = (int)floorf(entity.pos.x);
-	int block_y = (int)floorf(entity.pos.y + entity.eye_level);
-	int block_z = (int)floorf(entity.pos.z);
+	int block_x = (int)floorf(position.x);
+	int block_y = (int)floorf(position.y);
+	int block_z = (int)floorf(position.z);
 
 	// Step direction
 	int step_x = (direction.x > 0) ? 1 : -1;
@@ -42,9 +45,9 @@ void get_targeted_block(Entity entity, vec3 direction, float reach, int* out_x, 
 	float delta_z = (direction.z == 0) ? INFINITY : fabs(1.0f / direction.z);
 
 	// Initial side distances
-	float side_x = (direction.x > 0) ? (block_x + 1 - entity.pos.x) * delta_x : (entity.pos.x - block_x) * delta_x;
-	float side_y = (direction.y > 0) ? (block_y + 1 - entity.pos.y + entity.eye_level) * delta_y : (entity.pos.y + entity.eye_level - block_y) * delta_y;
-	float side_z = (direction.z > 0) ? (block_z + 1 - entity.pos.z) * delta_z : (entity.pos.z - block_z) * delta_z;
+	float side_x = (direction.x > 0) ? (block_x + 1 - position.x) * delta_x : (position.x - block_x) * delta_x;
+	float side_y = (direction.y > 0) ? (block_y + 1 - position.y) * delta_y : (position.y - block_y) * delta_y;
+	float side_z = (direction.z > 0) ? (block_z + 1 - position.z) * delta_z : (position.z - block_z) * delta_z;
 
 	float distance = 0.0f;
 
@@ -72,18 +75,18 @@ void get_targeted_block(Entity entity, vec3 direction, float reach, int* out_x, 
 		uint8_t intersecting_block_id = block->id;
 
 		if (intersecting_block_id != 0 && intersecting_block_id != 8 && intersecting_block_id != 9) {
-			*out_x = block_x;
-			*out_y = block_y;
-			*out_z = block_z;
+			pos_out->x = block_x;
+			pos_out->y = block_y;
+			pos_out->z = block_z;
 
 			// Determine which face was hit
 			float block_center_x = block_x + 0.5f;
 			float block_center_y = block_y + 0.5f;
 			float block_center_z = block_z + 0.5f;
 
-			float dx_intersect = entity.pos.x + direction.x * distance - block_center_x;
-			float dy_intersect = entity.pos.y + entity.eye_level + direction.y * distance - block_center_y;
-			float dz_intersect = entity.pos.z + direction.z * distance - block_center_z;
+			float dx_intersect = position.x + direction.x * distance - block_center_x;
+			float dy_intersect = position.y + direction.y * distance - block_center_y;
+			float dz_intersect = position.z + direction.z * distance - block_center_z;
 
 			if (fabs(dx_intersect) > fabs(dy_intersect) && fabs(dx_intersect) > fabs(dz_intersect)) {
 				*out_face = (dx_intersect > 0) ? 'L' : 'R';
@@ -97,9 +100,9 @@ void get_targeted_block(Entity entity, vec3 direction, float reach, int* out_x, 
 	}
 
 	// No block found
-	*out_x = -1;
-	*out_y = -1;
-	*out_z = -1;
+	pos_out->x = -1;
+	pos_out->y = -1;
+	pos_out->z = -1;
 	*out_face = 'N';
 }
 
@@ -153,6 +156,7 @@ void update_entity_physics(Entity* entity, float delta_time) {
 
 	entity->is_grounded = false;
 
+	// Check ground collision
 	for (int i = 0; i < collision_points_count; i++) {
 		int ground_collision = is_block_solid(
 			(int)floorf(ground_check_points[i][0]), 
@@ -163,8 +167,25 @@ void update_entity_physics(Entity* entity, float delta_time) {
 		if (ground_collision) {
 			new_y = ceilf(new_y);
 			entity->vertical_velocity = 0.0f;
-			entity->is_grounded = 1;
+			entity->is_grounded = true;
 			break;
+		}
+	}
+
+	// Check ceiling collision
+	if (entity->vertical_velocity > 0) {
+		for (int i = 0; i < collision_points_count; i++) {
+			int ceiling_collision = is_block_solid(
+				(int)floorf(ground_check_points[i][0]), 
+				(int)floorf(new_y + entity->height), 
+				(int)floorf(ground_check_points[i][1])
+			);
+
+			if (ceiling_collision) {
+				new_y = floorf(new_y + entity->height) - entity->height;
+				entity->vertical_velocity = 0.0f;
+				break;
+			}
 		}
 	}
 

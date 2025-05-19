@@ -5,11 +5,6 @@
 unsigned int FBO, colorTexture, RBO;
 unsigned int quadVAO, quadVBO;
 
-char block_face;
-int world_block_x;
-int world_block_y;
-int world_block_z;
-
 void setup_framebuffer(int width, int height) {
 	// Delete existing resources if they exist
 	if (colorTexture)
@@ -86,9 +81,11 @@ void render_to_framebuffer() {
 	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
 	render_chunks();
 
-	get_targeted_block(global_entities[0], dir, 5.0f, &world_block_x, &world_block_y, &world_block_z, &block_face);
+	char block_face;
+	vec3 block_pos;
+	get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &block_face);
 	if (block_face != 'N')
-		draw_block_highlight(world_block_x + 1, world_block_y + 1, world_block_z + 1);
+		draw_block_highlight(block_pos);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	#ifdef DEBUG
