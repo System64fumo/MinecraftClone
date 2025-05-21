@@ -52,43 +52,94 @@ static const uint8_t edge_indices[] = {
 };
 
 float cube_vertices[] = {
-	// Front face
-	-0.5f, -0.5f,  0.5f,
-	 0.5f, -0.5f,  0.5f,
-	 0.5f,  0.5f,  0.5f,
-	-0.5f,  0.5f,  0.5f,
-	
-	// Back face
-	-0.5f, -0.5f, -0.5f,
-	 0.5f, -0.5f, -0.5f,
-	 0.5f,  0.5f, -0.5f,
-	-0.5f,  0.5f, -0.5f
+    // Front face (Z+)
+    -0.5f, -0.5f,  0.5f,
+     0.5f, -0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
+    
+    // Back face (Z-)
+     0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f, -0.5f,
+    -0.5f,  0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+    
+    // Left face (X-)
+    -0.5f, -0.5f, -0.5f,
+    -0.5f, -0.5f,  0.5f,
+    -0.5f,  0.5f,  0.5f,
+    -0.5f,  0.5f, -0.5f,
+    
+    // Right face (X+)
+     0.5f, -0.5f,  0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f,  0.5f, -0.5f,
+     0.5f,  0.5f,  0.5f,
+    
+    // Top face (Y+)
+    -0.5f,  0.5f,  0.5f,
+     0.5f,  0.5f,  0.5f,
+     0.5f,  0.5f, -0.5f,
+    -0.5f,  0.5f, -0.5f,
+    
+    // Bottom face (Y-)
+    -0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f, -0.5f,
+     0.5f, -0.5f,  0.5f,
+    -0.5f, -0.5f,  0.5f
 };
 
 static const uint8_t cube_indices[] = {
+    // Front face
+    0, 1, 2,  0, 2, 3,
+    // Back face
+    4, 5, 6,  4, 6, 7,
+    // Left face
+    8, 9, 10,  8, 10, 11,
+    // Right face
+    12, 13, 14,  12, 14, 15,
+    // Top face
+    16, 17, 18,  16, 18, 19,
+    // Bottom face
+    20, 21, 22,  20, 22, 23
+};
+
+float cube_tex_coords[] = {
 	// Front face
-	0, 1, 2,
-	2, 3, 0,
+	0.0f, 1.0f,  // bottom-left
+	1.0f, 1.0f,  // bottom-right
+	1.0f, 0.0f,  // top-right
+	0.0f, 0.0f,  // top-left
 	
 	// Back face
-	5, 4, 7,
-	5, 7, 6,
+	1.0f, 1.0f,
+	0.0f, 1.0f,
+	0.0f, 0.0f,
+	1.0f, 0.0f,
 	
 	// Left face
-	4, 0, 3,
-	3, 7, 4,
+	1.0f, 1.0f,
+	0.0f, 1.0f,
+	0.0f, 0.0f,
+	1.0f, 0.0f,
 	
 	// Right face
-	1, 5, 6,
-	6, 2, 1,
+	0.0f, 1.0f,
+	1.0f, 1.0f,
+	1.0f, 0.0f,
+	0.0f, 0.0f,
 	
 	// Top face
-	3, 2, 6,
-	6, 7, 3,
+	0.0f, 1.0f,
+	1.0f, 1.0f,
+	1.0f, 0.0f,
+	0.0f, 0.0f,
 	
 	// Bottom face
-	4, 5, 1,
-	1, 0, 4
+	0.0f, 0.0f,
+	1.0f, 0.0f,
+	1.0f, 1.0f,
+	0.0f, 1.0f
 };
 
 void update_cube_projection() {
@@ -125,12 +176,12 @@ void init_cube_rendering() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	
-	// Create and bind VBO for face colors
-	glGenBuffers(1, &cube_color_vbo);
+	glGenBuffers(1, &cube_color_vbo); // Reuse this for texture coordinates
 	glBindBuffer(GL_ARRAY_BUFFER, cube_color_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_tex_coords), cube_tex_coords, GL_STATIC_DRAW);
 	
-	// Set up color attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	// Set up texture coordinate attribute
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
 	
 	// Create and bind EBO
@@ -227,17 +278,25 @@ void draw_cube_element(const cube_element_t* cube) {
 	}
 
 	matrix4_translate(cube_matrix, cube->pos.x, cube->pos.y, 0);
-
 	matrix4_scale(cube_matrix, cube->width, cube->height, cube->depth);
 
 	GLint proj_loc = glGetUniformLocation(cube_shader, "projection");
 	GLint view_loc = glGetUniformLocation(cube_shader, "view");
 	GLint model_loc = glGetUniformLocation(cube_shader, "model");
+	GLint tex_loc = glGetUniformLocation(cube_shader, "texParams");
 
 	glUniformMatrix4fv(proj_loc, 1, GL_FALSE, cube_projection);
 	glUniformMatrix4fv(view_loc, 1, GL_FALSE, cube_view);
 	glUniformMatrix4fv(model_loc, 1, GL_FALSE, cube_matrix);
 
+	// Calculate texture parameters
+	float tx = (float)cube->tex_x / 256.0f;
+	float ty = (float)cube->tex_y / 256.0f;
+	float tw = (float)cube->tex_width / 256.0f;
+	float th = (float)cube->tex_height / 256.0f;
+	glUniform4f(tex_loc, tx, ty, tw, th);
+
+	glBindTexture(GL_TEXTURE_2D, block_textures);
 	glBindVertexArray(cube_vao);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, 0);
 	draw_calls++;
@@ -250,8 +309,12 @@ void render_3d_elements() {
 		.width = 0.055f * UI_SCALING,
 		.height = 0.055f * UI_SCALING,
 		.depth = 0.055f * UI_SCALING,
-		.rotation_x = 30 * (M_PI / 180.0f),
+		.rotation_x = -30 * (M_PI / 180.0f),
 		.rotation_y = 45 * (M_PI / 180.0f),
+		.tex_x = 48,
+		.tex_y = 0,
+		.tex_width = 16,
+		.tex_height = 16
 	};
 
 	glDisable(GL_BLEND);
