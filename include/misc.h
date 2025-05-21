@@ -7,11 +7,15 @@
 #define RENDER_DISTANCE 16
 #define MAX_BLOCK_TYPES 256
 #define MAX_VERTICES 98304 // CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4;
-#define UI_SCALING 2.5f
+#define UI_SCALING 3.0f
 
 typedef struct {
 	float x, y, z;
 } vec3;
+
+typedef struct {
+	float x, y;
+} vec2;
 
 void setup_matrices();
 void matrix4_identity(float* mat);
@@ -20,6 +24,9 @@ void matrix4_multiply(float result[16], const float mat1[16], const float mat2[1
 void matrix4_rotate(float* mat, float angle, float x, float y, float z);
 void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far);
 void matrix4_scale(float* mat, float x, float y, float z);
+void matrix4_rotate_x(float* matrix, float angle);
+void matrix4_rotate_y(float* matrix, float angle);
+void matrix4_rotate_z(float* matrix, float angle);
 void do_time_stuff();
 const char* load_file(const char* filename);
 unsigned int loadTexture(const char* path);

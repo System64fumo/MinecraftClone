@@ -84,7 +84,7 @@ extern float framerate;
 extern float frametime;
 extern float model[16], view[16], projection[16];
 
-extern unsigned int shaderProgram, postProcessingShader, ui_shader;
+extern unsigned int shaderProgram, postProcessingShader, ui_shader, cube_shader;
 extern unsigned int block_textures, ui_textures;
 
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
