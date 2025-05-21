@@ -2,8 +2,11 @@
 precision mediump float;
 out vec4 FragColor;
 
-uniform vec3 color;
+in vec2 TexCoord;
+uniform sampler2D uiTexture;
+uniform vec4 texParams; // x,y = offset, z,w = size
 
 void main() {
-	FragColor = vec4(color, 1.0);
+	vec2 atlasCoord = TexCoord * texParams.zw + texParams.xy;
+	FragColor = texture(uiTexture, atlasCoord);
 }

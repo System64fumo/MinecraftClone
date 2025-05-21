@@ -16,9 +16,11 @@ typedef struct {
 	vec2 pos;
 	float width, height, depth;
 	float rotation_x, rotation_y, rotation_z;
+	uint8_t tex_x;
+	uint8_t tex_y;
+	uint8_t tex_width;
+	uint8_t tex_height;
 } cube_element_t;
-
-extern cube_element_t cube_elements[MAX_CUBE_ELEMENTS];
 
 void init_cube_rendering();
 void draw_cube_element(const cube_element_t* cube);
