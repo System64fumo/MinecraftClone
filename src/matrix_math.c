@@ -1,5 +1,6 @@
 #include "main.h"
 #include <math.h>
+#include <string.h>
 
 void setup_matrices() {
 	matrix4_identity(view);
@@ -118,8 +119,47 @@ void matrix4_perspective(float* mat, float fovy, float aspect, float near, float
 	mat[15] = 0.0f;
 }
 
-void matrix4_scale(float* mat, float x, float y, float z) {
-	mat[0] *= x;
-	mat[5] *= y;
-	mat[10] *= z;
+void matrix4_scale(float* matrix, float sx, float sy, float sz) {
+	float temp[16];
+	memcpy(temp, matrix, 16 * sizeof(float));
+	
+	// Scale the matrix columns
+	for (int i = 0; i < 4; i++) {
+		matrix[i]	 = temp[i] * sx;	 // Scale x column
+		matrix[i + 4] = temp[i + 4] * sy; // Scale y column
+		matrix[i + 8] = temp[i + 8] * sz; // Scale z column
+	}
+}
+
+void matrix4_rotate_x(float* matrix, float angle) {
+	matrix4_identity(matrix);
+	float c = cosf(angle);
+	float s = sinf(angle);
+
+	matrix[5] = c;
+	matrix[6] = -s;
+	matrix[9] = s;
+	matrix[10] = c;
+}
+
+void matrix4_rotate_y(float* matrix, float angle) {
+	matrix4_identity(matrix);
+	float c = cosf(angle);
+	float s = sinf(angle);
+
+	matrix[0] = c;
+	matrix[2] = -s;
+	matrix[8] = s;
+	matrix[10] = c;
+}
+
+void matrix4_rotate_z(float* matrix, float angle) {
+	matrix4_identity(matrix);
+	float c = cosf(angle);
+	float s = sinf(angle);
+
+	matrix[0] = c;
+	matrix[1] = -s;
+	matrix[4] = s;
+	matrix[5] = c;
 }
