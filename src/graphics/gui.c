@@ -17,138 +17,13 @@ GLuint highlight_vao, highlight_vbo, highlight_ebo;
 GLuint cube_vao, cube_vbo, cube_ebo;
 GLuint cube_color_vbo;
 
-static const float vertices_template[] = {
-	// Front face (Z+)
-	0.0f, 0.0f, 1.0f,
-	1.0f, 0.0f, 1.0f,
-	1.0f, 1.0f, 1.0f,
-	0.0f, 1.0f, 1.0f,
-
-	// Back face (Z-)
-	0.0f, 0.0f, 0.0f,
-	1.0f, 0.0f, 0.0f,
-	1.0f, 1.0f, 0.0f,
-	0.0f, 1.0f, 0.0f
-};
-
-static const uint8_t edge_indices[] = {
-	// Front face edges
-	0, 1, // Bottom edge
-	1, 2, // Right edge
-	2, 3, // Top edge
-	3, 0, // Left edge
-
-	// Back face edges
-	4, 5, // Bottom edge
-	5, 6, // Right edge
-	6, 7, // Top edge
-	7, 4, // Left edge
-
-	// Side edges
-	0, 4, // Bottom-left edge
-	1, 5, // Bottom-right edge
-	2, 6, // Top-right edge
-	3, 7  // Top-left edge
-};
-
-float cube_vertices[] = {
-    // Front face (Z+)
-    -0.5f, -0.5f,  0.5f,
-     0.5f, -0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-    
-    // Back face (Z-)
-     0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    -0.5f,  0.5f, -0.5f,
-     0.5f,  0.5f, -0.5f,
-    
-    // Left face (X-)
-    -0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f, -0.5f,
-    
-    // Right face (X+)
-     0.5f, -0.5f,  0.5f,
-     0.5f, -0.5f, -0.5f,
-     0.5f,  0.5f, -0.5f,
-     0.5f,  0.5f,  0.5f,
-    
-    // Top face (Y+)
-    -0.5f,  0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
-     0.5f,  0.5f, -0.5f,
-    -0.5f,  0.5f, -0.5f,
-    
-    // Bottom face (Y-)
-    -0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f,  0.5f,
-    -0.5f, -0.5f,  0.5f
-};
-
-static const uint8_t cube_indices[] = {
-    // Front face
-    0, 1, 2,  0, 2, 3,
-    // Back face
-    4, 5, 6,  4, 6, 7,
-    // Left face
-    8, 9, 10,  8, 10, 11,
-    // Right face
-    12, 13, 14,  12, 14, 15,
-    // Top face
-    16, 17, 18,  16, 18, 19,
-    // Bottom face
-    20, 21, 22,  20, 22, 23
-};
-
-float cube_tex_coords[] = {
-	// Front face
-	0.0f, 1.0f,  // bottom-left
-	1.0f, 1.0f,  // bottom-right
-	1.0f, 0.0f,  // top-right
-	0.0f, 0.0f,  // top-left
-	
-	// Back face
-	1.0f, 1.0f,
-	0.0f, 1.0f,
-	0.0f, 0.0f,
-	1.0f, 0.0f,
-	
-	// Left face
-	1.0f, 1.0f,
-	0.0f, 1.0f,
-	0.0f, 0.0f,
-	1.0f, 0.0f,
-	
-	// Right face
-	0.0f, 1.0f,
-	1.0f, 1.0f,
-	1.0f, 0.0f,
-	0.0f, 0.0f,
-	
-	// Top face
-	0.0f, 1.0f,
-	1.0f, 1.0f,
-	1.0f, 0.0f,
-	0.0f, 0.0f,
-	
-	// Bottom face
-	0.0f, 0.0f,
-	1.0f, 0.0f,
-	1.0f, 1.0f,
-	0.0f, 1.0f
-};
-
 void update_cube_projection() {
-	float zoom_factor = 3.0f;
-	float left = -zoom_factor * aspect;
-	float right = zoom_factor * aspect;
-	float bottom = -zoom_factor;
-	float top = zoom_factor;
-	float near = -0.5f;
+	float zoom_factor = 1.0f;
+	float left = 0;
+	float right = settings.window_width;
+	float bottom = 0;
+	float top = settings.window_height;
+	float near = -100.0f;
 	float far = 100.0f;
 	
 	matrix4_identity(cube_projection);
@@ -302,28 +177,6 @@ void draw_cube_element(const cube_element_t* cube) {
 	draw_calls++;
 }
 
-void render_3d_elements() {
-	cube_elements[0] = (cube_element_t){
-		.pos.x = -1.33f,
-		.pos.y = -2.827f,
-		.width = 0.055f * UI_SCALING,
-		.height = 0.055f * UI_SCALING,
-		.depth = 0.055f * UI_SCALING,
-		.rotation_x = -30 * (M_PI / 180.0f),
-		.rotation_y = 45 * (M_PI / 180.0f),
-		.tex_x = 48,
-		.tex_y = 0,
-		.tex_width = 16,
-		.tex_height = 16
-	};
-
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-	draw_cube_element(&cube_elements[0]);
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-}
-
 void update_ui_buffer() {
 	// Each UI element now requires 4 vertices (1 triangle strip), each with 4 floats (x, y, tx, ty)
 	float vertices[MAX_UI_ELEMENTS * 4 * 4]; 
@@ -407,6 +260,27 @@ void setup_ui_elements() {
 		.tex_height = 24
 	};
 
+	// Hotbar blocks
+	const cube_element_t base_cube = {
+		.pos.y = 10.333f * UI_SCALING,
+		.width = 10.05 * UI_SCALING,
+		.height = 10.05 * UI_SCALING,
+		.depth = 10.05 * UI_SCALING,
+		.rotation_x = -30 * (M_PI / 180.0f),
+		.rotation_y = 45 * (M_PI / 180.0f),
+		.tex_width = 16,
+		.tex_height = 16
+	};
+
+	uint8_t tex_x_coords[] = {32, 48, 16, 0, 64, 240, 16, 224, 224};
+	uint8_t tex_y_coords[] = {0, 0, 0, 16, 0, 0, 16, 208, 208};
+
+	for (int i = 0; i < MAX_CUBE_ELEMENTS; i++) {
+		cube_elements[i] = base_cube;
+		cube_elements[i].tex_x = tex_x_coords[i];
+		cube_elements[i].tex_y = tex_y_coords[i];
+	}
+
 	update_ui_buffer();
 }
 
@@ -419,19 +293,28 @@ void render_ui() {
 	draw_calls++;
 
 	// Hotbar blocks
-	render_3d_elements();
+	for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++)
+		draw_cube_element(&cube_elements[i]);
 }
 
 void update_ui() {
+	uint16_t ui_center_x = settings.window_width / UI_SCALING;
+	uint16_t ui_center_y = settings.window_height / UI_SCALING;
+	uint16_t hotbar_offset = 80 * UI_SCALING;
+
 	// Crosshair
-	ui_elements[0].x = settings.window_width / UI_SCALING;
-	ui_elements[0].y = settings.window_height / UI_SCALING;
+	ui_elements[0].x = ui_center_x;
+	ui_elements[0].y = ui_center_y;
 
 	// Hotbar
-	ui_elements[1].x = settings.window_width / UI_SCALING;
+	ui_elements[1].x = ui_center_x;
 
 	// Hotbar slot
-	ui_elements[2].x = settings.window_width / UI_SCALING - 182 + 22 + (40 * (hotbar_slot % 9));
+	ui_elements[2].x = ui_center_x - 182 + 22 + (40 * (hotbar_slot % 9));
+
+	// Hotbar blocks
+	for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++)
+		cube_elements[i].pos.x = screen_center_x + 1 - hotbar_offset + ((20 * UI_SCALING) * i);
 
 	update_ui_buffer();
 

@@ -86,7 +86,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			block->id = 0;
 		}
 		else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-			block->id = hotbar_slot;
+			block->id = hotbar_slot + 1;
 			block->light_data = 0;
 		}
 		else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
