@@ -16,9 +16,9 @@ cube_element_t cube_elements[MAX_CUBE_ELEMENTS];
 GLuint highlight_vao, highlight_vbo, highlight_ebo;
 GLuint cube_vao, cube_vbo, cube_ebo;
 GLuint cube_color_vbo;
+GLuint cube_normal_vbo;
 
 void update_cube_projection() {
-	float zoom_factor = 1.0f;
 	float left = 0;
 	float right = settings.window_width;
 	float bottom = 0;
@@ -47,17 +47,25 @@ void init_cube_rendering() {
 	glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
 	
-	// Set up vertex attributes
+	// Set up vertex attributes (location 0 - positions)
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 	
-	glGenBuffers(1, &cube_color_vbo); // Reuse this for texture coordinates
+	// Texture coordinates (location 1)
+	glGenBuffers(1, &cube_color_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, cube_color_vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_tex_coords), cube_tex_coords, GL_STATIC_DRAW);
 	
-	// Set up texture coordinate attribute
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
+	
+	// Normals (location 2)
+	glGenBuffers(1, &cube_normal_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, cube_normal_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_normals), cube_normals, GL_STATIC_DRAW);
+	
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(2);
 	
 	// Create and bind EBO
 	glGenBuffers(1, &cube_ebo);
@@ -329,6 +337,7 @@ void cleanup_ui() {
 	glDeleteBuffers(1, &ui_vbo);
 	glDeleteBuffers(1, &cube_vbo);
 	glDeleteBuffers(1, &cube_color_vbo);
+	glDeleteBuffers(1, &cube_normal_vbo);
 	glDeleteBuffers(1, &cube_ebo);
 	glDeleteVertexArrays(1, &cube_vao);
 	glDeleteProgram(ui_shader);

@@ -147,6 +147,44 @@ static float cube_tex_coords[] = {
 	0.0f, 1.0f
 };
 
+static float cube_normals[] = {
+	// Front face (Z+)
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	
+	// Back face (Z-)
+	0.0f, 0.0f, -1.0f,
+	0.0f, 0.0f, -1.0f,
+	0.0f, 0.0f, -1.0f,
+	0.0f, 0.0f, -1.0f,
+	
+	// Left face (X-)
+	-1.0f, 0.0f, 0.0f,
+	-1.0f, 0.0f, 0.0f,
+	-1.0f, 0.0f, 0.0f,
+	-1.0f, 0.0f, 0.0f,
+	
+	// Right face (X+)
+	1.0f, 0.0f, 0.0f,
+	1.0f, 0.0f, 0.0f,
+	1.0f, 0.0f, 0.0f,
+	1.0f, 0.0f, 0.0f,
+	
+	// Bottom face (Y-)
+	0.0f, -1.0f, 0.0f,
+	0.0f, -1.0f, 0.0f,
+	0.0f, -1.0f, 0.0f,
+	0.0f, -1.0f, 0.0f,
+	
+	// Top face (Y+)
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f
+};
+
 void init_cube_rendering();
 void draw_cube_element(const cube_element_t* cube);
 void render_3d_elements();
