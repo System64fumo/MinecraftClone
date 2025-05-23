@@ -4,6 +4,8 @@
 #include <string.h>
 
 uint8_t ui_state = 0;
+uint8_t ui_active_2d_elements = 0;
+uint8_t ui_active_3d_elements = 0;
 unsigned int highlight_vbo = 0, highlight_vao = 0;
 unsigned int ui_vao, ui_vbo;
 float ortho[16];
@@ -115,8 +117,6 @@ void init_ui() {
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-	setup_ui_elements();
 }
 
 void draw_block_highlight(vec3 pos) {
@@ -138,8 +138,6 @@ void draw_block_highlight(vec3 pos) {
 
 
 void draw_cube_element(const cube_element_t* cube) {
-	glUseProgram(cube_shader);
-
 	matrix4_identity(cube_matrix);
 
 	float temp[16], rotation[16];
@@ -184,7 +182,6 @@ void draw_cube_element(const cube_element_t* cube) {
 	glBindTexture(GL_TEXTURE_2D, block_textures);
 	glBindVertexArray(cube_vao);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, 0);
-	draw_calls++;
 }
 
 void update_ui_buffer() {
@@ -233,100 +230,120 @@ void update_ui_buffer() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 }
 
-void setup_ui_elements() {
-	// Crosshair
-	ui_elements[0] = (ui_element_t) {
-		.x = settings.window_width / UI_SCALING,
-		.y = settings.window_height / UI_SCALING,
-		.width = 16,
-		.height = 16,
-		.tex_x = 240,
-		.tex_y = 0,
-		.tex_width = 16,
-		.tex_height = 16
-	};
-
-	// Hotbar
-	ui_elements[1] = (ui_element_t) {
-		.x = settings.window_width / UI_SCALING,
-		.y = 20,
-		.width = 182,
-		.height = 22,
-		.tex_x = 0,
-		.tex_y = 0,
-		.tex_width = 182,
-		.tex_height = 22
-	};
-
-	// Hotbar slot
-	ui_elements[2] = (ui_element_t) {
-		.x = settings.window_width / UI_SCALING - 182 + 22 + (40 * (hotbar_slot % 9)),
-		.y = 20,
-		.width = 24,
-		.height = 24,
-		.tex_x = 0,
-		.tex_y = 22,
-		.tex_width = 24,
-		.tex_height = 24
-	};
-
-	// Hotbar blocks
-	const cube_element_t base_cube = {
-		.pos.y = 10.333f * UI_SCALING,
-		.width = 10.05 * UI_SCALING,
-		.height = 10.05 * UI_SCALING,
-		.depth = 10.05 * UI_SCALING,
-		.rotation_x = -30 * (M_PI / 180.0f),
-		.rotation_y = 45 * (M_PI / 180.0f),
-		.tex_width = 16,
-		.tex_height = 16
-	};
-
-	uint8_t tex_x_coords[] = {32, 48, 16, 0, 64, 240, 16, 224, 224};
-	uint8_t tex_y_coords[] = {0, 0, 0, 16, 0, 0, 16, 208, 208};
-
-	for (int i = 0; i < MAX_CUBE_ELEMENTS; i++) {
-		cube_elements[i] = base_cube;
-		cube_elements[i].tex_x = tex_x_coords[i];
-		cube_elements[i].tex_y = tex_y_coords[i];
+void render_ui() {
+	if (ui_active_2d_elements) {
+		glUseProgram(ui_shader);
+		glUniformMatrix4fv(ui_projection_uniform_location, 1, GL_FALSE, ortho);
+		glBindVertexArray(ui_vao);
+		glBindTexture(GL_TEXTURE_2D, ui_textures);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, ui_active_2d_elements * 4);
+		draw_calls++;
 	}
 
-	update_ui_buffer();
-}
+	if (ui_active_3d_elements) {
+		glUseProgram(cube_shader);
 
-void render_ui() {
-	glUseProgram(ui_shader);
-	glUniformMatrix4fv(ui_projection_uniform_location, 1, GL_FALSE, ortho);
-	glBindVertexArray(ui_vao);
-	glBindTexture(GL_TEXTURE_2D, ui_textures);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, MAX_UI_ELEMENTS * 4);
-	draw_calls++;
-
-	// Hotbar blocks
-	for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++)
-		draw_cube_element(&cube_elements[i]);
+		// Hotbar blocks
+		for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++) {
+			draw_cube_element(&cube_elements[i]);
+			draw_calls++;
+		}
+	}
 }
 
 void update_ui() {
 	ui_center_x = settings.window_width / UI_SCALING;
 	ui_center_y = settings.window_height / UI_SCALING;
+	ui_active_2d_elements = 0;
+	ui_active_3d_elements = 0;
 	switch (ui_state) {
-		case 0: // Game view
+		case UI_STATE_RUNNING: // Game view
 			uint16_t hotbar_offset = 80 * UI_SCALING;
 
 			// Crosshair
-			ui_elements[0].x = ui_center_x;
-			ui_elements[0].y = ui_center_y;
-		
+			ui_elements[ui_active_2d_elements++] = (ui_element_t) {
+				.x = ui_center_x,
+				.y = ui_center_y,
+				.width = 16,
+				.height = 16,
+				.tex_x = 240,
+				.tex_y = 0,
+				.tex_width = 16,
+				.tex_height = 16
+			};
+
 			// Hotbar
-			ui_elements[1].x = ui_center_x;
+			ui_elements[ui_active_2d_elements++] = (ui_element_t) {
+				.x = ui_center_x,
+				.y = 20,
+				.width = 182,
+				.height = 22,
+				.tex_x = 0,
+				.tex_y = 0,
+				.tex_width = 182,
+				.tex_height = 22
+			};
 		
 			// Hotbar slot
-			ui_elements[2].x = ui_center_x - 182 + 22 + (40 * (hotbar_slot % 9));
+			ui_elements[ui_active_2d_elements++] = (ui_element_t) {
+				.x = ui_center_x - 182 + 22 + (40 * (hotbar_slot % 9)),
+				.y = 20,
+				.width = 24,
+				.height = 24,
+				.tex_x = 0,
+				.tex_y = 22,
+				.tex_width = 24,
+				.tex_height = 24
+			};
 		
 			// Hotbar blocks
-			for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++)
+			const cube_element_t base_cube = {
+				.pos.y = 10.333f * UI_SCALING,
+				.width = 10.05 * UI_SCALING,
+				.height = 10.05 * UI_SCALING,
+				.depth = 10.05 * UI_SCALING,
+				.rotation_x = -30 * (M_PI / 180.0f),
+				.rotation_y = 45 * (M_PI / 180.0f),
+				.tex_width = 16,
+				.tex_height = 16
+			};
+
+			uint8_t tex_x_coords[] = {32, 48, 16, 0, 64, 240, 16, 224, 224};
+			uint8_t tex_y_coords[] = {0, 0, 0, 16, 0, 0, 16, 208, 208};
+
+			for (int i = 0; i < MAX_CUBE_ELEMENTS; i++) {
+				cube_elements[i] = base_cube;
+				cube_elements[i].tex_x = tex_x_coords[i];
+				cube_elements[i].tex_y = tex_y_coords[i];
 				cube_elements[i].pos.x = screen_center_x + 1 - hotbar_offset + ((20 * UI_SCALING) * i);
+				ui_active_3d_elements = i;
+			}
+			break;
+
+		case UI_STATE_PAUSED:
+			// Resume button
+			ui_elements[ui_active_2d_elements++] = (ui_element_t) {
+				.x = ui_center_x,
+				.y = ui_center_y + 25,
+				.width = 200,
+				.height = 20,
+				.tex_x = 0,
+				.tex_y = 66,
+				.tex_width = 200,
+				.tex_height = 20
+			};
+
+			// Quit button
+			ui_elements[ui_active_2d_elements++] = (ui_element_t) {
+				.x = ui_center_x,
+				.y = ui_center_y - 25,
+				.width = 200,
+				.height = 20,
+				.tex_x = 0,
+				.tex_y = 66,
+				.tex_width = 200,
+				.tex_height = 20
+			};
 			break;
 	}
 

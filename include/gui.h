@@ -1,6 +1,9 @@
 #define MAX_UI_ELEMENTS 3
 #define MAX_CUBE_ELEMENTS 9
 
+#define UI_STATE_RUNNING 0
+#define UI_STATE_PAUSED 1
+
 typedef struct {
 	uint16_t x;
 	uint16_t y;
@@ -193,7 +196,6 @@ void render_3d_elements();
 
 void init_ui();
 void init_block_highlight();
-void setup_ui_elements();
 void update_ui();
 void render_ui();
 void cleanup_ui();
