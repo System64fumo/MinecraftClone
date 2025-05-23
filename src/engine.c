@@ -158,18 +158,9 @@ int initialize() {
 	//glEnable(GL_MULTISAMPLE);
 
 	// Initialize player
-	Entity player = {
-		.pos.x = 0.0f,
-		.pos.y = 100.0f,
-		.pos.z = 0.0f,
-		.yaw = 90.0f,
-		.pitch = 0.0f,
-		.width = 0.6f,
-		.height = 1.8f,
-		.eye_level = 1.625f,
-		.speed = 5
-	};
-	global_entities[0] = player;
+	global_entities[0] = create_entity(0);
+	global_entities[0].pos.y = 75;
+	global_entities[0].yaw = 90;
 
 	/*snprintf(game_dir, sizeof(game_dir), "%s/.ccraft", getenv("HOME"));
 	mkdir(game_dir, 0766);

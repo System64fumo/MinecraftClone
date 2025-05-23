@@ -31,6 +31,8 @@ typedef struct {
 	uint8_t speed;
 	bool is_grounded;
 	float vertical_velocity;
+	uint8_t inventory_size;
+	uint8_t* inventory_data; // TODO: Implement proper inventory struct
 } Entity;
 
 typedef struct {
@@ -123,6 +125,7 @@ bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);
 void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x, int block_y, int block_z);
 bool check_entity_collision(float x, float y, float z, float width, float height);
 void update_entity_physics(Entity* player, float delta_time);
+Entity create_entity(uint8_t id);
 
 unsigned int load_shader(const char* vertex_path, const char* fragment_path);
 void load_shaders();

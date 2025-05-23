@@ -32,5 +32,6 @@ const char* load_file(const char* filename);
 unsigned int loadTexture(const char* path);
 int write_binary_file(const char *filename, const void *data, size_t size);
 void *read_binary_file(const char *filename, size_t *size);
+void* create_array(size_t size, size_t element_size);
 
 #endif // _MISC_H_
