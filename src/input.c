@@ -1,5 +1,6 @@
 #include "main.h"
 #include "world.h"
+#include "gui.h"
 #include <math.h>
 
 float lastX = 0;
@@ -10,6 +11,9 @@ float lastY = 0;
 //
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+	if (ui_state != UI_STATE_RUNNING)
+		return;
+
 	int8_t offset = yoffset;
 	hotbar_slot -= offset;
 	set_hotbar_slot(hotbar_slot);
@@ -21,83 +25,106 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	lastX = xpos;
 	lastY = ypos;
 
-	float sensitivity = 0.1f;
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-
-	global_entities[0].yaw += xoffset;
-	global_entities[0].pitch += yoffset;
-
-	if (global_entities[0].pitch > 89.0f) {
-		global_entities[0].pitch = 89.0f;
+	if (ui_state == UI_STATE_PAUSED) {
+		// TODO: UI Highlights
 	}
-	if (global_entities[0].pitch < -89.0f) {
-		global_entities[0].pitch = -89.0f;
+	else if (ui_state == UI_STATE_RUNNING) {
+		float sensitivity = 0.1f;
+		xoffset *= sensitivity;
+		yoffset *= sensitivity;
+	
+		global_entities[0].yaw += xoffset;
+		global_entities[0].pitch += yoffset;
+	
+		if (global_entities[0].pitch > 89.0f) {
+			global_entities[0].pitch = 89.0f;
+		}
+		if (global_entities[0].pitch < -89.0f) {
+			global_entities[0].pitch = -89.0f;
+		}
+	
+		// Wrap yaw
+		if (global_entities[0].yaw >= 360.0f) {
+			global_entities[0].yaw -= 360.0f;
+		}
+		if (global_entities[0].yaw < 0.0f) {
+			global_entities[0].yaw += 360.0f;
+		}
+	
+		update_frustum();
 	}
-
-	// Wrap yaw
-	if (global_entities[0].yaw >= 360.0f) {
-		global_entities[0].yaw -= 360.0f;
-	}
-	if (global_entities[0].yaw < 0.0f) {
-		global_entities[0].yaw += 360.0f;
-	}
-
-	update_frustum();
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-	if (action != GLFW_PRESS) return;
+	if (ui_state == UI_STATE_PAUSED) {
+		if (action == GLFW_PRESS) return;
+		//printf("Click at: %.fx%.f\n", lastX, lastY);
+		// TODO: Align hitboxes with buttons, Currently hardcoded for 1920x1080..
 
-	vec3 block_pos;
-	char face;
-	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
-	get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &face);
+		// Resume button
+		if (lastX >= 660 && lastX <= 1260 && lastY >= 470 && lastY <= 530) {
+			ui_state = UI_STATE_RUNNING;
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			update_ui();
+		}
 
-	if (face == 'N') return;
-
-	// Adjust block coordinates based on face for right-click
-	if (button == GLFW_MOUSE_BUTTON_RIGHT || button == GLFW_MOUSE_BUTTON_MIDDLE) {
-		switch (face) {
-			case 'R': block_pos.x--; break;
-			case 'L': block_pos.x++; break;
-			case 'F': block_pos.z++; break;
-			case 'K': block_pos.z--; break;
-			case 'T': block_pos.y++; break;
-			case 'B': block_pos.y--; break;
+		// Quit button
+		if (lastX >= 660 && lastX <= 1260 && lastY >= 550 && lastY <= 600) {
+			glfwSetWindowShouldClose(window, true);
 		}
 	}
-
-	Block* block = get_block_at(block_pos.x, block_pos.y, block_pos.z);
-
-	int chunk_x, chunk_z, block_x, block_z;
-	calculate_chunk_and_block(block_pos.x, &chunk_x, &block_x);
-	calculate_chunk_and_block(block_pos.z, &chunk_z, &block_z);
-
-	int chunk_y = block_pos.y / CHUNK_SIZE;
-	int block_y = (((int)block_pos.y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
-
-	int render_x = chunk_x - last_cx;
-	int render_z = chunk_z - last_cz;
-
-	if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
-		Chunk* chunk = &chunks[render_x][chunk_y][render_z];
-		if (button == GLFW_MOUSE_BUTTON_LEFT) {
-			block->id = 0;
+	else if (ui_state == UI_STATE_RUNNING) {
+		if (action != GLFW_PRESS) return;
+		vec3 block_pos;
+		char face;
+		vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
+		get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &face);
+	
+		if (face == 'N') return;
+	
+		// Adjust block coordinates based on face for right-click
+		if (button == GLFW_MOUSE_BUTTON_RIGHT || button == GLFW_MOUSE_BUTTON_MIDDLE) {
+			switch (face) {
+				case 'R': block_pos.x--; break;
+				case 'L': block_pos.x++; break;
+				case 'F': block_pos.z++; break;
+				case 'K': block_pos.z--; break;
+				case 'T': block_pos.y++; break;
+				case 'B': block_pos.y--; break;
+			}
 		}
-		else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-			block->id = hotbar_slot + 1;
-			block->light_data = 0;
+	
+		Block* block = get_block_at(block_pos.x, block_pos.y, block_pos.z);
+	
+		int chunk_x, chunk_z, block_x, block_z;
+		calculate_chunk_and_block(block_pos.x, &chunk_x, &block_x);
+		calculate_chunk_and_block(block_pos.z, &chunk_z, &block_z);
+	
+		int chunk_y = block_pos.y / CHUNK_SIZE;
+		int block_y = (((int)block_pos.y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
+	
+		int render_x = chunk_x - last_cx;
+		int render_z = chunk_z - last_cz;
+	
+		if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
+			Chunk* chunk = &chunks[render_x][chunk_y][render_z];
+			if (button == GLFW_MOUSE_BUTTON_LEFT) {
+				block->id = 0;
+			}
+			else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+				block->id = hotbar_slot + 1;
+				block->light_data = 0;
+			}
+			else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+				printf("Adjacent Light data: %d\n", block->light_data);
+			}
+			else {
+				return;
+			}
+			chunk->needs_update = true;
+	
+			update_adjacent_chunks(render_x, chunk_y, render_z, block_x, block_y, block_z);
 		}
-		else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-			printf("Adjacent Light data: %d\n", block->light_data);
-		}
-		else {
-			return;
-		}
-		chunk->needs_update = true;
-
-		update_adjacent_chunks(render_x, chunk_y, render_z, block_x, block_y, block_z);
 	}
 }
 
@@ -115,7 +142,16 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 				mesh_mode = !mesh_mode;
 				break;
 			case GLFW_KEY_ESCAPE:
-				glfwSetWindowShouldClose(window, true);
+				glfwSetCursorPos(window, screen_center_x, screen_center_y); // This doesn't seem to work?
+				if (ui_state == UI_STATE_RUNNING) {
+					ui_state = UI_STATE_PAUSED;
+					glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				}
+				else {
+					ui_state = UI_STATE_RUNNING;
+					glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				}
+				update_ui();
 				break;
 		}
 
@@ -126,6 +162,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void process_input(GLFWwindow* window) {
+	if (ui_state != UI_STATE_RUNNING)
+		return;
+
 	int player_cx = (int)(global_entities[0].pos.x / CHUNK_SIZE);
 	int player_cy = (int)(global_entities[0].pos.y / CHUNK_SIZE);
 	int player_cz = (int)(global_entities[0].pos.z / CHUNK_SIZE);
