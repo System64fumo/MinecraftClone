@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 
+uint8_t ui_state = 0;
 unsigned int highlight_vbo = 0, highlight_vao = 0;
 unsigned int ui_vao, ui_vbo;
 float ortho[16];
@@ -17,6 +18,7 @@ GLuint highlight_vao, highlight_vbo, highlight_ebo;
 GLuint cube_vao, cube_vbo, cube_ebo;
 GLuint cube_color_vbo;
 GLuint cube_normal_vbo;
+uint16_t ui_center_x, ui_center_y;
 
 void update_cube_projection() {
 	float left = 0;
@@ -306,23 +308,27 @@ void render_ui() {
 }
 
 void update_ui() {
-	uint16_t ui_center_x = settings.window_width / UI_SCALING;
-	uint16_t ui_center_y = settings.window_height / UI_SCALING;
-	uint16_t hotbar_offset = 80 * UI_SCALING;
+	ui_center_x = settings.window_width / UI_SCALING;
+	ui_center_y = settings.window_height / UI_SCALING;
+	switch (ui_state) {
+		case 0: // Game view
+			uint16_t hotbar_offset = 80 * UI_SCALING;
 
-	// Crosshair
-	ui_elements[0].x = ui_center_x;
-	ui_elements[0].y = ui_center_y;
-
-	// Hotbar
-	ui_elements[1].x = ui_center_x;
-
-	// Hotbar slot
-	ui_elements[2].x = ui_center_x - 182 + 22 + (40 * (hotbar_slot % 9));
-
-	// Hotbar blocks
-	for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++)
-		cube_elements[i].pos.x = screen_center_x + 1 - hotbar_offset + ((20 * UI_SCALING) * i);
+			// Crosshair
+			ui_elements[0].x = ui_center_x;
+			ui_elements[0].y = ui_center_y;
+		
+			// Hotbar
+			ui_elements[1].x = ui_center_x;
+		
+			// Hotbar slot
+			ui_elements[2].x = ui_center_x - 182 + 22 + (40 * (hotbar_slot % 9));
+		
+			// Hotbar blocks
+			for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++)
+				cube_elements[i].pos.x = screen_center_x + 1 - hotbar_offset + ((20 * UI_SCALING) * i);
+			break;
+	}
 
 	update_ui_buffer();
 

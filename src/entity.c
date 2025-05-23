@@ -22,7 +22,7 @@ void update_frustum() {
 	pos.x = global_entities[0].pos.x;
 	pos.y = global_entities[0].pos.y + global_entities[0].eye_level;
 	pos.z = global_entities[0].pos.z;
-	update_chunks_visibility(pos, dir);
+	update_chunks_visibility(global_entities[0].pos, dir);
 }
 
 void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_out, char* out_face) {
@@ -196,4 +196,26 @@ void set_hotbar_slot(uint8_t slot) {
 	printf("Slot: %d\n", hotbar_slot);
 	hotbar_slot = slot;
 	update_ui();
+}
+
+Entity create_entity(uint8_t id) {
+	Entity entity = {0};
+	switch (id) {
+		case 0: // Player
+			entity.width = 0.6f;
+			entity.height = 1.8f;
+			entity.eye_level = 1.625f;
+			entity.speed = 5;
+			entity.inventory_size = 10;
+		break;
+		default:
+			printf("Unknown entity id: %d\n", id);
+		break;
+	}
+
+	if (entity.inventory_size != 0) {
+		entity.inventory_data = create_array(entity.inventory_size, sizeof(uint8_t));
+	}
+
+	return entity;
 }

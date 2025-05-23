@@ -185,6 +185,8 @@ static float cube_normals[] = {
 	0.0f, 1.0f, 0.0f
 };
 
+extern uint8_t ui_state;
+
 void init_cube_rendering();
 void draw_cube_element(const cube_element_t* cube);
 void render_3d_elements();

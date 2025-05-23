@@ -181,3 +181,12 @@ void *read_binary_file(const char *filename, size_t *size) {
 	fclose(file);
 	return data;
 }
+
+void* create_array(size_t size, size_t element_size) {
+	void *arr = malloc(size * element_size);
+	if (arr == NULL) {
+		perror("malloc failed");
+		exit(EXIT_FAILURE);
+	}
+	return arr;
+}

@@ -56,7 +56,7 @@ bool is_chunk_in_frustum(vec3 pos, vec3 dir, int chunk_x, int chunk_y, int chunk
 
 	vec3 frustum_origin = {
 		pos.x - normalized_dir.x * frustum_offset,
-		pos.y - (CHUNK_SIZE / 2) - normalized_dir.y * frustum_offset,
+		pos.y - (CHUNK_SIZE * 4) - normalized_dir.y * frustum_offset,
 		pos.z - normalized_dir.z * frustum_offset
 	};
 
