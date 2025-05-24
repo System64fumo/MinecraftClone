@@ -53,6 +53,11 @@ float lightLevelToBrightness(int lightLevel) {
 }
 
 void main() {
+	if (texID == 0) {
+		FragColor = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+		return;
+	}
+
 	vec4 textureColor = texture(textureAtlas, getTextureCoords());
 	vec3 faceShade = faceShades[faceID];
 
