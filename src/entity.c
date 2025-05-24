@@ -193,7 +193,7 @@ void update_entity_physics(Entity* entity, float delta_time) {
 }
 
 void set_hotbar_slot(uint8_t slot) {
-	printf("Slot: %d\n", hotbar_slot);
+	printf("Selected block: %d\n", hotbar_slot + 1);
 	hotbar_slot = slot;
 	update_ui();
 }
