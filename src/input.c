@@ -26,7 +26,20 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	lastY = ypos;
 
 	if (ui_state == UI_STATE_PAUSED) {
-		// TODO: UI Highlights
+		// TODO: This could probably be done a little better..
+		if (check_hit(lastX, lastY, 0)) {
+			ui_elements[0].tex_y = 86;
+			update_ui_buffer();
+		}
+		else if (check_hit(lastX, lastY, 1)) {
+			ui_elements[1].tex_y = 86;
+			update_ui_buffer();
+		}
+		else {
+			ui_elements[0].tex_y = 66;
+			ui_elements[1].tex_y = 66;
+			update_ui_buffer();
+		}
 	}
 	else if (ui_state == UI_STATE_RUNNING) {
 		float sensitivity = 0.1f;
@@ -62,14 +75,14 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		// TODO: Align hitboxes with buttons, Currently hardcoded for 1920x1080..
 
 		// Resume button
-		if (lastX >= 660 && lastX <= 1260 && lastY >= 470 && lastY <= 530) {
+		if (check_hit(lastX, lastY, 0)) {
 			ui_state = UI_STATE_RUNNING;
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			update_ui();
 		}
 
 		// Quit button
-		if (lastX >= 660 && lastX <= 1260 && lastY >= 550 && lastY <= 600) {
+		else if (check_hit(lastX, lastY, 1)) {
 			glfwSetWindowShouldClose(window, true);
 		}
 	}
