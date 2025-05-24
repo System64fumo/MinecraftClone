@@ -355,6 +355,22 @@ void update_ui() {
 	update_cube_projection();
 }
 
+bool check_hit(uint16_t hit_x, uint16_t hit_y, uint8_t element_id) {
+	hit_y = settings.window_height - hit_y;
+
+	const ui_element_t *element = &ui_elements[element_id];
+
+	uint16_t scaled_half_width = (uint16_t)(element->width * UI_SCALING) / 2;
+	uint16_t scaled_half_height = (uint16_t)(element->height * UI_SCALING) / 2;
+	uint16_t center_x = (uint16_t)(element->x * UI_SCALING) / 2;
+	uint16_t center_y = (uint16_t)(element->y * UI_SCALING) / 2;
+
+	return (hit_x >= center_x - scaled_half_width &&
+		hit_x <= center_x + scaled_half_width &&
+		hit_y >= center_y - scaled_half_height &&
+		hit_y <= center_y + scaled_half_height);
+}
+
 void cleanup_ui() {
 	glDeleteVertexArrays(1, &ui_vao);
 	glDeleteBuffers(1, &ui_vbo);
