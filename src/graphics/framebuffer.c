@@ -59,6 +59,7 @@ void init_fullscreen_quad() {
 }
 
 void render_to_framebuffer() {
+	draw_calls = 0;
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
 	glClearColor(0.471f * sky_brightness, 0.655f * sky_brightness, 1.0f * sky_brightness, 1.0f);
