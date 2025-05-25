@@ -18,12 +18,6 @@ const float flatness_scale = 0.02f;
 const float cave_scale = 0.1f;
 const float cave_simplex_scale = 0.1f;
 
-chunk_loader_t chunk_loader = {
-	.running = false,
-	.should_load = false,
-	.thread = 0
-};
-
 uint32_t serialize(uint8_t a, uint8_t b, uint8_t c) {
 	return ((uint32_t)a << 16) | ((uint32_t)b << 8) | (uint32_t)c;
 }
@@ -94,250 +88,154 @@ void radix_sort(chunk_load_item_t* arr, int size) {
 	}
 }
 
-void* chunk_loader_thread(void* arg) {
-	chunk_loader_t* loader = (chunk_loader_t*)arg;
-	struct timespec ts;
-	
-	while (1) {
-		Entity* entity = NULL;
-		bool should_load = false;
-
-		// Wait for load request with timeout
-		pthread_mutex_lock(&loader->mutex);
-		if (!loader->should_load) {
-			clock_gettime(CLOCK_REALTIME, &ts);
-			ts.tv_nsec += 10000000; // 10ms
-			pthread_cond_timedwait(&loader->cond, &loader->mutex, &ts);
-		}
-
-		// Get the entity and reset flag
-		entity = loader->entity;
-		should_load = loader->should_load;
-		loader->should_load = false;
-		pthread_mutex_unlock(&loader->mutex);
-
-		if (entity != NULL && should_load) {
-			#ifdef DEBUG
-			profiler_start(PROFILER_ID_WORLD_GEN, false);
-			#endif
-			
-			int center_cx = floorf(entity->pos.x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
-			last_cy = floorf(entity->pos.y / CHUNK_SIZE) - (WORLD_HEIGHT / 2);
-			int center_cz = floorf(entity->pos.z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
-
-			int dx, dz;
-			int local_last_cx, local_last_cz;
-
-			// Get current position with minimal lock time
-			pthread_mutex_lock(&loader->mutex);
-			local_last_cx = last_cx;
-			local_last_cz = last_cz;
-			pthread_mutex_unlock(&loader->mutex);
-
-			dx = center_cx - local_last_cx;
-			dz = center_cz - local_last_cz;
-
-			// Update position with minimal lock time
-			pthread_mutex_lock(&loader->mutex);
-			last_cx = center_cx;
-			last_cz = center_cz;
-			pthread_mutex_unlock(&loader->mutex);
-
-			if (dx == 0 && dz == 0) continue;
-
-			// Allocate temporary chunks
-			Chunk*** temp_chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
-			if (!temp_chunks) continue;
-
-			// Copy chunks with a single lock
-			pthread_mutex_lock(&mesh_mutex);
-			for (int x = 0; x < RENDER_DISTANCE; x++) {
-				for (int y = 0; y < WORLD_HEIGHT; y++) {
-					memcpy(temp_chunks[x][y], chunks[x][y], RENDER_DISTANCE * sizeof(Chunk));
-				}
-			}
-			pthread_mutex_unlock(&mesh_mutex);
-
-			// Process old chunks (east/west movement)
-			if (dx != 0) {
-				int start_x = (dx > 0) ? 0 : RENDER_DISTANCE + dx;
-				int end_x = (dx > 0) ? dx : RENDER_DISTANCE;
-				
-				for (int x = start_x; x < end_x; x++) {
-					for (int y = 0; y < WORLD_HEIGHT; y++) {
-						for (int z = 0; z < RENDER_DISTANCE; z++) {
-							if (temp_chunks[x][y][z].vertices != NULL) {
-								if ((dx > 0 && x == dx - 1 && x + 1 < RENDER_DISTANCE) ||
-									(dx < 0 && x == RENDER_DISTANCE + dx && x - 1 >= 0)) {
-									temp_chunks[x + (dx > 0 ? 1 : -1)][y][z].needs_update = true;
-								}
-								unload_chunk(&temp_chunks[x][y][z]);
-							}
-						}
-					}
-				}
-			}
-
-			// Process old chunks (north/south movement)
-			if (dz != 0) {
-				int start_z = (dz > 0) ? 0 : RENDER_DISTANCE + dz;
-				int end_z = (dz > 0) ? dz : RENDER_DISTANCE;
-				
-				for (int x = 0; x < RENDER_DISTANCE; x++) {
-					for (int y = 0; y < WORLD_HEIGHT; y++) {
-						for (int z = start_z; z < end_z; z++) {
-							if (temp_chunks[x][y][z].vertices != NULL) {
-								if ((dz > 0 && z == dz - 1 && z + 1 < RENDER_DISTANCE) ||
-									(dz < 0 && z == RENDER_DISTANCE + dz && z - 1 >= 0)) {
-									temp_chunks[x][y][z + (dz > 0 ? 1 : -1)].needs_update = true;
-								}
-								unload_chunk(&temp_chunks[x][y][z]);
-							}
-						}
-					}
-				}
-			}
-
-			// Update chunks array
-			pthread_mutex_lock(&mesh_mutex);
-			// Clear chunks array
-			for (int x = 0; x < RENDER_DISTANCE; x++) {
-				for (int y = 0; y < WORLD_HEIGHT; y++) {
-					memset(chunks[x][y], 0, RENDER_DISTANCE * sizeof(Chunk));
-				}
-			}
-
-			// Move surviving chunks
-			for (int x = 0; x < RENDER_DISTANCE; x++) {
-				for (int y = 0; y < WORLD_HEIGHT; y++) {
-					for (int z = 0; z < RENDER_DISTANCE; z++) {
-						int old_x = x + dx;
-						int old_z = z + dz;
-						
-						if (old_x >= 0 && old_x < RENDER_DISTANCE && 
-							old_z >= 0 && old_z < RENDER_DISTANCE &&
-							temp_chunks[old_x][y][old_z].vertices != NULL) {
-							chunks[x][y][z] = temp_chunks[old_x][y][old_z];
-							chunks[x][y][z].ci_x = x;
-							chunks[x][y][z].ci_z = z;
-						}
-					}
-				}
-			}
-			pthread_mutex_unlock(&mesh_mutex);
-
-			// Create a prioritized list of chunks to load based on distance to entity		
-			chunk_load_item_t* load_queue = malloc(RENDER_DISTANCE * WORLD_HEIGHT * RENDER_DISTANCE * sizeof(chunk_load_item_t));
-			int queue_size = 0;
-			
-			// Entity position within chunk coordinates
-			float entity_chunk_x = entity->pos.x / CHUNK_SIZE;
-			float entity_chunk_y = entity->pos.y / CHUNK_SIZE;
-			float entity_chunk_z = entity->pos.z / CHUNK_SIZE;
-			
-			// Calculate which chunks need loading and their distances
-			for (int x = 0; x < RENDER_DISTANCE; x++) {
-				for (int y = 0; y < WORLD_HEIGHT; y++) {
-					for (int z = 0; z < RENDER_DISTANCE; z++) {
-						bool should_load = false;
-						
-						pthread_mutex_lock(&mesh_mutex);
-						should_load = chunks[x][y][z].vertices == NULL;
-						pthread_mutex_unlock(&mesh_mutex);
-						
-						if (should_load) {
-							// Calculate world position of this chunk
-							float world_chunk_x = (x + center_cx);
-							float world_chunk_y = (y + last_cy);
-							float world_chunk_z = (z + center_cz);
-							
-							// Calculate distance to entity (squared)
-							float dx = world_chunk_x - entity_chunk_x;
-							float dy = world_chunk_y - entity_chunk_y;
-							float dz = world_chunk_z - entity_chunk_z;
-							float dist_sq = dx*dx + dy*dy + dz*dz;
-							
-							// Add to queue
-							load_queue[queue_size].x = x;
-							load_queue[queue_size].y = y;
-							load_queue[queue_size].z = z;
-							load_queue[queue_size].distance = dist_sq;
-							queue_size++;
-						}
-					}
-				}
-			}
-			
-			// Sort chunks by distance (simple bubble sort - could be optimized)
-			radix_sort(load_queue, queue_size);
-			
-			// Load chunks in priority order
-			for (int i = 0; i < queue_size; i++) {
-				int x = load_queue[i].x;
-				int y = load_queue[i].y;
-				int z = load_queue[i].z;
-				
-				// Load chunk atomically
-				Chunk temp_chunk = {0};
-				load_chunk_data(&temp_chunk, x, y, z, x + center_cx, y, z + center_cz);
-				temp_chunk.is_loaded = true;
-				
-				pthread_mutex_lock(&mesh_mutex);
-				chunks[x][y][z] = temp_chunk;
-				
-				// Mark adjacent chunks for update
-				if (x > 0 && chunks[x-1][y][z].vertices != NULL) 
-					chunks[x-1][y][z].needs_update = true;
-				if (x < RENDER_DISTANCE-1 && chunks[x+1][y][z].vertices != NULL) 
-					chunks[x+1][y][z].needs_update = true;
-				if (z > 0 && chunks[x][y][z-1].vertices != NULL) 
-					chunks[x][y][z-1].needs_update = true;
-				if (z < RENDER_DISTANCE-1 && chunks[x][y][z+1].vertices != NULL) 
-					chunks[x][y][z+1].needs_update = true;
-				pthread_mutex_unlock(&mesh_mutex);
-			}
-			
-			free(load_queue);
-			free_chunks(temp_chunks, RENDER_DISTANCE, WORLD_HEIGHT);
-			#ifdef DEBUG
-			profiler_stop(PROFILER_ID_WORLD_GEN, false);
-			#endif
-		}
-	}
-
-	return NULL;
-}
-
-void init_chunk_loader() {
-	pthread_mutex_init(&chunk_loader.mutex, NULL);
-	pthread_cond_init(&chunk_loader.cond, NULL);
-}
-
-void destroy_chunk_loader() {
-	if (chunk_loader.running) {
-		pthread_cancel(chunk_loader.thread);
-		chunk_loader.running = false;
-	}
-	
-	pthread_mutex_destroy(&chunk_loader.mutex);
-	pthread_cond_destroy(&chunk_loader.cond);
-}
-
 void load_around_entity(Entity* entity) {
-	pthread_mutex_lock(&chunk_loader.mutex);
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_WORLD_GEN, false);
+	#endif
 	
-	// Start thread if not already running
-	if (!chunk_loader.running) {
-		chunk_loader.running = true;
-		pthread_create(&chunk_loader.thread, NULL, chunk_loader_thread, &chunk_loader);
+	int center_cx = floorf(entity->pos.x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
+	last_cy = floorf(entity->pos.y / CHUNK_SIZE) - (WORLD_HEIGHT / 2);
+	int center_cz = floorf(entity->pos.z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
+
+	int dx = center_cx - last_cx;
+	int dz = center_cz - last_cz;
+
+	last_cx = center_cx;
+	last_cz = center_cz;
+
+	if (dx == 0 && dz == 0) {
+		#ifdef DEBUG
+		profiler_stop(PROFILER_ID_WORLD_GEN, false);
+		#endif
+		return;
+	}
+
+	// Allocate temporary chunks
+	Chunk*** temp_chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
+	if (!temp_chunks) {
+		#ifdef DEBUG
+		profiler_stop(PROFILER_ID_WORLD_GEN, false);
+		#endif
+		return;
+	}
+
+	// Copy chunks
+	for (int x = 0; x < RENDER_DISTANCE; x++) {
+		for (int y = 0; y < WORLD_HEIGHT; y++) {
+			memcpy(temp_chunks[x][y], chunks[x][y], RENDER_DISTANCE * sizeof(Chunk));
+		}
+	}
+
+	// Process old chunks (east/west movement)
+	if (dx != 0) {
+		int start_x = (dx > 0) ? 0 : RENDER_DISTANCE + dx;
+		int end_x = (dx > 0) ? dx : RENDER_DISTANCE;
+		
+		for (int x = start_x; x < end_x; x++) {
+			for (int y = 0; y < WORLD_HEIGHT; y++) {
+				for (int z = 0; z < RENDER_DISTANCE; z++) {
+					if (temp_chunks[x][y][z].vertices != NULL) {
+						if ((dx > 0 && x == dx - 1 && x + 1 < RENDER_DISTANCE) ||
+							(dx < 0 && x == RENDER_DISTANCE + dx && x - 1 >= 0)) {
+							temp_chunks[x + (dx > 0 ? 1 : -1)][y][z].needs_update = true;
+						}
+						unload_chunk(&temp_chunks[x][y][z]);
+					}
+				}
+			}
+		}
+	}
+
+	// Process old chunks (north/south movement)
+	if (dz != 0) {
+		int start_z = (dz > 0) ? 0 : RENDER_DISTANCE + dz;
+		int end_z = (dz > 0) ? dz : RENDER_DISTANCE;
+		
+		for (int x = 0; x < RENDER_DISTANCE; x++) {
+			for (int y = 0; y < WORLD_HEIGHT; y++) {
+				for (int z = start_z; z < end_z; z++) {
+					if (temp_chunks[x][y][z].vertices != NULL) {
+						if ((dz > 0 && z == dz - 1 && z + 1 < RENDER_DISTANCE) ||
+							(dz < 0 && z == RENDER_DISTANCE + dz && z - 1 >= 0)) {
+							temp_chunks[x][y][z + (dz > 0 ? 1 : -1)].needs_update = true;
+						}
+						unload_chunk(&temp_chunks[x][y][z]);
+					}
+				}
+			}
+		}
+	}
+
+	// Clear chunks array
+	for (int x = 0; x < RENDER_DISTANCE; x++) {
+		for (int y = 0; y < WORLD_HEIGHT; y++) {
+			memset(chunks[x][y], 0, RENDER_DISTANCE * sizeof(Chunk));
+		}
+	}
+
+	// Move surviving chunks
+	for (int x = 0; x < RENDER_DISTANCE; x++) {
+		for (int y = 0; y < WORLD_HEIGHT; y++) {
+			for (int z = 0; z < RENDER_DISTANCE; z++) {
+				int old_x = x + dx;
+				int old_z = z + dz;
+				
+				if (old_x >= 0 && old_x < RENDER_DISTANCE && 
+					old_z >= 0 && old_z < RENDER_DISTANCE &&
+					temp_chunks[old_x][y][old_z].vertices != NULL) {
+					chunks[x][y][z] = temp_chunks[old_x][y][old_z];
+					chunks[x][y][z].ci_x = x;
+					chunks[x][y][z].ci_z = z;
+				}
+			}
+		}
+	}
+
+	// Entity position within chunk coordinates
+	float entity_chunk_x = entity->pos.x / CHUNK_SIZE;
+	float entity_chunk_y = entity->pos.y / CHUNK_SIZE;
+	float entity_chunk_z = entity->pos.z / CHUNK_SIZE;
+	
+	// Load chunks in order from closest to farthest
+	for (int x = 0; x < RENDER_DISTANCE; x++) {
+		for (int y = 0; y < WORLD_HEIGHT; y++) {
+			for (int z = 0; z < RENDER_DISTANCE; z++) {
+				if (chunks[x][y][z].vertices == NULL) {
+					// Calculate world position of this chunk
+					float world_chunk_x = (x + center_cx);
+					float world_chunk_y = (y + last_cy);
+					float world_chunk_z = (z + center_cz);
+					
+					// Calculate distance to entity (squared)
+					float dx = world_chunk_x - entity_chunk_x;
+					float dy = world_chunk_y - entity_chunk_y;
+					float dz = world_chunk_z - entity_chunk_z;
+					float dist_sq = dx*dx + dy*dy + dz*dz;
+					
+					// Load chunk
+					Chunk temp_chunk = {0};
+					load_chunk_data(&temp_chunk, x, y, z, x + center_cx, y, z + center_cz);
+					temp_chunk.is_loaded = true;
+					chunks[x][y][z] = temp_chunk;
+					
+					// Mark adjacent chunks for update
+					if (x > 0 && chunks[x-1][y][z].vertices != NULL) 
+						chunks[x-1][y][z].needs_update = true;
+					if (x < RENDER_DISTANCE-1 && chunks[x+1][y][z].vertices != NULL) 
+						chunks[x+1][y][z].needs_update = true;
+					if (z > 0 && chunks[x][y][z-1].vertices != NULL) 
+						chunks[x][y][z-1].needs_update = true;
+					if (z < RENDER_DISTANCE-1 && chunks[x][y][z+1].vertices != NULL) 
+						chunks[x][y][z+1].needs_update = true;
+				}
+			}
+		}
 	}
 	
-	// Update entity and signal thread to load
-	chunk_loader.entity = entity;
-	chunk_loader.should_load = true;
-	pthread_cond_signal(&chunk_loader.cond);
-	
-	pthread_mutex_unlock(&chunk_loader.mutex);
+	free_chunks(temp_chunks, RENDER_DISTANCE, WORLD_HEIGHT);
+	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_WORLD_GEN, false);
+	#endif
 }
 
 int save_chunk_to_file(const char *filename, const Chunk *chunk) {
