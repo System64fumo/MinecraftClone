@@ -152,8 +152,6 @@ int initialize() {
 	ui_projection_uniform_location = glGetUniformLocation(ui_shader, "projection");
 
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
-	init_chunk_loader();
-	init_chunk_processor();
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -199,7 +197,6 @@ void shutdown() {
 	cleanup_framebuffer();
 	cleanup_ui();
 	cleanup_renderer();
-	destroy_chunk_loader();
 
 	for(uint8_t cx = 0; cx < RENDER_DISTANCE; cx++) {
 		for(uint8_t cy = 0; cy < WORLD_HEIGHT; cy++) {

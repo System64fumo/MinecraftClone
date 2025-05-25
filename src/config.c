@@ -58,48 +58,6 @@ static void ini_load_file(IniFile* ini) {
 	parse_config(ini);
 }
 
-static void* ini_thread_func(void* arg) {
-	IniFile* ini = (IniFile*)arg;
-
-	ini_load_file(ini);
-
-	int fd = inotify_init1(IN_NONBLOCK);
-	if (fd < 0) return NULL;
-
-	int wd = inotify_add_watch(fd, ini->filename, IN_MODIFY | IN_CLOSE_WRITE);
-	if (wd < 0) {
-		close(fd);
-		return NULL;
-	}
-
-	char buf[sizeof(struct inotify_event) + NAME_MAX + 1];
-
-	while (1) {
-		int len = read(fd, buf, sizeof(buf));
-		if (len <= 0) {
-			usleep(100000); // avoid busy loop
-			continue;
-		}
-
-		struct inotify_event* event = (struct inotify_event*)buf;
-		if (event->mask & (IN_MODIFY | IN_CLOSE_WRITE)) {
-			ini_load_file(ini);
-		}
-	}
-
-	close(wd);
-	close(fd);
-	return NULL;
-}
-
-void ini_parse_async(const char* filename, IniFile* ini) {
-	memset(ini, 0, sizeof(IniFile));
-	ini->filename = filename;
-	ini->ready = 0;
-	pthread_create(&ini->thread, NULL, ini_thread_func, ini);
-	pthread_detach(ini->thread);
-}
-
 void initialize_config() {
 	settings.window_width = 1280;
 	settings.window_height = 720;
@@ -131,7 +89,8 @@ void initialize_config() {
 		fprintf(config_file, "fov = %.1f\n", settings.fov);
 		fclose(config_file);
 	}
-	ini_parse_async(config_path, &ini);
+	ini.filename = config_path;
+	ini_load_file(&ini);
 }
 
 const char* ini_get(IniFile* ini, const char* section, const char* key) {

@@ -152,21 +152,35 @@ void generate_indices(uint32_t base_vertex, uint32_t indices[], uint32_t* index_
 }
 
 void generate_chunk_mesh(Chunk* chunk) {
-	Vertex vertices[MAX_VERTICES];
-	uint32_t indices[MAX_VERTICES * 6];
+	// Safety check for null chunk pointer
+	if (chunk == NULL) {
+		fprintf(stderr, "Error: Null chunk pointer passed to generate_chunk_mesh\n");
+		return;
+	}
+
+	// Initialize vertex and index arrays with safe maximum sizes
+	Vertex vertices[MAX_VERTICES] = {0};
+	uint32_t indices[MAX_VERTICES] = {0};
 	uint32_t vertex_count = 0;
 	uint32_t index_count = 0;
 	
-	Vertex transparent_vertices[MAX_VERTICES];
-	uint32_t transparent_indices[MAX_VERTICES * 6];
+	Vertex transparent_vertices[MAX_VERTICES] = {0};
+	uint32_t transparent_indices[MAX_VERTICES] = {0};
 	uint32_t transparent_vertex_count = 0;
 	uint32_t transparent_index_count = 0;
+
+	// Calculate world position with bounds checking
+	if (chunk->x >= CHUNK_SIZE || chunk->y >= WORLD_HEIGHT || chunk->z >= CHUNK_SIZE) {
+		fprintf(stderr, "Error: Invalid chunk coordinates (%d, %d, %d)\n", 
+			   chunk->x, chunk->y, chunk->z);
+		return;
+	}
 
 	const float world_x = chunk->x * CHUNK_SIZE;
 	const float world_y = chunk->y * CHUNK_SIZE;
 	const float world_z = chunk->z * CHUNK_SIZE;
 
-	bool mask[CHUNK_SIZE][CHUNK_SIZE];
+	bool mask[CHUNK_SIZE][CHUNK_SIZE] = {0};
 
 	// First pass: Handle regular blocks using greedy meshing
 	for (uint8_t face = 0; face < 6; face++) {
@@ -180,30 +194,46 @@ void generate_chunk_mesh(Chunk* chunk) {
 					uint8_t x, y, z;
 					map_coordinates(face, u, v, d, &x, &y, &z);
 
+					// Bounds checking for block access
+					if (x >= CHUNK_SIZE || y >= CHUNK_SIZE || z >= CHUNK_SIZE) {
+						continue;
+					}
+
 					Block* block = &chunk->blocks[x][y][z];
-					if (block->id == 0 || block_data[block->id][0] != 0 || !is_face_visible(chunk, x, y, z, face)) 
+					if (block == NULL || block->id == 0 || block_data[block->id][0] != 0 || !is_face_visible(chunk, x, y, z, face)) 
 						continue;
 
 					uint8_t width = find_width(chunk, face, u, v, x, y, z, mask, block);
 					uint8_t height = find_height(chunk, face, u, v, x, y, z, mask, block, width);
 
-					// Mark cells as processed
-					for (uint8_t dy = 0; dy < height; dy++) {
-						memset(&mask[v + dy][u], true, width * sizeof(bool));
+					// Check array bounds before marking
+					for (uint8_t dy = 0; dy < height && (v + dy) < CHUNK_SIZE; dy++) {
+						uint8_t end_u = u + width;
+						if (end_u > CHUNK_SIZE) end_u = CHUNK_SIZE;
+						memset(&mask[v + dy][u], true, (end_u - u) * sizeof(bool));
 					}
 
 					uint8_t adjacent_light_data = 15;
-
-					// Check if block is transparent
 					bool is_transparent = block_data[block->id][1] != 0;
 					
+					// Check vertex buffer capacity before adding
 					if (is_transparent) {
+						if (transparent_vertex_count + 4 > MAX_VERTICES || transparent_index_count + 6 > MAX_VERTICES) {
+							fprintf(stderr, "Warning: Transparent vertex/index buffer overflow\n");
+							continue;
+						}
 						uint16_t base_vertex = transparent_vertex_count;
-						generate_vertices(face, x + world_x, y + world_y, z + world_z, width, height, block, transparent_vertices, &transparent_vertex_count, adjacent_light_data);
+						generate_vertices(face, x + world_x, y + world_y, z + world_z, width, height, block, 
+										transparent_vertices, &transparent_vertex_count, adjacent_light_data);
 						generate_indices(base_vertex, transparent_indices, &transparent_index_count);
 					} else {
+						if (vertex_count + 4 > MAX_VERTICES || index_count + 6 > MAX_VERTICES) {
+							fprintf(stderr, "Warning: Opaque vertex/index buffer overflow\n");
+							continue;
+						}
 						uint16_t base_vertex = vertex_count;
-						generate_vertices(face, x + world_x, y + world_y, z + world_z, width, height, block, vertices, &vertex_count, adjacent_light_data);
+						generate_vertices(face, x + world_x, y + world_y, z + world_z, width, height, block, 
+										vertices, &vertex_count, adjacent_light_data);
 						generate_indices(base_vertex, indices, &index_count);
 					}
 				}
@@ -211,40 +241,58 @@ void generate_chunk_mesh(Chunk* chunk) {
 		}
 	}
 
-	// Second pass: Handle special blocks (cross, slab)
+	// Second pass: Handle special blocks (cross, slab) with bounds checking
 	for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
 		for (uint8_t y = 0; y < CHUNK_SIZE; y++) {
 			for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
 				Block* block = &chunk->blocks[x][y][z];
-				uint8_t block_type = block_data[block->id][0];
+				if (block == NULL) continue;
 				
+				uint8_t block_type = block_data[block->id][0];
 				if (block_type == 0) continue;
 
-				// Check if block is transparent
 				bool is_transparent = block_data[block->id][1] != 0;
 				
 				if (is_transparent) {
+					// Check capacity for cross (16 vertices, 24 indices) or slab (24 vertices, 36 indices)
+					if ((block_type == 2 && (transparent_vertex_count + 16 > MAX_VERTICES || transparent_index_count + 24 > MAX_VERTICES)) ||
+						(block_type == 1 && (transparent_vertex_count + 24 > MAX_VERTICES || transparent_index_count + 36 > MAX_VERTICES))) {
+						fprintf(stderr, "Warning: Transparent special block buffer overflow\n");
+						continue;
+					}
+					
 					uint32_t base_vertex = transparent_vertex_count;
 					if (block_type == 2) {
-						generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, transparent_vertices, &transparent_vertex_count);
+						generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, 
+											  transparent_vertices, &transparent_vertex_count);
 						for (uint8_t i = 0; i < 4; i++) {
 							generate_indices(base_vertex + (i * 4), transparent_indices, &transparent_index_count);
 						}
 					} else if (block_type == 1) {
-						generate_slab_vertices(x + world_x, y + world_y, z + world_z, block, transparent_vertices, &transparent_vertex_count);
+						generate_slab_vertices(x + world_x, y + world_y, z + world_z, block, 
+											 transparent_vertices, &transparent_vertex_count);
 						for (uint8_t i = 0; i < 6; i++) {
 							generate_indices(base_vertex + (i * 4), transparent_indices, &transparent_index_count);
 						}
 					}
 				} else {
+					// Similar capacity check for opaque blocks
+					if ((block_type == 2 && (vertex_count + 16 > MAX_VERTICES || index_count + 24 > MAX_VERTICES)) ||
+						(block_type == 1 && (vertex_count + 24 > MAX_VERTICES || index_count + 36 > MAX_VERTICES))) {
+						fprintf(stderr, "Warning: Opaque special block buffer overflow\n");
+						continue;
+					}
+					
 					uint32_t base_vertex = vertex_count;
 					if (block_type == 2) {
-						generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
+						generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, 
+											  vertices, &vertex_count);
 						for (uint8_t i = 0; i < 4; i++) {
 							generate_indices(base_vertex + (i * 4), indices, &index_count);
 						}
 					} else if (block_type == 1) {
-						generate_slab_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
+						generate_slab_vertices(x + world_x, y + world_y, z + world_z, block, 
+											 vertices, &vertex_count);
 						for (uint8_t i = 0; i < 6; i++) {
 							generate_indices(base_vertex + (i * 4), indices, &index_count);
 						}
@@ -254,44 +302,57 @@ void generate_chunk_mesh(Chunk* chunk) {
 		}
 	}
 
-	chunk->vertex_count = vertex_count;
-	chunk->index_count = index_count;
-
+	// Free existing data if any
 	free(chunk->vertices);
 	free(chunk->indices);
-	chunk->vertices = NULL;
-	chunk->indices = NULL;
-
-	// Only allocate if we have vertices to store
-	if (vertex_count > 0) {
-		size_t vertex_size = vertex_count * sizeof(Vertex);
-		size_t index_size = index_count * sizeof(uint32_t);
-
-		chunk->vertices = malloc(vertex_size);
-		chunk->indices = malloc(index_size);
-
-		memcpy(chunk->vertices, vertices, vertex_size);
-		memcpy(chunk->indices, indices, index_size);
-	}
-	
-	chunk->transparent_vertex_count = transparent_vertex_count;
-	chunk->transparent_index_count = transparent_index_count;
-
 	free(chunk->transparent_vertices);
 	free(chunk->transparent_indices);
+	
+	// Initialize to NULL
+	chunk->vertices = NULL;
+	chunk->indices = NULL;
 	chunk->transparent_vertices = NULL;
 	chunk->transparent_indices = NULL;
 
-	if (transparent_vertex_count > 0) {
-		size_t vertex_size = transparent_vertex_count * sizeof(Vertex);
-		size_t index_size = transparent_index_count * sizeof(uint32_t);
-
-		chunk->transparent_vertices = malloc(vertex_size);
-		chunk->transparent_indices = malloc(index_size);
-
-		memcpy(chunk->transparent_vertices, transparent_vertices, vertex_size);
-		memcpy(chunk->transparent_indices, transparent_indices, index_size);
+	// Allocate and copy only if we have data
+	if (vertex_count > 0) {
+		chunk->vertices = malloc(vertex_count * sizeof(Vertex));
+		chunk->indices = malloc(index_count * sizeof(uint32_t));
+		if (chunk->vertices && chunk->indices) {
+			memcpy(chunk->vertices, vertices, vertex_count * sizeof(Vertex));
+			memcpy(chunk->indices, indices, index_count * sizeof(uint32_t));
+		} else {
+			fprintf(stderr, "Error: Failed to allocate memory for chunk mesh\n");
+			free(chunk->vertices);
+			free(chunk->indices);
+			chunk->vertices = NULL;
+			chunk->indices = NULL;
+			vertex_count = 0;
+			index_count = 0;
+		}
 	}
 
+	if (transparent_vertex_count > 0) {
+		chunk->transparent_vertices = malloc(transparent_vertex_count * sizeof(Vertex));
+		chunk->transparent_indices = malloc(transparent_index_count * sizeof(uint32_t));
+		if (chunk->transparent_vertices && chunk->transparent_indices) {
+			memcpy(chunk->transparent_vertices, transparent_vertices, transparent_vertex_count * sizeof(Vertex));
+			memcpy(chunk->transparent_indices, transparent_indices, transparent_index_count * sizeof(uint32_t));
+		} else {
+			fprintf(stderr, "Error: Failed to allocate memory for transparent chunk mesh\n");
+			free(chunk->transparent_vertices);
+			free(chunk->transparent_indices);
+			chunk->transparent_vertices = NULL;
+			chunk->transparent_indices = NULL;
+			transparent_vertex_count = 0;
+			transparent_index_count = 0;
+		}
+	}
+
+	// Update counts only after successful allocation
+	chunk->vertex_count = vertex_count;
+	chunk->index_count = index_count;
+	chunk->transparent_vertex_count = transparent_vertex_count;
+	chunk->transparent_index_count = transparent_index_count;
 	chunk->needs_update = false;
 }

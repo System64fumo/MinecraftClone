@@ -160,9 +160,7 @@ void update_chunks_visibility(vec3 pos, vec3 dir) {
 	}
 }
 
-void rebuild_combined_visible_mesh() {
-	pthread_mutex_lock(&mesh_mutex);
-	
+void rebuild_combined_visible_mesh() {	
 	uint32_t total_vertices = 0;
 	uint32_t total_indices = 0;
 
@@ -185,7 +183,6 @@ void rebuild_combined_visible_mesh() {
 	if (total_vertices == 0 || total_indices == 0) {
 		combined_mesh.vertex_count = 0;
 		combined_mesh.index_count = 0;
-		pthread_mutex_unlock(&mesh_mutex);
 		mesh_needs_rebuild = false;
 		return;
 	}
@@ -227,7 +224,6 @@ void rebuild_combined_visible_mesh() {
 		if (vbo_ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
 		if (ebo_ptr) glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 		glBindVertexArray(0);
-		pthread_mutex_unlock(&mesh_mutex);
 		return;
 	}
 	
@@ -270,8 +266,7 @@ void rebuild_combined_visible_mesh() {
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 	glBindVertexArray(0);
-	
-	pthread_mutex_unlock(&mesh_mutex);
+
 	mesh_needs_rebuild = false;
 }
 

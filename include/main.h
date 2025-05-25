@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "renderer.h"
-#include <pthread.h>
 #include "misc.h"
 #include "config.h"
 
@@ -58,15 +57,6 @@ typedef struct {
 } Chunk;
 
 typedef struct {
-	Entity* entity;
-	bool running;
-	bool should_load;
-	pthread_t thread;
-	pthread_mutex_t mutex;
-	pthread_cond_t cond;
-} chunk_loader_t;
-
-typedef struct {
 	uint32_t start_index;
 	uint32_t index_count;
 	bool visible;
@@ -98,16 +88,12 @@ extern uint8_t block_data[MAX_BLOCK_TYPES][8];
 extern Chunk*** chunks;
 extern ChunkRenderData chunk_render_data[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK];
-extern chunk_loader_t chunk_loader;
 
 extern unsigned int model_uniform_location;
 extern unsigned int atlas_uniform_location;
 extern unsigned int view_uniform_location;
 extern unsigned int projection_uniform_location;
 extern unsigned int ui_projection_uniform_location;
-
-extern bool terrain_thread_busy;
-extern pthread_mutex_t mesh_mutex;
 
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -136,7 +122,6 @@ unsigned int load_shader(const char* vertex_path, const char* fragment_path);
 void load_shaders();
 
 void process_chunks();
-void init_chunk_processor();
 
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);
 void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, uint8_t* y, uint8_t* z);

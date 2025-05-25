@@ -18,7 +18,6 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * Render distance (Only keep track of chunks that matter not the whole world)
 * Batch rendering
 * Greedy meshing
-* Multithreading (Terrain generates on another thread, So does meshing)
 * DDA raycasting
 * Basic face culling
 * 3D Frustum culling

@@ -18,7 +18,6 @@ typedef struct {
 	IniSection sections[MAX_SECTIONS];
 	int section_count;
 	const char* filename;
-	pthread_t thread;
 	int ready;
 } IniFile;
 
@@ -32,6 +31,5 @@ typedef struct {
 extern IniFile ini;
 
 void initialize_config();
-void ini_parse_async(const char* filename, IniFile* ini);
 const char* ini_get(IniFile* ini, const char* section, const char* key);
 void parse_config(IniFile* ini);
