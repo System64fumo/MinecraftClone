@@ -156,6 +156,11 @@ void generate_chunk_mesh(Chunk* chunk) {
 	uint32_t indices[MAX_VERTICES * 6];
 	uint32_t vertex_count = 0;
 	uint32_t index_count = 0;
+	
+	Vertex transparent_vertices[MAX_VERTICES];
+	uint32_t transparent_indices[MAX_VERTICES * 6];
+	uint32_t transparent_vertex_count = 0;
+	uint32_t transparent_index_count = 0;
 
 	const float world_x = chunk->x * CHUNK_SIZE;
 	const float world_y = chunk->y * CHUNK_SIZE;
@@ -187,44 +192,20 @@ void generate_chunk_mesh(Chunk* chunk) {
 						memset(&mask[v + dy][u], true, width * sizeof(bool));
 					}
 
-					// int adjacent_x, adjacent_y, adjacent_z;
-					// if (face == 'R') {
-					// 	adjacent_x = world_x + x - 1;
-					// 	adjacent_y = world_y + y;
-					// 	adjacent_z = world_z + z;
-					// }
-					// else if (face == 'L') {
-					// 	adjacent_x = world_x + x + 1;
-					// 	adjacent_y = world_y + y;
-					// 	adjacent_z = world_z + z;
-					// }
-					// else if (face == 'F') {
-					// 	adjacent_x = world_x + x;
-					// 	adjacent_y = world_y + y;
-					// 	adjacent_z = world_z + z + 1;
-					// }
-					// else if (face == 'K') {
-					// 	adjacent_x = world_x + x;
-					// 	adjacent_y = world_y + y;
-					// 	adjacent_z = world_z + z - 1;
-					// }
-					// else if (face == 'T') {
-					// 	adjacent_x = world_x + x;
-					// 	adjacent_y = world_y + y + 1;
-					// 	adjacent_z = world_z + z;
-					// }
-					// else if (face == 'B') {
-					// 	adjacent_x = world_x + x;
-					// 	adjacent_y = world_y + y - 1;
-					// 	adjacent_z = world_z + z;
-					// }
-					// Block* adjacent_block = get_block_at(adjacent_x, adjacent_y, adjacent_z);
-					// uint8_t adjacent_light_data = adjacent_block ? adjacent_block->light_data : 6;
 					uint8_t adjacent_light_data = 15;
 
-					uint16_t base_vertex = vertex_count;
-					generate_vertices(face, x + world_x, y + world_y, z + world_z, width, height, block, vertices, &vertex_count, adjacent_light_data);
-					generate_indices(base_vertex, indices, &index_count);
+					// Check if block is transparent
+					bool is_transparent = block_data[block->id][1] != 0;
+					
+					if (is_transparent) {
+						uint16_t base_vertex = transparent_vertex_count;
+						generate_vertices(face, x + world_x, y + world_y, z + world_z, width, height, block, transparent_vertices, &transparent_vertex_count, adjacent_light_data);
+						generate_indices(base_vertex, transparent_indices, &transparent_index_count);
+					} else {
+						uint16_t base_vertex = vertex_count;
+						generate_vertices(face, x + world_x, y + world_y, z + world_z, width, height, block, vertices, &vertex_count, adjacent_light_data);
+						generate_indices(base_vertex, indices, &index_count);
+					}
 				}
 			}
 		}
@@ -239,16 +220,34 @@ void generate_chunk_mesh(Chunk* chunk) {
 				
 				if (block_type == 0) continue;
 
-				uint32_t base_vertex = vertex_count;
-				if (block_type == 2) {
-					generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
-					for (uint8_t i = 0; i < 4; i++) {
-						generate_indices(base_vertex + (i * 4), indices, &index_count);
+				// Check if block is transparent
+				bool is_transparent = block_data[block->id][1] != 0;
+				
+				if (is_transparent) {
+					uint32_t base_vertex = transparent_vertex_count;
+					if (block_type == 2) {
+						generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, transparent_vertices, &transparent_vertex_count);
+						for (uint8_t i = 0; i < 4; i++) {
+							generate_indices(base_vertex + (i * 4), transparent_indices, &transparent_index_count);
+						}
+					} else if (block_type == 1) {
+						generate_slab_vertices(x + world_x, y + world_y, z + world_z, block, transparent_vertices, &transparent_vertex_count);
+						for (uint8_t i = 0; i < 6; i++) {
+							generate_indices(base_vertex + (i * 4), transparent_indices, &transparent_index_count);
+						}
 					}
-				} else if (block_type == 1) {
-					generate_slab_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
-					for (uint8_t i = 0; i < 6; i++) {
-						generate_indices(base_vertex + (i * 4), indices, &index_count);
+				} else {
+					uint32_t base_vertex = vertex_count;
+					if (block_type == 2) {
+						generate_cross_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
+						for (uint8_t i = 0; i < 4; i++) {
+							generate_indices(base_vertex + (i * 4), indices, &index_count);
+						}
+					} else if (block_type == 1) {
+						generate_slab_vertices(x + world_x, y + world_y, z + world_z, block, vertices, &vertex_count);
+						for (uint8_t i = 0; i < 6; i++) {
+							generate_indices(base_vertex + (i * 4), indices, &index_count);
+						}
 					}
 				}
 			}
@@ -273,6 +272,25 @@ void generate_chunk_mesh(Chunk* chunk) {
 
 		memcpy(chunk->vertices, vertices, vertex_size);
 		memcpy(chunk->indices, indices, index_size);
+	}
+	
+	chunk->transparent_vertex_count = transparent_vertex_count;
+	chunk->transparent_index_count = transparent_index_count;
+
+	free(chunk->transparent_vertices);
+	free(chunk->transparent_indices);
+	chunk->transparent_vertices = NULL;
+	chunk->transparent_indices = NULL;
+
+	if (transparent_vertex_count > 0) {
+		size_t vertex_size = transparent_vertex_count * sizeof(Vertex);
+		size_t index_size = transparent_index_count * sizeof(uint32_t);
+
+		chunk->transparent_vertices = malloc(vertex_size);
+		chunk->transparent_indices = malloc(index_size);
+
+		memcpy(chunk->transparent_vertices, transparent_vertices, vertex_size);
+		memcpy(chunk->transparent_indices, transparent_indices, index_size);
 	}
 
 	chunk->needs_update = false;

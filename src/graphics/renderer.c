@@ -8,6 +8,12 @@ CombinedMesh combined_mesh = {0};
 unsigned int combined_VAO = 0;
 unsigned int combined_VBO = 0;
 unsigned int combined_EBO = 0;
+
+CombinedMesh transparent_mesh = {0};
+unsigned int transparent_VAO = 0;
+unsigned int transparent_VBO = 0;
+unsigned int transparent_EBO = 0;
+
 bool mesh_mode = false;
 uint16_t draw_calls = 0;
 bool frustum_culling_enabled = true;
@@ -38,6 +44,33 @@ void init_gl_buffers() {
 	glEnableVertexAttribArray(4);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, combined_EBO);
+
+	glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+
+	glGenVertexArrays(1, &transparent_VAO);
+	glGenBuffers(1, &transparent_VBO);
+	glGenBuffers(1, &transparent_EBO);
+
+	glBindVertexArray(transparent_VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, transparent_VBO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
+	glEnableVertexAttribArray(1);
+
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
+	glEnableVertexAttribArray(2);
+
+	glVertexAttribPointer(3, 2, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, width));
+	glEnableVertexAttribArray(3);
+
+	glVertexAttribPointer(4, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, light_data));
+	glEnableVertexAttribArray(4);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBO);
 
 	glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
@@ -125,26 +158,6 @@ void update_chunks_visibility(vec3 pos, vec3 dir) {
 			}
 		}
 	}
-}
-
-void render_chunks_combined() {
-	if (combined_mesh.index_count == 0)
-		return;
-
-	glUseProgram(shaderProgram);
-	
-	matrix4_identity(model);
-	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, model);
-
-	glBindVertexArray(combined_VAO);
-
-	// Single draw call for all visible chunks
-	if (mesh_mode)
-		glDrawElements(GL_LINES, combined_mesh.index_count, GL_UNSIGNED_INT, 0);
-	else
-		glDrawElements(GL_TRIANGLES, combined_mesh.index_count, GL_UNSIGNED_INT, 0);
-	
-	draw_calls = 1;
 }
 
 void rebuild_combined_visible_mesh() {
@@ -266,7 +279,22 @@ void render_chunks() {
 	if (mesh_needs_rebuild)
 		rebuild_combined_visible_mesh();
 
-	render_chunks_combined();
+	glUseProgram(shaderProgram);
+	matrix4_identity(model);
+	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, model);
+	glBindVertexArray(combined_VAO);
+	if (mesh_mode)
+		glDrawElements(GL_LINES, combined_mesh.index_count, GL_UNSIGNED_INT, 0);
+	else
+		glDrawElements(GL_TRIANGLES, combined_mesh.index_count, GL_UNSIGNED_INT, 0);
+	draw_calls++;
+
+	glBindVertexArray(transparent_VAO);
+	if (mesh_mode)
+		glDrawElements(GL_LINES, transparent_mesh.index_count, GL_UNSIGNED_INT, 0);
+	else
+		glDrawElements(GL_TRIANGLES, transparent_mesh.index_count, GL_UNSIGNED_INT, 0);
+	draw_calls++;
 }
 
 void cleanup_renderer() {

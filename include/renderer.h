@@ -21,6 +21,12 @@ extern CombinedMesh combined_mesh;
 extern unsigned int combined_VAO;
 extern unsigned int combined_VBO;
 extern unsigned int combined_EBO;
+
+extern CombinedMesh transparent_mesh;
+extern unsigned int transparent_VAO;
+extern unsigned int transparent_VBO;
+extern unsigned int transparent_EBO;
+
 extern bool mesh_mode;
 extern uint16_t draw_calls;
 

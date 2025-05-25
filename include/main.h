@@ -50,6 +50,11 @@ typedef struct {
 	uint32_t index_count;
 	Vertex* vertices;
 	uint32_t* indices;
+
+	Vertex* transparent_vertices;
+	uint32_t* transparent_indices;
+	uint32_t transparent_vertex_count;
+	uint32_t transparent_index_count;
 } Chunk;
 
 typedef struct {
