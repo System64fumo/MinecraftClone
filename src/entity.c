@@ -22,7 +22,7 @@ void update_frustum() {
 	pos.x = global_entities[0].pos.x;
 	pos.y = global_entities[0].pos.y + global_entities[0].eye_level;
 	pos.z = global_entities[0].pos.z;
-	update_chunks_visibility(global_entities[0].pos, dir);
+	update_chunks_visibility(pos, dir);
 }
 
 void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_out, char* out_face) {

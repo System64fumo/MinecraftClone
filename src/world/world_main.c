@@ -18,74 +18,135 @@ const float flatness_scale = 0.02f;
 const float cave_scale = 0.1f;
 const float cave_simplex_scale = 0.1f;
 
-uint32_t serialize(uint8_t a, uint8_t b, uint8_t c) {
-	return ((uint32_t)a << 16) | ((uint32_t)b << 8) | (uint32_t)c;
+// Threading variables
+typedef struct {
+	int ci_x, ci_y, ci_z;
+	int cx, cy, cz;
+	float priority;	
+} chunk_load_request_t;
+
+typedef struct {
+	chunk_load_request_t* requests;
+	int capacity;
+	int size;
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+} chunk_load_queue_t;
+
+chunk_load_queue_t chunk_load_queue;
+pthread_t world_gen_thread;
+bool world_gen_thread_running = false;
+pthread_mutex_t chunks_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+// Initialize the chunk load queue
+void init_chunk_load_queue() {
+	chunk_load_queue.capacity = 128;
+	chunk_load_queue.size = 0;
+	chunk_load_queue.requests = malloc(chunk_load_queue.capacity * sizeof(chunk_load_request_t));
+	pthread_mutex_init(&chunk_load_queue.mutex, NULL);
+	pthread_cond_init(&chunk_load_queue.cond, NULL);
 }
 
-void deserialize(uint32_t serialized, uint8_t *a, uint8_t *b, uint8_t *c) {
-	*a = (serialized >> 16) & 0xFF;
-	*b = (serialized >> 8) & 0xFF;
-	*c = serialized & 0xFF;
-}
-			
-// Perform counting sort based on digit at exp
-void counting_sort(chunk_load_item_t* arr, int size, int exp) {
-	chunk_load_item_t* output = malloc(size * sizeof(chunk_load_item_t));
-	int count[10] = {0};
-	int i;
+// Add a chunk load request to the queue
+void enqueue_chunk_load(int ci_x, int ci_y, int ci_z, int cx, int cy, int cz, float priority) {
+	pthread_mutex_lock(&chunk_load_queue.mutex);
 	
-	// Store count of occurrences in count[]
-	for (i = 0; i < size; i++) {
-		count[GET_DIGIT(arr[i].distance, exp)]++;
+	// Resize if needed
+	if (chunk_load_queue.size >= chunk_load_queue.capacity) {
+		chunk_load_queue.capacity *= 2;
+		chunk_load_queue.requests = realloc(chunk_load_queue.requests, 
+										  chunk_load_queue.capacity * sizeof(chunk_load_request_t));
 	}
 	
-	// Change count[i] so it contains actual position
-	for (i = 1; i < 10; i++) {
-		count[i] += count[i - 1];
-	}
+	// Add the request
+	chunk_load_request_t* req = &chunk_load_queue.requests[chunk_load_queue.size++];
+	req->ci_x = ci_x;
+	req->ci_y = ci_y;
+	req->ci_z = ci_z;
+	req->cx = cx;
+	req->cy = cy;
+	req->cz = cz;
+	req->priority = priority;
 	
-	// Build the output array
-	for (i = size - 1; i >= 0; i--) {
-		int digit = GET_DIGIT(arr[i].distance, exp);
-		output[count[digit] - 1] = arr[i];
-		count[digit]--;
-	}
-	
-	// Copy the output array back
-	for (i = 0; i < size; i++) {
-		arr[i] = output[i];
-	}
-	
-	free(output);
-}
-
-// Radix sort implementation
-void radix_sort(chunk_load_item_t* arr, int size) {
-	if (size <= 1) return;
-	
-	// Find the maximum distance to know number of digits
-	float max_dist = arr[0].distance;
-	for (int i = 1; i < size; i++) {
-		if (arr[i].distance > max_dist) {
-			max_dist = arr[i].distance;
+	// Insertion sort
+	for (int i = chunk_load_queue.size - 1; i > 0; i--) {
+		if (chunk_load_queue.requests[i].priority < chunk_load_queue.requests[i-1].priority) {
+			chunk_load_request_t tmp = chunk_load_queue.requests[i];
+			chunk_load_queue.requests[i] = chunk_load_queue.requests[i-1];
+			chunk_load_queue.requests[i-1] = tmp;
+		} else {
+			break;
 		}
 	}
 	
-	// Scale distances to integers for sorting
-	const float scale = 1000.0f; // Scale factor to preserve decimal precision
-	for (int i = 0; i < size; i++) {
-		arr[i].distance *= scale;
+	pthread_cond_signal(&chunk_load_queue.cond);
+	pthread_mutex_unlock(&chunk_load_queue.mutex);
+}
+
+// World generation thread function
+void* world_gen_thread_func(void* arg) {
+	while (world_gen_thread_running) {
+		pthread_mutex_lock(&chunk_load_queue.mutex);
+		
+		// Wait for work if queue is empty
+		while (chunk_load_queue.size == 0 && world_gen_thread_running) {
+			pthread_cond_wait(&chunk_load_queue.cond, &chunk_load_queue.mutex);
+		}
+		
+		if (!world_gen_thread_running) {
+			pthread_mutex_unlock(&chunk_load_queue.mutex);
+			break;
+		}
+		
+		// Get the highest priority request
+		chunk_load_request_t req = chunk_load_queue.requests[0];
+		
+		// Shift remaining requests
+		for (int i = 1; i < chunk_load_queue.size; i++) {
+			chunk_load_queue.requests[i-1] = chunk_load_queue.requests[i];
+		}
+		chunk_load_queue.size--;
+		
+		pthread_mutex_unlock(&chunk_load_queue.mutex);
+		
+		// Generate the chunk
+		Chunk temp_chunk = {0};
+		load_chunk_data(&temp_chunk, req.ci_x, req.ci_y, req.ci_z, req.cx, req.cy, req.cz);
+		
+		// Lock chunks array to update it
+		pthread_mutex_lock(&chunks_mutex);
+		chunks[req.ci_x][req.ci_y][req.ci_z] = temp_chunk;
+		chunks[req.ci_x][req.ci_y][req.ci_z].is_loaded = true;
+		
+		// Mark adjacent chunks for update
+		if (req.ci_x > 0 && chunks[req.ci_x-1][req.ci_y][req.ci_z].vertices != NULL) 
+			chunks[req.ci_x-1][req.ci_y][req.ci_z].needs_update = true;
+		if (req.ci_x < RENDER_DISTANCE-1 && chunks[req.ci_x+1][req.ci_y][req.ci_z].vertices != NULL) 
+			chunks[req.ci_x+1][req.ci_y][req.ci_z].needs_update = true;
+		if (req.ci_z > 0 && chunks[req.ci_x][req.ci_y][req.ci_z-1].vertices != NULL) 
+			chunks[req.ci_x][req.ci_y][req.ci_z-1].needs_update = true;
+		if (req.ci_z < RENDER_DISTANCE-1 && chunks[req.ci_x][req.ci_y][req.ci_z+1].vertices != NULL) 
+			chunks[req.ci_x][req.ci_y][req.ci_z+1].needs_update = true;
+		
+		pthread_mutex_unlock(&chunks_mutex);
 	}
+	return NULL;
+}
+
+void start_world_gen_thread() {
+	init_chunk_load_queue();
+	world_gen_thread_running = true;
+	pthread_create(&world_gen_thread, NULL, world_gen_thread_func, NULL);
+}
+
+void stop_world_gen_thread() {
+	world_gen_thread_running = false;
+	pthread_cond_signal(&chunk_load_queue.cond);
+	pthread_join(world_gen_thread, NULL);
 	
-	// Do counting sort for every digit
-	for (int exp = 1; max_dist*scale/exp > 0; exp *= 10) {
-		counting_sort(arr, size, exp);
-	}
-	
-	// Scale back to original values
-	for (int i = 0; i < size; i++) {
-		arr[i].distance /= scale;
-	}
+	pthread_mutex_destroy(&chunk_load_queue.mutex);
+	pthread_cond_destroy(&chunk_load_queue.cond);
+	free(chunk_load_queue.requests);
 }
 
 void load_around_entity(Entity* entity) {
@@ -120,11 +181,13 @@ void load_around_entity(Entity* entity) {
 	}
 
 	// Copy chunks
+	pthread_mutex_lock(&chunks_mutex);
 	for (int x = 0; x < RENDER_DISTANCE; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
 			memcpy(temp_chunks[x][y], chunks[x][y], RENDER_DISTANCE * sizeof(Chunk));
 		}
 	}
+	pthread_mutex_unlock(&chunks_mutex);
 
 	// Process old chunks (east/west movement)
 	if (dx != 0) {
@@ -167,6 +230,7 @@ void load_around_entity(Entity* entity) {
 	}
 
 	// Clear chunks array
+	pthread_mutex_lock(&chunks_mutex);
 	for (int x = 0; x < RENDER_DISTANCE; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
 			memset(chunks[x][y], 0, RENDER_DISTANCE * sizeof(Chunk));
@@ -190,17 +254,22 @@ void load_around_entity(Entity* entity) {
 			}
 		}
 	}
+	pthread_mutex_unlock(&chunks_mutex);
 
 	// Entity position within chunk coordinates
 	float entity_chunk_x = entity->pos.x / CHUNK_SIZE;
 	float entity_chunk_y = entity->pos.y / CHUNK_SIZE;
 	float entity_chunk_z = entity->pos.z / CHUNK_SIZE;
 	
-	// Load chunks in order from closest to farthest
+	// Enqueue chunks that need to be loaded
 	for (int x = 0; x < RENDER_DISTANCE; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
 			for (int z = 0; z < RENDER_DISTANCE; z++) {
-				if (chunks[x][y][z].vertices == NULL) {
+				pthread_mutex_lock(&chunks_mutex);
+				bool needs_load = chunks[x][y][z].vertices == NULL;
+				pthread_mutex_unlock(&chunks_mutex);
+				
+				if (needs_load) {
 					// Calculate world position of this chunk
 					float world_chunk_x = (x + center_cx);
 					float world_chunk_y = (y + last_cy);
@@ -212,21 +281,8 @@ void load_around_entity(Entity* entity) {
 					float dz = world_chunk_z - entity_chunk_z;
 					float dist_sq = dx*dx + dy*dy + dz*dz;
 					
-					// Load chunk
-					Chunk temp_chunk = {0};
-					load_chunk_data(&temp_chunk, x, y, z, x + center_cx, y, z + center_cz);
-					temp_chunk.is_loaded = true;
-					chunks[x][y][z] = temp_chunk;
-					
-					// Mark adjacent chunks for update
-					if (x > 0 && chunks[x-1][y][z].vertices != NULL) 
-						chunks[x-1][y][z].needs_update = true;
-					if (x < RENDER_DISTANCE-1 && chunks[x+1][y][z].vertices != NULL) 
-						chunks[x+1][y][z].needs_update = true;
-					if (z > 0 && chunks[x][y][z-1].vertices != NULL) 
-						chunks[x][y][z-1].needs_update = true;
-					if (z < RENDER_DISTANCE-1 && chunks[x][y][z+1].vertices != NULL) 
-						chunks[x][y][z+1].needs_update = true;
+					// Enqueue the chunk load request
+					enqueue_chunk_load(x, y, z, x + center_cx, y, z + center_cz, dist_sq);
 				}
 			}
 		}
@@ -236,51 +292,6 @@ void load_around_entity(Entity* entity) {
 	#ifdef DEBUG
 	profiler_stop(PROFILER_ID_WORLD_GEN, false);
 	#endif
-}
-
-int save_chunk_to_file(const char *filename, const Chunk *chunk) {
-	size_t data_size = sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE + // blocks
-					   sizeof(int) * 3; // x, y, z
-
-	uint8_t *buffer = malloc(data_size);
-	if (!buffer) {
-		return -1;
-	}
-
-	memcpy(buffer, chunk->blocks, sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
-
-	memcpy(buffer + sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, &chunk->x, sizeof(int) * 3);
-
-	int result = write_binary_file(filename, buffer, data_size);
-
-	free(buffer);
-
-	return result;
-}
-
-int load_chunk_from_file(const char *filename, Chunk *chunk) {
-	size_t data_size = sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE + // blocks
-					   sizeof(int) * 3; // x, y, z
-
-	size_t loaded_size;
-	uint8_t *data = read_binary_file(filename, &loaded_size);
-
-	if (!data) {
-		return -1;
-	}
-
-	if (loaded_size != data_size) {
-		free(data);
-		return -1;
-	}
-
-	memcpy(chunk->blocks, data, sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE);
-
-	memcpy(&chunk->x, data + sizeof(Block) * CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE, sizeof(int) * 3);
-
-	free(data);
-
-	return 0; // Success
 }
 
 void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz) {
@@ -295,37 +306,7 @@ void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsig
 	generate_chunk_terrain(chunk, cx, cy, cz);
 }
 
-void load_chunk(unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz) {
-	chunks[ci_x][ci_y][ci_z].ci_x = ci_x;
-	chunks[ci_x][ci_y][ci_z].ci_y = ci_y;
-	chunks[ci_x][ci_y][ci_z].ci_z = ci_z;
-	chunks[ci_x][ci_y][ci_z].x = cx;
-	chunks[ci_x][ci_y][ci_z].y = cy;
-	chunks[ci_x][ci_y][ci_z].z = cz;
-	chunks[ci_x][ci_y][ci_z].needs_update = true;
-	chunks[ci_x][ci_y][ci_z].is_loaded = false;
-
-	// char filename[255];
-	// snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(cx, cy, cz));
-
-	// size_t size;
-	// int *read_data = read_binary_file(filename, &size);
-	// if (read_data) {
-	// 	printf("Loading chunk: %s\n", filename);
-	// 	load_chunk_from_file(filename, &chunks[ci_x][ci_y][ci_z]);
-	// }
-	// else {
-	// 	printf("Generating chunk: %s\n", filename);
-	 	generate_chunk_terrain(&chunks[ci_x][ci_y][ci_z], cx, cy, cz);
-	// 	save_chunk_to_file(filename, &chunks[ci_x][ci_y][ci_z]);
-	// }
-}
-
 void unload_chunk(Chunk* chunk) {
-	// char filename[255];
-	// snprintf(filename, sizeof(filename), "%s/saves/chunks/%u.bin", game_dir, serialize(chunk->x, chunk->y, chunk->z));
-	// if (access(filename, F_OK) == 0)
-	// 	save_chunk_to_file(filename, chunk);
 	if (chunk->vertices != NULL) {
 		free(chunk->vertices);
 		chunk->vertices = NULL;

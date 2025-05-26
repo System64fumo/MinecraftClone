@@ -143,6 +143,7 @@ int initialize() {
 	init_ui();
 	init_block_highlight();
 	init_gl_buffers();
+	start_world_gen_thread();
 
 	// Cache uniform locations
 	model_uniform_location = glGetUniformLocation(shaderProgram, "model");
