@@ -59,7 +59,7 @@ static const uint8_t edge_indices[] = {
 	3, 7  // Top-left edge
 };
 
-static float cube_vertices[] = {
+static const float cube_vertices[] = {
 	// Front face (Z+)
 	-0.5f, -0.5f,  0.5f,
 	 0.5f, -0.5f,  0.5f,
@@ -97,7 +97,7 @@ static float cube_vertices[] = {
 	-0.5f, -0.5f,  0.5f
 };
 
-static uint8_t cube_indices[] = {
+static const uint8_t cube_indices[] = {
 	// Front face
 	0, 1, 2,  0, 2, 3,
 	// Back face
@@ -112,7 +112,7 @@ static uint8_t cube_indices[] = {
 	20, 21, 22,  20, 22, 23
 };
 
-static float cube_tex_coords[] = {
+static const float cube_tex_coords[] = {
 	// Front face
 	0.0f, 1.0f,
 	1.0f, 1.0f,
@@ -150,7 +150,7 @@ static float cube_tex_coords[] = {
 	0.0f, 1.0f
 };
 
-static float cube_normals[] = {
+static const float cube_normals[] = {
 	// Front face (Z+)
 	0.0f, 0.0f, 1.0f,
 	0.0f, 0.0f, 1.0f,
