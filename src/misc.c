@@ -34,9 +34,31 @@ void do_time_stuff() {
 		process_chunks();
 
 		#ifdef DEBUG
-		printf("Vertex count: %d\n", combined_mesh.vertex_count);
-		printf("Index count: %d\n", combined_mesh.index_count);
-		printf("VRAM estimate: %ldmb\n", (sizeof(Vertex) * combined_mesh.vertex_count) / 1024 / 1024);
+		uint16_t total_opaque_vertices = 0;
+		uint16_t total_opaque_indices = 0;
+		uint16_t total_transparent_vertices = 0;
+		uint16_t total_transparent_indices = 0;
+
+		for (int face = 0; face < 6; face++) {
+			for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+				for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
+					for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
+						ChunkRenderData* render_data = &chunk_render_data[x][y][z];
+						if (!render_data->visible) continue;
+						
+						Chunk* chunk = &chunks[x][y][z];
+						total_opaque_vertices += chunk->faces[face].vertex_count;
+						total_opaque_indices += chunk->faces[face].index_count;
+						total_transparent_vertices += chunk->transparent_faces[face].vertex_count;
+						total_transparent_indices += chunk->transparent_faces[face].index_count;
+					}
+				}
+			}
+		}
+
+		printf("Vertex count: %d\n", total_opaque_vertices + total_transparent_vertices);
+		printf("Index count: %d\n", total_transparent_vertices + total_transparent_indices);
+		printf("VRAM estimate: %ldmb\n", (sizeof(Vertex) * total_opaque_vertices + total_transparent_vertices) / 1024 / 1024);
 		printf("Draw calls: %d\n", draw_calls);
 		#endif
 	}

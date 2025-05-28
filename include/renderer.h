@@ -13,19 +13,16 @@ typedef struct {
 	uint32_t* indices;
 	uint32_t vertex_count;
 	uint32_t index_count;
-	uint32_t capacity_vertices;
-	uint32_t capacity_indices;
-} CombinedMesh;
+	size_t capacity_vertices;
+	size_t capacity_indices;
+} FaceMesh;
 
-extern CombinedMesh combined_mesh;
-extern unsigned int combined_VAO;
-extern unsigned int combined_VBO;
-extern unsigned int combined_EBO;
-
-extern CombinedMesh transparent_mesh;
-extern unsigned int transparent_VAO;
-extern unsigned int transparent_VBO;
-extern unsigned int transparent_EBO;
+extern unsigned int opaque_VAOs[6];
+extern unsigned int opaque_VBOs[6];
+extern unsigned int opaque_EBOs[6];
+extern unsigned int transparent_VAOs[6];
+extern unsigned int transparent_VBOs[6];
+extern unsigned int transparent_EBOs[6];
 
 extern bool mesh_mode;
 extern uint16_t draw_calls;
