@@ -47,15 +47,10 @@ typedef struct {
 	bool needs_mesh_update;
 	bool is_loaded;
 	bool lighting_changed;
-	uint32_t vertex_count;
-	uint32_t index_count;
-	Vertex* vertices;
-	uint32_t* indices;
-
-	Vertex* transparent_vertices;
-	uint32_t* transparent_indices;
-	uint32_t transparent_vertex_count;
-	uint32_t transparent_index_count;
+	
+	// Face-based storage
+	FaceMesh faces[6]; // 0:Front, 1:Left, 2:Back, 3:Right, 4:Bottom, 5:Top
+	FaceMesh transparent_faces[6];
 } Chunk;
 
 typedef struct {

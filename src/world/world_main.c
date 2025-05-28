@@ -119,14 +119,38 @@ void* world_gen_thread_func(void* arg) {
 		chunks[req.ci_x][req.ci_y][req.ci_z].is_loaded = true;
 		
 		// Mark adjacent chunks for update
-		if (req.ci_x > 0 && chunks[req.ci_x-1][req.ci_y][req.ci_z].vertices != NULL) 
-			chunks[req.ci_x-1][req.ci_y][req.ci_z].needs_update = true;
-		if (req.ci_x < RENDER_DISTANCE-1 && chunks[req.ci_x+1][req.ci_y][req.ci_z].vertices != NULL) 
-			chunks[req.ci_x+1][req.ci_y][req.ci_z].needs_update = true;
-		if (req.ci_z > 0 && chunks[req.ci_x][req.ci_y][req.ci_z-1].vertices != NULL) 
-			chunks[req.ci_x][req.ci_y][req.ci_z-1].needs_update = true;
-		if (req.ci_z < RENDER_DISTANCE-1 && chunks[req.ci_x][req.ci_y][req.ci_z+1].vertices != NULL) 
-			chunks[req.ci_x][req.ci_y][req.ci_z+1].needs_update = true;
+		if (req.ci_x > 0) {
+			for (int face = 0; face < 6; face++) {
+				if (chunks[req.ci_x-1][req.ci_y][req.ci_z].faces[face].vertices != NULL) {
+					chunks[req.ci_x-1][req.ci_y][req.ci_z].needs_update = true;
+					break;
+				}
+			}
+		}
+		if (req.ci_x < RENDER_DISTANCE-1) {
+			for (int face = 0; face < 6; face++) {
+				if (chunks[req.ci_x+1][req.ci_y][req.ci_z].faces[face].vertices != NULL) {
+					chunks[req.ci_x+1][req.ci_y][req.ci_z].needs_update = true;
+					break;
+				}
+			}
+		}
+		if (req.ci_z > 0) {
+			for (int face = 0; face < 6; face++) {
+				if (chunks[req.ci_x][req.ci_y][req.ci_z-1].faces[face].vertices != NULL) {
+					chunks[req.ci_x][req.ci_y][req.ci_z-1].needs_update = true;
+					break;
+				}
+			}
+		}
+		if (req.ci_z < RENDER_DISTANCE-1) {
+			for (int face = 0; face < 6; face++) {
+				if (chunks[req.ci_x][req.ci_y][req.ci_z+1].faces[face].vertices != NULL) {
+					chunks[req.ci_x][req.ci_y][req.ci_z+1].needs_update = true;
+					break;
+				}
+			}
+		}
 		
 		pthread_mutex_unlock(&chunks_mutex);
 	}
@@ -197,7 +221,15 @@ void load_around_entity(Entity* entity) {
 		for (int x = start_x; x < end_x; x++) {
 			for (int y = 0; y < WORLD_HEIGHT; y++) {
 				for (int z = 0; z < RENDER_DISTANCE; z++) {
-					if (temp_chunks[x][y][z].vertices != NULL) {
+					bool has_data = false;
+					for (int face = 0; face < 6; face++) {
+						if (temp_chunks[x][y][z].faces[face].vertices != NULL) {
+							has_data = true;
+							break;
+						}
+					}
+					
+					if (has_data) {
 						if ((dx > 0 && x == dx - 1 && x + 1 < RENDER_DISTANCE) ||
 							(dx < 0 && x == RENDER_DISTANCE + dx && x - 1 >= 0)) {
 							temp_chunks[x + (dx > 0 ? 1 : -1)][y][z].needs_update = true;
@@ -217,7 +249,15 @@ void load_around_entity(Entity* entity) {
 		for (int x = 0; x < RENDER_DISTANCE; x++) {
 			for (int y = 0; y < WORLD_HEIGHT; y++) {
 				for (int z = start_z; z < end_z; z++) {
-					if (temp_chunks[x][y][z].vertices != NULL) {
+					bool has_data = false;
+					for (int face = 0; face < 6; face++) {
+						if (temp_chunks[x][y][z].faces[face].vertices != NULL) {
+							has_data = true;
+							break;
+						}
+					}
+					
+					if (has_data) {
 						if ((dz > 0 && z == dz - 1 && z + 1 < RENDER_DISTANCE) ||
 							(dz < 0 && z == RENDER_DISTANCE + dz && z - 1 >= 0)) {
 							temp_chunks[x][y][z + (dz > 0 ? 1 : -1)].needs_update = true;
@@ -245,11 +285,20 @@ void load_around_entity(Entity* entity) {
 				int old_z = z + dz;
 				
 				if (old_x >= 0 && old_x < RENDER_DISTANCE && 
-					old_z >= 0 && old_z < RENDER_DISTANCE &&
-					temp_chunks[old_x][y][old_z].vertices != NULL) {
-					chunks[x][y][z] = temp_chunks[old_x][y][old_z];
-					chunks[x][y][z].ci_x = x;
-					chunks[x][y][z].ci_z = z;
+					old_z >= 0 && old_z < RENDER_DISTANCE) {
+					bool has_data = false;
+					for (int face = 0; face < 6; face++) {
+						if (temp_chunks[old_x][y][old_z].faces[face].vertices != NULL) {
+							has_data = true;
+							break;
+						}
+					}
+					
+					if (has_data) {
+						chunks[x][y][z] = temp_chunks[old_x][y][old_z];
+						chunks[x][y][z].ci_x = x;
+						chunks[x][y][z].ci_z = z;
+					}
 				}
 			}
 		}
@@ -266,7 +315,13 @@ void load_around_entity(Entity* entity) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
 			for (int z = 0; z < RENDER_DISTANCE; z++) {
 				pthread_mutex_lock(&chunks_mutex);
-				bool needs_load = chunks[x][y][z].vertices == NULL;
+				bool needs_load = true;
+				for (int face = 0; face < 6; face++) {
+					if (chunks[x][y][z].faces[face].vertices != NULL) {
+						needs_load = false;
+						break;
+					}
+				}
 				pthread_mutex_unlock(&chunks_mutex);
 				
 				if (needs_load) {
@@ -307,14 +362,23 @@ void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsig
 }
 
 void unload_chunk(Chunk* chunk) {
-	if (chunk->vertices != NULL) {
-		free(chunk->vertices);
-		chunk->vertices = NULL;
+	for (int face = 0; face < 6; face++) {
+		if (chunk->faces[face].vertices != NULL) {
+			free(chunk->faces[face].vertices);
+			chunk->faces[face].vertices = NULL;
+		}
+		if (chunk->faces[face].indices != NULL) {
+			free(chunk->faces[face].indices);
+			chunk->faces[face].indices = NULL;
+		}
+		if (chunk->transparent_faces[face].vertices != NULL) {
+			free(chunk->transparent_faces[face].vertices);
+			chunk->transparent_faces[face].vertices = NULL;
+		}
+		if (chunk->transparent_faces[face].indices != NULL) {
+			free(chunk->transparent_faces[face].indices);
+			chunk->transparent_faces[face].indices = NULL;
+		}
 	}
-	if (chunk->indices != NULL) {
-		free(chunk->indices);
-		chunk->indices = NULL;
-	}
-
 	memset(chunk, 0, sizeof(Chunk));
 }
