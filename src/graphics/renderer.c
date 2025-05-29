@@ -125,7 +125,13 @@ bool is_chunk_in_frustum(vec3 pos, vec3 dir, int chunk_x, int chunk_y, int chunk
 	return dot_product >= fov_angle;
 }
 
-void update_chunks_visibility(vec3 pos, vec3 dir) {
+void update_frustum() {
+	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
+	vec3 pos;
+	pos.x = global_entities[0].pos.x;
+	pos.y = global_entities[0].pos.y + global_entities[0].eye_level;
+	pos.z = global_entities[0].pos.z;
+
 	float fov_angle = cos(settings.fov * M_PI / 180.0f);
 
 	int center_cx = last_cx + (RENDER_DISTANCE / 2);

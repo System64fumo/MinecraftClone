@@ -1,4 +1,5 @@
 #include "misc.h"
+#include <stdint.h>
 
 typedef struct {
 	float x, y, z;
@@ -13,8 +14,8 @@ typedef struct {
 	uint32_t* indices;
 	uint32_t vertex_count;
 	uint32_t index_count;
-	size_t capacity_vertices;
-	size_t capacity_indices;
+	uint64_t capacity_vertices;
+	uint64_t capacity_indices;
 } FaceMesh;
 
 extern unsigned int opaque_VAOs[6];
@@ -28,7 +29,7 @@ extern bool mesh_mode;
 extern uint16_t draw_calls;
 
 void init_gl_buffers();
-void update_chunks_visibility(vec3 pos, vec3 dir);
+void update_frustum();
 void render_chunks_combined();
 void rebuild_combined_visible_mesh();
 void render_chunks();

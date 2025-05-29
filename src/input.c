@@ -154,6 +154,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			case GLFW_KEY_F2:
 				mesh_mode = !mesh_mode;
 				break;
+			case GLFW_KEY_L:
+				load_shaders();
+				break;
 			case GLFW_KEY_ESCAPE:
 				glfwSetCursorPos(window, screen_center_x, screen_center_y); // This doesn't seem to work?
 				if (ui_state == UI_STATE_RUNNING) {

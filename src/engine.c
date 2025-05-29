@@ -17,7 +17,7 @@ float far = 300.0f;
 float aspect = 1.7f;
 
 float model[16], view[16], projection[16];
-unsigned int block_textures, ui_textures;
+unsigned int block_textures, ui_textures, font_textures;
 
 // Type, Translucent, Face textures
 // t,    t,           f,f,f,f,f,f
@@ -127,14 +127,21 @@ int initialize() {
 		fprintf(stderr, "atlas_path truncated\n");
 		exit(EXIT_FAILURE);
 	}
-	block_textures = loadTexture(atlas_path);
+	block_textures = load_texture(atlas_path);
 
 	char gui_path[1024];
 	if (snprintf(gui_path, sizeof(gui_path), "%s/%s", exec_path, "assets/gui.webp") >= sizeof(gui_path)) {
 		fprintf(stderr, "gui_path truncated\n");
 		exit(EXIT_FAILURE);
 	}
-	ui_textures = loadTexture(gui_path);
+	ui_textures = load_texture(gui_path);
+
+	char font_path[1024];
+	if (snprintf(font_path, sizeof(font_path), "%s/%s", exec_path, "assets/font.webp") >= sizeof(font_path)) {
+		fprintf(stderr, "font_path truncated\n");
+		exit(EXIT_FAILURE);
+	}
+	font_textures = load_texture(font_path);
 
 	// Initialization
 	load_shaders();
@@ -181,7 +188,9 @@ int initialize() {
 }
 
 void run() {
+	update_frustum();
 	load_around_entity(&global_entities[0]);
+
 	while (!glfwWindowShouldClose(window)) {
 		do_time_stuff();
 		process_input(window);

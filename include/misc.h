@@ -1,5 +1,5 @@
-#ifndef _MISC_H_
-#define _MISC_H_
+#ifndef MISC_H
+#define MISC_H
 
 #define CHUNK_SIZE 16
 #define WORLD_HEIGHT 16
@@ -29,9 +29,9 @@ void matrix4_rotate_y(float* matrix, float angle);
 void matrix4_rotate_z(float* matrix, float angle);
 void do_time_stuff();
 const char* load_file(const char* filename);
-unsigned int loadTexture(const char* path);
-int write_binary_file(const char *filename, const void *data, size_t size);
-void *read_binary_file(const char *filename, size_t *size);
-void* create_array(size_t size, size_t element_size);
+unsigned int load_texture(const char* path);
+int write_binary_file(const char *filename, const void *data, unsigned long size);
+void *read_binary_file(const char *filename, unsigned long *size);
+void* create_array(unsigned long size, unsigned long element_size);
 
-#endif // _MISC_H_
+#endif // MISC_H

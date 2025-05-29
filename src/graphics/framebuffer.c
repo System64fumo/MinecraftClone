@@ -98,6 +98,11 @@ void render_to_screen() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glUseProgram(postProcessingShader);
+
+	// Pass the UI state to the shader
+	GLint uiStateLoc = glGetUniformLocation(postProcessingShader, "uiState");
+	glUniform1i(uiStateLoc, ui_state);
+
 	glBindVertexArray(quadVAO);
 	glBindTexture(GL_TEXTURE_2D, colorTexture);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);

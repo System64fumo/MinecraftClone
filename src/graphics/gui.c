@@ -235,9 +235,24 @@ void render_ui() {
 		glUseProgram(ui_shader);
 		glUniformMatrix4fv(ui_projection_uniform_location, 1, GL_FALSE, ortho);
 		glBindVertexArray(ui_vao);
-		glBindTexture(GL_TEXTURE_2D, ui_textures);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, ui_active_2d_elements * 4);
-		draw_calls++;
+		
+		GLuint current_texture = 0;
+		bool texture_bound = false;
+		
+		for (uint8_t i = 0; i < ui_active_2d_elements; i++) {
+			const ui_element_t* element = &ui_elements[i];
+			
+			// Only bind texture if it's different from the current one
+			if (element->texture_id != current_texture) {
+				glBindTexture(GL_TEXTURE_2D, element->texture_id);
+				current_texture = element->texture_id;
+				texture_bound = true;
+			}
+			
+			// Draw this element (4 vertices per element)
+			glDrawArrays(GL_TRIANGLE_STRIP, i * 4, 4);
+			draw_calls++;
+		}
 	}
 
 	if (ui_active_3d_elements) {
@@ -269,7 +284,8 @@ void update_ui() {
 				.tex_x = 240,
 				.tex_y = 0,
 				.tex_width = 16,
-				.tex_height = 16
+				.tex_height = 16,
+				.texture_id = ui_textures
 			};
 
 			// Hotbar
@@ -281,7 +297,8 @@ void update_ui() {
 				.tex_x = 0,
 				.tex_y = 0,
 				.tex_width = 182,
-				.tex_height = 22
+				.tex_height = 22,
+				.texture_id = ui_textures
 			};
 		
 			// Hotbar slot
@@ -293,7 +310,8 @@ void update_ui() {
 				.tex_x = 0,
 				.tex_y = 22,
 				.tex_width = 24,
-				.tex_height = 24
+				.tex_height = 24,
+				.texture_id = ui_textures
 			};
 		
 			// Hotbar blocks
@@ -330,7 +348,8 @@ void update_ui() {
 				.tex_x = 0,
 				.tex_y = 66,
 				.tex_width = 200,
-				.tex_height = 20
+				.tex_height = 20,
+				.texture_id = ui_textures
 			};
 
 			// Quit button
@@ -342,8 +361,12 @@ void update_ui() {
 				.tex_x = 0,
 				.tex_y = 66,
 				.tex_width = 200,
-				.tex_height = 20
+				.tex_height = 20,
+				.texture_id = ui_textures
 			};
+
+			// char text[] = "Hello world!";
+			// draw_text(text, ui_center_x - 180, ui_center_y + 25);
 			break;
 	}
 
@@ -369,6 +392,35 @@ bool check_hit(uint16_t hit_x, uint16_t hit_y, uint8_t element_id) {
 		hit_x <= center_x + scaled_half_width &&
 		hit_y >= center_y - scaled_half_height &&
 		hit_y <= center_y + scaled_half_height);
+}
+
+void draw_char(char chr, uint16_t x, uint16_t y) {
+	uint8_t index_x, index_y;
+	uint8_t col = chr % 16;
+	uint8_t row = chr / 16;
+	index_x = col * 16;
+	index_y = row * 16;
+
+	ui_elements[ui_active_2d_elements++] = (ui_element_t) {
+		.x = x,
+		.y = y,
+		.width = 8,
+		.height = 8,
+		.tex_x = index_x,
+		.tex_y = index_y,
+		.tex_width = 16,
+		.tex_height = 16,
+		.texture_id = font_textures
+	};
+}
+
+void draw_text(char* ptr, uint16_t x, uint16_t y) {
+	uint8_t char_index = 0;
+	while (*ptr != '\0') {
+		draw_char(*ptr, x + (char_index * 16), y);
+		ptr++;
+		char_index++;
+	}
 }
 
 void cleanup_ui() {

@@ -1,4 +1,7 @@
-#define MAX_UI_ELEMENTS 3
+#include "misc.h"
+#include <stdint.h>
+
+#define MAX_UI_ELEMENTS 15
 #define MAX_CUBE_ELEMENTS 9
 
 #define UI_STATE_RUNNING 0
@@ -13,6 +16,7 @@ typedef struct {
 	uint8_t tex_y;
 	uint8_t tex_width;
 	uint8_t tex_height;
+	GLuint texture_id;
 } ui_element_t;
 
 typedef struct {
@@ -189,11 +193,16 @@ static const float cube_normals[] = {
 };
 
 extern uint8_t ui_state;
+extern uint8_t ui_active_2d_elements;
+extern uint8_t ui_active_3d_elements;
 extern ui_element_t ui_elements[MAX_UI_ELEMENTS];
 
 void init_cube_rendering();
 void draw_cube_element(const cube_element_t* cube);
 void render_3d_elements();
+
+void draw_char(char chr, uint16_t x, uint16_t y);
+void draw_text(char* ptr, uint16_t x, uint16_t y);
 
 void init_ui();
 void init_block_highlight();
