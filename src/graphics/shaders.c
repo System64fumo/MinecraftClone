@@ -36,7 +36,7 @@ void load_shaders() {
 	#ifdef DEBUG
 	profiler_start(PROFILER_ID_SHADER, false);
 	#endif
-	shaderProgram = load_shader("../shaders/vertex.vert", "../shaders/fragment.frag");
+	shaderProgram = load_shader("../shaders/world.vert", "../shaders/world.frag");
 	postProcessingShader = load_shader("../shaders/postprocess.vert", "../shaders/postprocess.frag");
 	ui_shader = load_shader("../shaders/ui.vert", "../shaders/ui.frag");
 	cube_shader = load_shader("../shaders/gui.vert", "../shaders/gui.frag");

@@ -58,7 +58,7 @@ void do_time_stuff() {
 
 		printf("Vertex count: %d\n", total_opaque_vertices + total_transparent_vertices);
 		printf("Index count: %d\n", total_transparent_vertices + total_transparent_indices);
-		printf("VRAM estimate: %ldmb\n", (sizeof(Vertex) * total_opaque_vertices + total_transparent_vertices) / 1024 / 1024);
+		printf("VRAM estimate: %ldkb\n", (sizeof(Vertex) * total_opaque_vertices + total_transparent_vertices) / 1024);
 		printf("Draw calls: %d\n", draw_calls);
 		#endif
 	}
@@ -116,7 +116,7 @@ const char* load_file(const char* filename) {
 	return buffer;
 }
 
-unsigned int loadTexture(const char* path) {
+unsigned int load_texture(const char* path) {
 	unsigned int textureID;
 	glGenTextures(1, &textureID);
 

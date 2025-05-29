@@ -16,15 +16,6 @@ vec3 get_direction(float pitch, float yaw) {
 	};
 }
 
-void update_frustum() {
-	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
-	vec3 pos;
-	pos.x = global_entities[0].pos.x;
-	pos.y = global_entities[0].pos.y + global_entities[0].eye_level;
-	pos.z = global_entities[0].pos.z;
-	update_chunks_visibility(pos, dir);
-}
-
 void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_out, char* out_face) {
 	vec3 position = entity.pos;
 	position.y += entity.eye_level;

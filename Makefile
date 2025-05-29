@@ -46,6 +46,7 @@ resources:
 	@mkdir -p $(BUILDDIR)/assets
 	@cwebp -lossless -quiet ./assets/gui.png -o $(BUILDDIR)/assets/gui.webp
 	@cwebp -lossless -quiet ./assets/atlas.png -o $(BUILDDIR)/assets/atlas.webp
+	@cwebp -lossless -quiet ./assets/font.png -o $(BUILDDIR)/assets/font.webp
 
 $(BUILDDIR)/%.o: %.c
 	$(call progress, Compiling $@)
