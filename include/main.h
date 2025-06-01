@@ -91,6 +91,7 @@ extern unsigned int atlas_uniform_location;
 extern unsigned int view_uniform_location;
 extern unsigned int projection_uniform_location;
 extern unsigned int ui_projection_uniform_location;
+extern unsigned int ui_state_uniform_location;
 
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);

@@ -4,40 +4,41 @@
 
 void generate_cross_vertices(float x, float y, float z, Block* block, Vertex vertices[], uint32_t* vertex_count) {
 	uint8_t texture_id = 0;
-	uint8_t light_data = block->light_data;
+	uint8_t light_data = 15;
 
 	// First diagonal plane
 	texture_id = block_data[block->id][2+0];
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, 5, texture_id, 1, 0, light_data}; // Top
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, 5, texture_id, 0, 0, light_data}; // Top
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, 4, texture_id, 0, 1, light_data}; // Bottom
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, 4, texture_id, 1, 1, light_data}; // Bottom
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, 0, texture_id, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, 0, texture_id, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, 0, texture_id, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, 0, texture_id, 1, 1, light_data};
 
 	// Second diagonal plane
 	texture_id = block_data[block->id][2+1];
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, 5, texture_id, 1, 0, light_data}; // Top
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, 5, texture_id, 0, 0, light_data}; // Top
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, 4, texture_id, 0, 1, light_data}; // Bottom
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, 4, texture_id, 1, 1, light_data}; // Bottom
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, 1, texture_id, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, 1, texture_id, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, 1, texture_id, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, 1, texture_id, 1, 1, light_data};
 
-	// Back faces
+	// Back face of first plane
 	texture_id = block_data[block->id][2+2];
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, 2, texture_id, 1, 0, light_data}; // Back
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, 0, texture_id, 0, 0, light_data}; // Front
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, 0, texture_id, 0, 1, light_data}; // Front
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, 2, texture_id, 1, 1, light_data}; // Back
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, 2, texture_id, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, 2, texture_id, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, 2, texture_id, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, 2, texture_id, 1, 1, light_data};
 
+	// Back face of second plane
 	texture_id = block_data[block->id][2+3];
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, 3, texture_id, 1, 0, light_data}; // Right
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, 1, texture_id, 0, 0, light_data}; // Left
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, 1, texture_id, 0, 1, light_data}; // Left
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, 3, texture_id, 1, 1, light_data}; // Right
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, 3, texture_id, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, 3, texture_id, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, 3, texture_id, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, 3, texture_id, 1, 1, light_data};
 }
 
 void generate_slab_vertices(float x, float y, float z, Block* block, Vertex vertices[], uint32_t* vertex_count) {
 	float height = 0.5f;
 	uint8_t texture_id = 0;
-	uint8_t light_data = block->light_data;
+	uint8_t light_data = 15;
 
 	// Generate vertices for each face
 	texture_id = block_data[block->id][2+5];

@@ -13,6 +13,7 @@ float cube_projection[16];
 float cube_view[16];
 float highlight_matrix[16];
 float cube_matrix[16];
+float vertices[MAX_UI_ELEMENTS * 4 * 4];
 
 ui_element_t ui_elements[MAX_UI_ELEMENTS];
 cube_element_t cube_elements[MAX_CUBE_ELEMENTS];
@@ -185,9 +186,6 @@ void draw_cube_element(const cube_element_t* cube) {
 }
 
 void update_ui_buffer() {
-	// Each UI element now requires 4 vertices (1 triangle strip), each with 4 floats (x, y, tx, ty)
-	float vertices[MAX_UI_ELEMENTS * 4 * 4]; 
-
 	for (uint8_t i = 0; i < MAX_UI_ELEMENTS; i++) {
 		ui_element_t* element = &ui_elements[i];
 		float tx = (float)element->tex_x / 256.0f;
@@ -336,6 +334,10 @@ void update_ui() {
 				cube_elements[i].pos.x = screen_center_x + 1 - hotbar_offset + ((20 * UI_SCALING) * i);
 				ui_active_3d_elements = i;
 			}
+
+			char text[10];
+			snprintf(text, 10, "FPS: %1.2f, %1.3f ms\n", framerate, frametime);
+			draw_text(text, 10, ui_center_y * 2 - 12);
 			break;
 
 		case UI_STATE_PAUSED:
@@ -364,9 +366,6 @@ void update_ui() {
 				.tex_height = 20,
 				.texture_id = ui_textures
 			};
-
-			// char text[] = "Hello world!";
-			// draw_text(text, ui_center_x - 180, ui_center_y + 25);
 			break;
 	}
 
@@ -414,6 +413,7 @@ void draw_char(char chr, uint16_t x, uint16_t y) {
 	};
 }
 
+// TODO: Font is not monospace
 void draw_text(char* ptr, uint16_t x, uint16_t y) {
 	uint8_t char_index = 0;
 	while (*ptr != '\0') {

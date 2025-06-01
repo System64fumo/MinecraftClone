@@ -82,8 +82,8 @@ void render_to_framebuffer() {
 	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
 	render_chunks();
 
-	char block_face;
-	vec3 block_pos;
+	char block_face = 'N';
+	vec3 block_pos = {0};
 	get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &block_face);
 	if (block_face != 'N')
 		draw_block_highlight(block_pos);
@@ -95,17 +95,13 @@ void render_to_framebuffer() {
 }
 
 void render_to_screen() {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_DEPTH_TEST);
 	glUseProgram(postProcessingShader);
-
-	// Pass the UI state to the shader
-	GLint uiStateLoc = glGetUniformLocation(postProcessingShader, "uiState");
-	glUniform1i(uiStateLoc, ui_state);
+	glUniform1i(ui_state_uniform_location, ui_state);
 
 	glBindVertexArray(quadVAO);
 	glBindTexture(GL_TEXTURE_2D, colorTexture);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	#ifdef DEBUG
 	profiler_start(PROFILER_ID_UI, true);

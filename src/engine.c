@@ -60,6 +60,7 @@ unsigned int atlas_uniform_location = -1;
 unsigned int view_uniform_location = -1;
 unsigned int projection_uniform_location = -1;
 unsigned int ui_projection_uniform_location = -1;
+unsigned int ui_state_uniform_location = -1;
 GLFWwindow* window = NULL;
 
 int initialize() {
@@ -158,6 +159,7 @@ int initialize() {
 	view_uniform_location = glGetUniformLocation(shaderProgram, "view");
 	projection_uniform_location = glGetUniformLocation(shaderProgram, "projection");
 	ui_projection_uniform_location = glGetUniformLocation(ui_shader, "projection");
+	ui_state_uniform_location = glGetUniformLocation(postProcessingShader, "ui_state");
 
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 

@@ -1,4 +1,5 @@
 #include "main.h"
+#include "gui.h"
 #include <stdlib.h>
 #include <string.h>
 #include <webp/decode.h>
@@ -27,7 +28,9 @@ void do_time_stuff() {
 
 		framerate = (1.0 / time_difference) * time_counter;
 		frametime = (time_difference / time_counter) * 1000;
-		printf("FPS: %.2f, %.3f ms\n", framerate, frametime);
+		// TODO: There's probably a better way of doing this
+		if (ui_state == UI_STATE_RUNNING)
+			update_ui();
 		time_previous = time_current;
 		time_counter = 0;
 
