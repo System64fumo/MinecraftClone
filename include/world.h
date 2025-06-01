@@ -7,8 +7,6 @@ typedef struct {
 	float distance;
 } chunk_load_item_t;
 
-#define GET_DIGIT(num, exp) ((int)(num / exp) % 10)
-
 extern int last_cx;
 extern int last_cy;
 extern int last_cz;

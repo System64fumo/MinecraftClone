@@ -3,7 +3,7 @@ precision mediump float;
 out vec4 FragColor;
 in vec2 TexCoords;
 uniform sampler2D screenTexture;
-uniform int uiState; // 0 = running, 1 = paused
+uniform int ui_state; // 0 = running, 1 = paused
 
 void main() {
 	vec3 color = texture(screenTexture, TexCoords).rgb;
@@ -16,8 +16,8 @@ void main() {
 	vignette = 1.0 - vignette * 0.25;
 	color *= vignette;
 
-	// Dim the screen when paused (uiState == 1)
-	if (uiState == 1) {
+	// Dim the screen when paused (ui_state == 1)
+	if (ui_state == 1) {
 		color *= 0.5; // Reduce brightness by 50%
 	}
 
