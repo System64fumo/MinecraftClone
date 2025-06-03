@@ -34,41 +34,37 @@ void init_gl_buffers() {
 	for (int face = 0; face < 6; face++) {
 		// Opaque faces
 		glBindVertexArray(opaque_VAOs[face]);
-		
 		glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-		glEnableVertexAttribArray(0);
-		glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
-		glEnableVertexAttribArray(1);
-		glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(3, 2, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, width));
-		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(4, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, light_data));
-		glEnableVertexAttribArray(4);
-		
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaque_EBOs[face]);
-		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
+		glEnableVertexAttribArray(0);
+
+		glVertexAttribIPointer(1, 1, GL_UNSIGNED_SHORT, sizeof(Vertex), (void*)offsetof(Vertex, face_tex_data));
+		glEnableVertexAttribArray(1);
+
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
+		glEnableVertexAttribArray(2);
+
+		glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, light_data));
+		glEnableVertexAttribArray(3);
 
 		// Transparent faces (same setup)
 		glBindVertexArray(transparent_VAOs[face]);
-		
 		glBindBuffer(GL_ARRAY_BUFFER, transparent_VBOs[face]);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
-		glEnableVertexAttribArray(0);
-		glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
-		glEnableVertexAttribArray(1);
-		glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
-		glEnableVertexAttribArray(2);
-		glVertexAttribPointer(3, 2, GL_UNSIGNED_BYTE, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, width));
-		glEnableVertexAttribArray(3);
-		glVertexAttribPointer(4, 1, GL_UNSIGNED_INT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, light_data));
-		glEnableVertexAttribArray(4);
-		
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBOs[face]);
-		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+		
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
+		glEnableVertexAttribArray(0);
+		
+		glVertexAttribIPointer(1, 1, GL_UNSIGNED_SHORT, sizeof(Vertex), (void*)offsetof(Vertex, face_tex_data));
+		glEnableVertexAttribArray(1);
+		
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
+		glEnableVertexAttribArray(2);
+		
+		glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, light_data));
+		glEnableVertexAttribArray(3);
 	}
 
 	glBindVertexArray(0);

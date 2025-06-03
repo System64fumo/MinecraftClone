@@ -20,7 +20,7 @@ float model[16], view[16], projection[16];
 unsigned int block_textures, ui_textures, font_textures;
 
 // Type, Translucent, Face textures
-// t,    t,           f,f,f,f,f,f
+// t,	t,		   f,f,f,f,f,f
 uint8_t block_data[MAX_BLOCK_TYPES][8] = {
 	[0] =  {0, 1, 0,   0,   0,   0,   0,   0  },	// Air
 	[1] =  {0, 0, 3,   3,   3,   3,   3,   3  },	// Dirt

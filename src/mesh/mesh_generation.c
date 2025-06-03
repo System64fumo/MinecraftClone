@@ -8,74 +8,85 @@ void generate_cross_vertices(float x, float y, float z, Block* block, Vertex ver
 
 	// First diagonal plane
 	texture_id = block_data[block->id][2+0];
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, 0, texture_id, 1, 0, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, 0, texture_id, 0, 0, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, 0, texture_id, 0, 1, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, 0, texture_id, 1, 1, light_data};
+	uint16_t face_tex_data = (0 << 8) | texture_id;
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, face_tex_data, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, face_tex_data, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, face_tex_data, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, face_tex_data, 1, 1, light_data};
 
 	// Second diagonal plane
 	texture_id = block_data[block->id][2+1];
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, 1, texture_id, 1, 0, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, 1, texture_id, 0, 0, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, 1, texture_id, 0, 1, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, 1, texture_id, 1, 1, light_data};
+	face_tex_data = (1 << 8) | texture_id;
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, face_tex_data, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, face_tex_data, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, face_tex_data, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, face_tex_data, 1, 1, light_data};
 
 	// Back face of first plane
 	texture_id = block_data[block->id][2+2];
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, 2, texture_id, 1, 0, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, 2, texture_id, 0, 0, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, 2, texture_id, 0, 1, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, 2, texture_id, 1, 1, light_data};
+	face_tex_data = (2 << 8) | texture_id;
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 0.0f, face_tex_data, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 1.0f, face_tex_data, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 1.0f, face_tex_data, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 0.0f, face_tex_data, 1, 1, light_data};
 
 	// Back face of second plane
 	texture_id = block_data[block->id][2+3];
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, 3, texture_id, 1, 0, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, 3, texture_id, 0, 0, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, 3, texture_id, 0, 1, light_data};
-	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, 3, texture_id, 1, 1, light_data};
+	face_tex_data = (3 << 8) | texture_id;
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y + 1, z + 0.0f, face_tex_data, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y + 1, z + 1.0f, face_tex_data, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 0.0f, y, z + 1.0f, face_tex_data, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1.0f, y, z + 0.0f, face_tex_data, 1, 1, light_data};
 }
 
 void generate_slab_vertices(float x, float y, float z, Block* block, Vertex vertices[], uint32_t* vertex_count) {
 	float height = 0.5f;
 	uint8_t texture_id = 0;
 	uint8_t light_data = 15;
+	uint16_t mesh_size = (1 << 8) | 1; // 1x1 for special blocks
 
 	// Generate vertices for each face
 	texture_id = block_data[block->id][2+5];
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, 5, texture_id, 1, 0, light_data}; // Top
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, 5, texture_id, 0, 0, light_data}; // Top
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, 5, texture_id, 0, 1, light_data}; // Top
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, 5, texture_id, 1, 1, light_data}; // Top
+	uint16_t face_tex_data = (5 << 8) | texture_id;
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, face_tex_data, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, face_tex_data, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, face_tex_data, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, face_tex_data, 1, 1, light_data};
 
 	texture_id = block_data[block->id][2+4];
-	vertices[(*vertex_count)++] = (Vertex){x, y, z, 4, texture_id, 1, 0, light_data}; // Bottom
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, 4, texture_id, 0, 0, light_data}; // Bottom
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, 4, texture_id, 0, 1, light_data}; // Bottom
-	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, 4, texture_id, 1, 1, light_data}; // Bottom
+	face_tex_data = (4 << 8) | texture_id;
+	vertices[(*vertex_count)++] = (Vertex){x, y, z, face_tex_data, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, face_tex_data, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, face_tex_data, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, face_tex_data, 1, 1, light_data};
 
 	texture_id = block_data[block->id][2+0];
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, 0, texture_id, 1, 0, light_data}; // Front
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, 0, texture_id, 0, 0, light_data}; // Front
-	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, 0, texture_id, 0, 1, light_data}; // Front
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, 0, texture_id, 1, 1, light_data}; // Front
+	face_tex_data = (0 << 8) | texture_id;
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, face_tex_data, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, face_tex_data, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, face_tex_data, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, face_tex_data, 1, 1, light_data};
 
 	texture_id = block_data[block->id][2+2];
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, 2, texture_id, 1, 0, light_data}; // Back
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, 2, texture_id, 0, 0, light_data}; // Back
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, 2, texture_id, 0, 1, light_data}; // Back
-	vertices[(*vertex_count)++] = (Vertex){x, y, z, 2, texture_id, 1, 1, light_data}; // Back
+	face_tex_data = (2 << 8) | texture_id;
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, face_tex_data, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, face_tex_data, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, face_tex_data, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x, y, z, face_tex_data, 1, 1, light_data};
 
 	texture_id = block_data[block->id][2+1];
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, 1, texture_id, 1, 0, light_data}; // Left
-	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, 1, texture_id, 0, 0, light_data}; // Left
-	vertices[(*vertex_count)++] = (Vertex){x, y, z, 1, texture_id, 0, 1, light_data}; // Left
-	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, 1, texture_id, 1, 1, light_data}; // Left
+	face_tex_data = (1 << 8) | texture_id;
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z + 1, face_tex_data, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, face_tex_data, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x, y, z, face_tex_data, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x, y, z + 1, face_tex_data, 1, 1, light_data};
 
 	texture_id = block_data[block->id][2+3];
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, 3, texture_id, 1, 0, light_data}; // Right
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, 3, texture_id, 0, 0, light_data}; // Right
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, 3, texture_id, 0, 1, light_data}; // Right
-	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, 3, texture_id, 1, 1, light_data}; // Right
+	face_tex_data = (3 << 8) | texture_id;
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z, face_tex_data, 1, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y + height, z + 1, face_tex_data, 0, 0, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z + 1, face_tex_data, 0, 1, light_data};
+	vertices[(*vertex_count)++] = (Vertex){x + 1, y, z, face_tex_data, 1, 1, light_data};
 }
 
 void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint32_t* vertex_count, uint8_t light_data) {
@@ -95,43 +106,44 @@ void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, u
 	}
 
 	uint8_t texture_id = block_data[block->id][2+face];
+	uint16_t face_tex_data = (face << 8) | texture_id;
 
 	switch (face) {
 		case 0: // Front (Z+)
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, texture_id, width_blocks, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, texture_id, 0.0f, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, texture_id, 0.0f, height_blocks, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, texture_id, width_blocks, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face_tex_data, width_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face_tex_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face_tex_data, 0.0f, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face_tex_data, width_blocks, height_blocks, light_data};
 			break;
 		case 1: // Left (X-)
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, texture_id, depth_blocks, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, texture_id, 0.0f, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, texture_id, 0.0f, height_blocks, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, texture_id, depth_blocks, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face_tex_data, depth_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face_tex_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face_tex_data, 0.0f, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face_tex_data, depth_blocks, height_blocks, light_data};
 			break;
 		case 2: // Back (Z-)
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, texture_id, width_blocks, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, texture_id, 0.0f, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, texture_id, 0.0f, height_blocks, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, texture_id, width_blocks, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face_tex_data, width_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face_tex_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face_tex_data, 0.0f, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face_tex_data, width_blocks, height_blocks, light_data};
 			break;
 		case 3: // Right (X+)
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, texture_id, depth_blocks, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, texture_id, 0.0f, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, texture_id, 0.0f, height_blocks, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, texture_id, depth_blocks, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face_tex_data, depth_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face_tex_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face_tex_data, 0.0f, height_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face_tex_data, depth_blocks, height_blocks, light_data};
 			break;
 		case 4: // Bottom (Y-)
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face, texture_id, width_blocks, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face, texture_id, 0.0f, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face, texture_id, 0.0f, depth_blocks, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face, texture_id, width_blocks, depth_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z1, face_tex_data, width_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z1, face_tex_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y1, z2, face_tex_data, 0.0f, depth_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y1, z2, face_tex_data, width_blocks, depth_blocks, light_data};
 			break;
 		case 5: // Top (Y+)
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face, texture_id, width_blocks, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face, texture_id, 0.0f, 0.0f, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face, texture_id, 0.0f, depth_blocks, light_data};
-			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face, texture_id, width_blocks, depth_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z2, face_tex_data, width_blocks, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z2, face_tex_data, 0.0f, 0.0f, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x2, y2, z1, face_tex_data, 0.0f, depth_blocks, light_data};
+			vertices[(*vertex_count)++] = (Vertex){x1, y2, z1, face_tex_data, width_blocks, depth_blocks, light_data};
 			break;
 	}
 }
@@ -280,7 +292,7 @@ void generate_chunk_mesh(Chunk* chunk) {
 				// Distribute vertices to appropriate faces
 				for (uint32_t i = 0; i < vertex_count; i++) {
 					Vertex v = special_vertices[i];
-					uint8_t face = v.face_id;
+					uint8_t face = v.face_tex_data & 0x7;  // Extract face_id from packed data
 					if (face >= 6) continue;
 
 					// Add vertex to appropriate face
