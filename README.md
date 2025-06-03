@@ -13,6 +13,7 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * FPS Counter & Several profiling utils
 * Vignette effect
 * GUI
+* Lighting (Experimental)
 
 # Optimizations
 * Render distance (Only keep track of chunks that matter not the whole world)
@@ -21,6 +22,7 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * DDA raycasting
 * Basic face culling
 * 3D Frustum culling
+* Data packing
 
 # Notes
 This project has been tested on ARM64 only, It should still work on x86_64 though. (In theory)<br>
