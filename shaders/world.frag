@@ -1,10 +1,10 @@
 #version 300 es
 precision mediump float;
 out vec4 FragColor;
-flat in int faceID;
-flat in int texID;
+flat in uint faceID;
+flat in uint texID;
 in vec2 size;
-flat in uint lightData[64];
+flat in uint lightData[32];
 
 uniform sampler2D textureAtlas;
 
@@ -20,11 +20,11 @@ const vec3 faceShades[6] = vec3[6](
 vec2 getTextureCoords() {
 	int rotation = 0;
 	float texSize = 16.0 / 256.0;
-	int atlasWidth = 16;
+	uint atlasWidth = 16u;
 
-	int textureIndex = texID - 1;
-	int xOffset = textureIndex % atlasWidth;
-	int yOffset = textureIndex / atlasWidth;
+	uint textureIndex = texID - 1u;
+	uint xOffset = textureIndex % atlasWidth;
+	uint yOffset = textureIndex / atlasWidth;
 
 	float x = float(xOffset) * texSize;
 	float y = float(yOffset) * texSize;
@@ -50,9 +50,9 @@ float lightLevelToBrightness(float lightLevel) {
 
 float getLightValueFromData(int x, int y) {
 	int index = y * 16 + x; // 0-255
-	int dataIndex = index / 4; // Which uint (0-63)
-	int component = index % 4; // Which byte (0-3)
-	return float((lightData[dataIndex] >> (component * 8)) & 0xFFu);
+	int dataIndex = index / 8; // Which uint (0-31)
+	int component = index % 8; // Which nibble (0-7)
+	return float((lightData[dataIndex] >> (component * 4)) & 0xFu);
 }
 
 float getSharpLightLevel(vec2 uv) {
@@ -61,7 +61,7 @@ float getSharpLightLevel(vec2 uv) {
 }
 
 void main() {
-	if (texID == 0) discard;
+	if (texID == 0u) discard;
 
 	vec4 textureColor = texture(textureAtlas, getTextureCoords());
 	vec3 faceShade = faceShades[faceID];
@@ -69,7 +69,7 @@ void main() {
 	float brightness = lightLevelToBrightness(getSharpLightLevel(size));
 	vec3 litColor = textureColor.rgb * faceShade * brightness;
 
-	if (texID == 1 || texID == 53) {
+	if (texID == 1u || texID == 53u) {
 		litColor *= vec3(0.569, 0.741, 0.349); // Biome tint
 	}
 

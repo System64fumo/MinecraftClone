@@ -22,6 +22,7 @@ GLuint cube_vao, cube_vbo, cube_ebo;
 GLuint cube_color_vbo;
 GLuint cube_normal_vbo;
 uint16_t ui_center_x, ui_center_y;
+GLint proj_loc, view_loc, model_loc, tex_loc;
 
 void update_cube_projection() {
 	float left = 0;
@@ -79,6 +80,11 @@ void init_cube_rendering() {
 	
 	// Unbind VAO
 	glBindVertexArray(0);
+
+	proj_loc = glGetUniformLocation(cube_shader, "projection");
+	view_loc = glGetUniformLocation(cube_shader, "view");
+	model_loc = glGetUniformLocation(cube_shader, "model");
+	tex_loc = glGetUniformLocation(cube_shader, "texParams");
 
 	update_cube_projection();
 }
@@ -163,11 +169,6 @@ void draw_cube_element(const cube_element_t* cube) {
 
 	matrix4_translate(cube_matrix, cube->pos.x, cube->pos.y, 0);
 	matrix4_scale(cube_matrix, cube->width, cube->height, cube->depth);
-
-	GLint proj_loc = glGetUniformLocation(cube_shader, "projection");
-	GLint view_loc = glGetUniformLocation(cube_shader, "view");
-	GLint model_loc = glGetUniformLocation(cube_shader, "model");
-	GLint tex_loc = glGetUniformLocation(cube_shader, "texParams");
 
 	glUniformMatrix4fv(proj_loc, 1, GL_FALSE, cube_projection);
 	glUniformMatrix4fv(view_loc, 1, GL_FALSE, cube_view);
