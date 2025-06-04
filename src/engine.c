@@ -32,8 +32,8 @@ uint8_t block_data[MAX_BLOCK_TYPES][8] = {
 	[7] =  {0, 0, 18,  18,  18,  18,  18,  18 },	// Bedrock
 	[8] =  {0, 1, 208, 208, 208, 208, 208, 208},	// Flowing water
 	[9] =  {0, 1, 208, 208, 208, 208, 208, 208},	// Stationary water
-	[10] = {0, 0, 224, 224, 224, 224, 224, 224},	// Flowing lava
-	[11] = {0, 0, 224, 224, 224, 224, 224, 224},	// Stationary lava
+	[10] = {0, 0, 238, 238, 238, 238, 238, 238},	// Flowing lava
+	[11] = {0, 0, 238, 238, 238, 238, 238, 238},	// Stationary lava
 	[12] = {0, 0, 19,  19,  19,  19,  19,  19 },	// Sand
 	[13] = {0, 0, 20,  20,  20,  20,  20,  20 },	// Gravel
 	[14] = {0, 0, 33,  33,  33,  33,  33,  33 },	// Gold Ore
@@ -48,7 +48,7 @@ uint8_t block_data[MAX_BLOCK_TYPES][8] = {
 	[23] = {0, 0, 47,  46,  46,  46,  63 , 63 },	// Dispenser
 	[24] = {0, 0, 193, 193, 193, 193, 209, 177},	// Sandstone
 	[25] = {0, 0, 75,  75,  75,  75,  75,  76 },	// Noteblock
-	[26] = {0, 1, 151, 150, 151, 0,   5,   135},	// Bed (Part 1)
+	[26] = {1, 1, 151, 0,   151, 150, 5,   135},	// Bed (Part 1)
 	[44] = {1, 1, 6,   6,   6,   6,   7,   7  },	// Slab
 	[89] = {0, 0, 106, 106, 106, 106, 106, 106},	// Glowstone
 };
@@ -175,16 +175,6 @@ int initialize() {
 	global_entities[0] = create_entity(0);
 	global_entities[0].pos.y = 75;
 	global_entities[0].yaw = 90;
-
-	/*snprintf(game_dir, sizeof(game_dir), "%s/.ccraft", getenv("HOME"));
-	mkdir(game_dir, 0766);
-	char saves_dir[255];
-	snprintf(saves_dir, sizeof(saves_dir), "%s/saves", game_dir);
-	mkdir(saves_dir, 0766);
-
-	char chunks_dir[255];
-	snprintf(chunks_dir, sizeof(chunks_dir), "%s/chunks", saves_dir);
-	mkdir(chunks_dir, 0766);*/
 
 	return 0;
 }

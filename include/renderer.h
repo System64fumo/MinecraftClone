@@ -3,9 +3,9 @@
 
 typedef struct {
 	float x, y, z;
-	uint16_t face_tex_data; // 8 bits for face id, 8 bits for texture id
+	uint8_t face_id;
+	uint8_t texture_id;
 	float size_u, size_v;
-	uint32_t light_data;
 } Vertex;
 
 typedef struct {

@@ -20,18 +20,16 @@ float frustum_offset = CHUNK_SIZE * 2;
 bool mesh_needs_rebuild = false;
 
 void init_gl_buffers() {
-	// Initialize opaque face buffers
 	glGenVertexArrays(6, opaque_VAOs);
 	glGenBuffers(6, opaque_VBOs);
 	glGenBuffers(6, opaque_EBOs);
 
-	// Initialize transparent face buffers
 	glGenVertexArrays(6, transparent_VAOs);
 	glGenBuffers(6, transparent_VBOs);
 	glGenBuffers(6, transparent_EBOs);
 
 	// Setup each face VAO
-	for (int face = 0; face < 6; face++) {
+	for (uint8_t face = 0; face < 6; face++) {
 		// Opaque faces
 		glBindVertexArray(opaque_VAOs[face]);
 		glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
@@ -40,30 +38,29 @@ void init_gl_buffers() {
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
 		glEnableVertexAttribArray(0);
 
-		glVertexAttribIPointer(1, 1, GL_UNSIGNED_SHORT, sizeof(Vertex), (void*)offsetof(Vertex, face_tex_data));
+		glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
 		glEnableVertexAttribArray(1);
 
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
+		glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
 		glEnableVertexAttribArray(2);
 
-		glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, light_data));
+		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
 		glEnableVertexAttribArray(3);
 
-		// Transparent faces (same setup)
 		glBindVertexArray(transparent_VAOs[face]);
 		glBindBuffer(GL_ARRAY_BUFFER, transparent_VBOs[face]);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBOs[face]);
-		
+
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
 		glEnableVertexAttribArray(0);
-		
-		glVertexAttribIPointer(1, 1, GL_UNSIGNED_SHORT, sizeof(Vertex), (void*)offsetof(Vertex, face_tex_data));
+
+		glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
 		glEnableVertexAttribArray(1);
-		
-		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
+
+		glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
 		glEnableVertexAttribArray(2);
-		
-		glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, light_data));
+
+		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
 		glEnableVertexAttribArray(3);
 	}
 
