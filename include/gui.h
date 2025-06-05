@@ -23,10 +23,7 @@ typedef struct {
 	vec2 pos;
 	float width, height, depth;
 	float rotation_x, rotation_y, rotation_z;
-	uint8_t tex_x;
-	uint8_t tex_y;
-	uint8_t tex_width;
-	uint8_t tex_height;
+	uint8_t id;
 } cube_element_t;
 
 static const float vertices_template[] = {
@@ -71,10 +68,10 @@ static const float cube_vertices[] = {
 	-0.5f,  0.5f,  0.5f,
 	
 	// Back face (Z-)
-	 0.5f, -0.5f, -0.5f,
 	-0.5f, -0.5f, -0.5f,
 	-0.5f,  0.5f, -0.5f,
 	 0.5f,  0.5f, -0.5f,
+	 0.5f, -0.5f, -0.5f,
 	
 	// Left face (X-)
 	-0.5f, -0.5f, -0.5f,
@@ -83,37 +80,37 @@ static const float cube_vertices[] = {
 	-0.5f,  0.5f, -0.5f,
 	
 	// Right face (X+)
-	 0.5f, -0.5f,  0.5f,
 	 0.5f, -0.5f, -0.5f,
 	 0.5f,  0.5f, -0.5f,
 	 0.5f,  0.5f,  0.5f,
-	
-	// Top face (Y+)
-	-0.5f,  0.5f,  0.5f,
-	 0.5f,  0.5f,  0.5f,
-	 0.5f,  0.5f, -0.5f,
-	-0.5f,  0.5f, -0.5f,
+	 0.5f, -0.5f,  0.5f,
 	
 	// Bottom face (Y-)
 	-0.5f, -0.5f, -0.5f,
 	 0.5f, -0.5f, -0.5f,
 	 0.5f, -0.5f,  0.5f,
-	-0.5f, -0.5f,  0.5f
+	-0.5f, -0.5f,  0.5f,
+	
+	// Top face (Y+)
+	-0.5f,  0.5f, -0.5f,
+	-0.5f,  0.5f,  0.5f,
+	 0.5f,  0.5f,  0.5f,
+	 0.5f,  0.5f, -0.5f
 };
 
 static const uint8_t cube_indices[] = {
 	// Front face
-	0, 1, 2,  0, 2, 3,
+	0, 1, 2,   2, 3, 0,
 	// Back face
-	4, 5, 6,  4, 6, 7,
+	4, 5, 6,   6, 7, 4,
 	// Left face
-	8, 9, 10,  8, 10, 11,
+	8, 9, 10,  10, 11, 8,
 	// Right face
-	12, 13, 14,  12, 14, 15,
-	// Top face
-	16, 17, 18,  16, 18, 19,
+	12, 13, 14, 14, 15, 12,
 	// Bottom face
-	20, 21, 22,  20, 22, 23
+	16, 17, 18, 18, 19, 16,
+	// Top face
+	20, 21, 22, 22, 23, 20
 };
 
 static const float cube_tex_coords[] = {
@@ -125,9 +122,9 @@ static const float cube_tex_coords[] = {
 	
 	// Back face
 	1.0f, 1.0f,
-	0.0f, 1.0f,
-	0.0f, 0.0f,
 	1.0f, 0.0f,
+	0.0f, 0.0f,
+	0.0f, 1.0f,
 	
 	// Left face
 	1.0f, 1.0f,
@@ -137,21 +134,21 @@ static const float cube_tex_coords[] = {
 	
 	// Right face
 	0.0f, 1.0f,
-	1.0f, 1.0f,
 	1.0f, 0.0f,
 	0.0f, 0.0f,
-	
-	// Top face
-	0.0f, 1.0f,
 	1.0f, 1.0f,
-	1.0f, 0.0f,
-	0.0f, 0.0f,
 	
 	// Bottom face
 	0.0f, 0.0f,
 	1.0f, 0.0f,
 	1.0f, 1.0f,
-	0.0f, 1.0f
+	0.0f, 1.0f,
+	
+	// Top face
+	0.0f, 1.0f,
+	0.0f, 0.0f,
+	1.0f, 0.0f,
+	1.0f, 1.0f
 };
 
 static const float cube_normals[] = {

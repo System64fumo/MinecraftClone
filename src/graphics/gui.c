@@ -21,8 +21,10 @@ GLuint highlight_vao, highlight_vbo, highlight_ebo;
 GLuint cube_vao, cube_vbo, cube_ebo;
 GLuint cube_color_vbo;
 GLuint cube_normal_vbo;
+GLuint cube_tex_id_vbo;
 uint16_t ui_center_x, ui_center_y;
-GLint proj_loc, view_loc, model_loc, tex_loc;
+GLint proj_loc, view_loc, model_loc;
+
 
 void update_cube_projection() {
 	float left = 0;
@@ -73,6 +75,12 @@ void init_cube_rendering() {
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(2);
 	
+	// Texture IDs (location 3)
+	glGenBuffers(1, &cube_tex_id_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, cube_tex_id_vbo);
+	glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(uint8_t), (void*)0);
+	glEnableVertexAttribArray(3);
+	
 	// Create and bind EBO
 	glGenBuffers(1, &cube_ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_ebo);
@@ -84,7 +92,6 @@ void init_cube_rendering() {
 	proj_loc = glGetUniformLocation(cube_shader, "projection");
 	view_loc = glGetUniformLocation(cube_shader, "view");
 	model_loc = glGetUniformLocation(cube_shader, "model");
-	tex_loc = glGetUniformLocation(cube_shader, "texParams");
 
 	update_cube_projection();
 }
@@ -143,7 +150,6 @@ void draw_block_highlight(vec3 pos) {
 	glEnable(GL_BLEND);
 }
 
-
 void draw_cube_element(const cube_element_t* cube) {
 	matrix4_identity(cube_matrix);
 
@@ -174,12 +180,20 @@ void draw_cube_element(const cube_element_t* cube) {
 	glUniformMatrix4fv(view_loc, 1, GL_FALSE, cube_view);
 	glUniformMatrix4fv(model_loc, 1, GL_FALSE, cube_matrix);
 
-	// Calculate texture parameters
-	float tx = (float)cube->tex_x / 256.0f;
-	float ty = (float)cube->tex_y / 256.0f;
-	float tw = (float)cube->tex_width / 256.0f;
-	float th = (float)cube->tex_height / 256.0f;
-	glUniform4f(tex_loc, tx, ty, tw, th);
+	uint8_t block_type = cube->id;
+	uint8_t face_tex_ids[24]; // 4 vertices per face, 6 faces
+
+	uint8_t face_mapping[] = {2, 3, 4, 5, 6, 7};
+	
+	for (int face = 0; face < 6; face++) {
+		uint8_t tex_id = block_data[block_type][face_mapping[face]];
+		for (int vertex = 0; vertex < 4; vertex++) {
+			face_tex_ids[face * 4 + vertex] = tex_id;
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, cube_tex_id_vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(face_tex_ids), face_tex_ids, GL_DYNAMIC_DRAW);
 
 	glBindTexture(GL_TEXTURE_2D, block_textures);
 	glBindVertexArray(cube_vao);
@@ -321,17 +335,12 @@ void update_ui() {
 				.depth = 10.05 * UI_SCALING,
 				.rotation_x = -30 * (M_PI / 180.0f),
 				.rotation_y = 45 * (M_PI / 180.0f),
-				.tex_width = 16,
-				.tex_height = 16
+				.id = 0
 			};
-
-			uint8_t tex_x_coords[] = {32, 48, 16, 0, 64, 240, 16, 224, 224};
-			uint8_t tex_y_coords[] = {0, 0, 0, 16, 0, 0, 16, 208, 208};
 
 			for (int i = 0; i < MAX_CUBE_ELEMENTS; i++) {
 				cube_elements[i] = base_cube;
-				cube_elements[i].tex_x = tex_x_coords[i];
-				cube_elements[i].tex_y = tex_y_coords[i];
+				cube_elements[i].id = i + 1;
 				cube_elements[i].pos.x = screen_center_x + 1 - hotbar_offset + ((20 * UI_SCALING) * i);
 				ui_active_3d_elements = i;
 			}
@@ -430,6 +439,7 @@ void cleanup_ui() {
 	glDeleteBuffers(1, &cube_vbo);
 	glDeleteBuffers(1, &cube_color_vbo);
 	glDeleteBuffers(1, &cube_normal_vbo);
+	glDeleteBuffers(1, &cube_tex_id_vbo);
 	glDeleteBuffers(1, &cube_ebo);
 	glDeleteVertexArrays(1, &cube_vao);
 	glDeleteProgram(ui_shader);
