@@ -20,8 +20,10 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * Batch rendering
 * Greedy meshing
 * DDA raycasting
+* AABB collision
 * Basic face culling
 * 3D Frustum culling
+* Occlusion culling (Currently disabled)
 * Data packing
 
 # Notes

@@ -1,5 +1,15 @@
 #include "main.h"
 
+bool are_all_neighbors_loaded(uint8_t x, uint8_t y, uint8_t z) {
+	if (x > 0 && !chunks[x-1][y][z].is_loaded) return false;
+	if (x < RENDER_DISTANCE-1 && !chunks[x+1][y][z].is_loaded) return false;
+	if (y > 0 && !chunks[x][y-1][z].is_loaded) return false;
+	if (y < WORLD_HEIGHT-1 && !chunks[x][y+1][z].is_loaded) return false;
+	if (z > 0 && !chunks[x][y][z-1].is_loaded) return false;
+	if (z < RENDER_DISTANCE-1 && !chunks[x][y][z+1].is_loaded) return false;
+	return true;
+}
+
 static inline bool check_bounds(int8_t val, int8_t* ci, int8_t* coord) {
 	if (val < 0) {
 		*ci -= 1;
@@ -35,8 +45,8 @@ bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
 						  check_bounds(nz, &ciz, &nz);
 
 	if (bounds_changed && (cix < 0 || cix >= RENDER_DISTANCE || 
-						   ciy < 0 || ciy >= WORLD_HEIGHT || 
-						   ciz < 0 || ciz >= RENDER_DISTANCE)) {
+							ciy < 0 || ciy >= WORLD_HEIGHT || 
+							ciz < 0 || ciz >= RENDER_DISTANCE)) {
 		return true;
 	}
 
@@ -66,7 +76,7 @@ uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, 
 
 		// Determine the next coordinates based on the face
 		if (face == 0 || face == 2 || face >= 4) next_x = x + width;  // Front/Back/Top/Bottom
-		if (face == 1 || face == 3) next_z = z + width;			   // Left/Right
+		if (face == 1 || face == 3) next_z = z + width;				// Left/Right
 
 		// Check if the next block is valid
 		if (mask[v][u + width] ||

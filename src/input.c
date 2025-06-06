@@ -2,6 +2,7 @@
 #include "world.h"
 #include "gui.h"
 #include <math.h>
+#include <stdio.h>
 
 float lastX = 0;
 float lastY = 0;
@@ -63,8 +64,8 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 		if (global_entities[0].yaw < 0.0f) {
 			global_entities[0].yaw += 360.0f;
 		}
-	
-		update_frustum();
+
+		frustum_changed = true;
 	}
 }
 
@@ -204,72 +205,58 @@ void process_input(GLFWwindow* window) {
 	float move_speed = global_entities[0].speed * delta_time;
 	float yaw = global_entities[0].yaw * (M_PI / 180.0f);
 	float dx = 0.0f, dy = 0.0f, dz = 0.0f;
-	bool frustum_needs_update = false;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		dx += cosf(yaw) * move_speed;
 		dz += sinf(yaw) * move_speed;
-		frustum_needs_update = true;
+		frustum_changed = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 		dx -= cosf(yaw) * move_speed;
 		dz -= sinf(yaw) * move_speed;
-		frustum_needs_update = true;
+		frustum_changed = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 		dx += sinf(yaw) * move_speed;
 		dz -= cosf(yaw) * move_speed;
-		frustum_needs_update = true;
+		frustum_changed = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 		dx -= sinf(yaw) * move_speed;
 		dz += cosf(yaw) * move_speed;
-		frustum_needs_update = true;
+		frustum_changed = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && global_entities[0].is_grounded) {
 		global_entities[0].vertical_velocity = 10.0f;
 		global_entities[0].is_grounded = false;
-		frustum_needs_update = true;
+		frustum_changed = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
 		dy -= move_speed;
-		frustum_needs_update = true;
-	}
-	if (frustum_needs_update) {
-		update_frustum();
+		frustum_changed = true;
 	}
 
 	float new_x = global_entities[0].pos.x + dx;
 	float new_y = global_entities[0].pos.y + dy;
 	float new_z = global_entities[0].pos.z + dz;
 
-	bool can_move_x = check_entity_collision(
-		new_x, 
-		global_entities[0].pos.y, 
-		global_entities[0].pos.z, 
-		global_entities[0].width, 
-		global_entities[0].height
-	);
-
-	bool can_move_y = check_entity_collision(
-		global_entities[0].pos.x, 
-		new_y, 
-		global_entities[0].pos.z, 
-		global_entities[0].width, 
-		global_entities[0].height
-	);
-
-	bool can_move_z = check_entity_collision(
-		global_entities[0].pos.x, 
-		global_entities[0].pos.y, 
-		new_z, 
-		global_entities[0].width, 
-		global_entities[0].height
-	);
-
-	if (can_move_x) global_entities[0].pos.x = new_x;
-	if (can_move_y) global_entities[0].pos.y = new_y;
-	if (can_move_z) global_entities[0].pos.z = new_z;
+	if (check_entity_collision(new_x, new_y, new_z, global_entities[0].width, global_entities[0].height)) {
+		global_entities[0].pos.x = new_x;
+		global_entities[0].pos.y = new_y;
+		global_entities[0].pos.z = new_z;
+	} else {
+		if (check_entity_collision(new_x, global_entities[0].pos.y, new_z, global_entities[0].width, global_entities[0].height)) {
+			global_entities[0].pos.x = new_x;
+			global_entities[0].pos.z = new_z;
+		} else {
+			if (check_entity_collision(new_x, global_entities[0].pos.y, global_entities[0].pos.z, global_entities[0].width, global_entities[0].height)) {
+				global_entities[0].pos.x = new_x;
+			}
+			if (check_entity_collision(global_entities[0].pos.x, global_entities[0].pos.y, new_z, global_entities[0].width, global_entities[0].height)) {
+				global_entities[0].pos.z = new_z;
+			}
+		}
+	}
 
 	update_entity_physics(&global_entities[0], delta_time);
 }

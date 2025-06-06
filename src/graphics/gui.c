@@ -1,7 +1,9 @@
 #include "main.h"
 #include "gui.h"
 #include <math.h>
+#include "config.h"
 #include <string.h>
+#include <stdio.h>
 
 uint8_t ui_state = 0;
 uint8_t ui_active_2d_elements = 0;
@@ -25,6 +27,134 @@ GLuint cube_tex_id_vbo;
 uint16_t ui_center_x, ui_center_y;
 GLint proj_loc, view_loc, model_loc;
 
+static const float cube_vertices[] = {
+	// Front face (Z+)
+	-0.5f, -0.5f,  0.5f,
+	 0.5f, -0.5f,  0.5f,
+	 0.5f,  0.5f,  0.5f,
+	-0.5f,  0.5f,  0.5f,
+	
+	// Back face (Z-)
+	-0.5f, -0.5f, -0.5f,
+	-0.5f,  0.5f, -0.5f,
+	 0.5f,  0.5f, -0.5f,
+	 0.5f, -0.5f, -0.5f,
+	
+	// Left face (X-)
+	-0.5f, -0.5f, -0.5f,
+	-0.5f, -0.5f,  0.5f,
+	-0.5f,  0.5f,  0.5f,
+	-0.5f,  0.5f, -0.5f,
+	
+	// Right face (X+)
+	 0.5f, -0.5f, -0.5f,
+	 0.5f,  0.5f, -0.5f,
+	 0.5f,  0.5f,  0.5f,
+	 0.5f, -0.5f,  0.5f,
+	
+	// Bottom face (Y-)
+	-0.5f, -0.5f, -0.5f,
+	 0.5f, -0.5f, -0.5f,
+	 0.5f, -0.5f,  0.5f,
+	-0.5f, -0.5f,  0.5f,
+	
+	// Top face (Y+)
+	-0.5f,  0.5f, -0.5f,
+	-0.5f,  0.5f,  0.5f,
+	 0.5f,  0.5f,  0.5f,
+	 0.5f,  0.5f, -0.5f
+};
+
+static const uint8_t cube_indices[] = {
+	// Front face
+	0, 1, 2,   2, 3, 0,
+	// Back face
+	4, 5, 6,   6, 7, 4,
+	// Left face
+	8, 9, 10,  10, 11, 8,
+	// Right face
+	12, 13, 14, 14, 15, 12,
+	// Bottom face
+	16, 17, 18, 18, 19, 16,
+	// Top face
+	20, 21, 22, 22, 23, 20
+};
+
+static const float cube_tex_coords[] = {
+	// Front face
+	0.0f, 1.0f,
+	1.0f, 1.0f,
+	1.0f, 0.0f,
+	0.0f, 0.0f,
+	
+	// Back face
+	1.0f, 1.0f,
+	1.0f, 0.0f,
+	0.0f, 0.0f,
+	0.0f, 1.0f,
+	
+	// Left face
+	1.0f, 1.0f,
+	0.0f, 1.0f,
+	0.0f, 0.0f,
+	1.0f, 0.0f,
+	
+	// Right face
+	0.0f, 1.0f,
+	1.0f, 0.0f,
+	0.0f, 0.0f,
+	1.0f, 1.0f,
+	
+	// Bottom face
+	0.0f, 0.0f,
+	1.0f, 0.0f,
+	1.0f, 1.0f,
+	0.0f, 1.0f,
+	
+	// Top face
+	0.0f, 1.0f,
+	0.0f, 0.0f,
+	1.0f, 0.0f,
+	1.0f, 1.0f
+};
+
+static const float cube_normals[] = {
+	// Front face (Z+)
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f,
+	
+	// Back face (Z-)
+	0.0f, 0.0f, -1.0f,
+	0.0f, 0.0f, -1.0f,
+	0.0f, 0.0f, -1.0f,
+	0.0f, 0.0f, -1.0f,
+	
+	// Left face (X-)
+	-1.0f, 0.0f, 0.0f,
+	-1.0f, 0.0f, 0.0f,
+	-1.0f, 0.0f, 0.0f,
+	-1.0f, 0.0f, 0.0f,
+	
+	// Right face (X+)
+	1.0f, 0.0f, 0.0f,
+	1.0f, 0.0f, 0.0f,
+	1.0f, 0.0f, 0.0f,
+	1.0f, 0.0f, 0.0f,
+	
+	// Bottom face (Y-)
+	0.0f, -1.0f, 0.0f,
+	0.0f, -1.0f, 0.0f,
+	0.0f, -1.0f, 0.0f,
+	0.0f, -1.0f, 0.0f,
+	
+	// Top face (Y+)
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f,
+	0.0f, 1.0f, 0.0f
+};
 
 void update_cube_projection() {
 	float left = 0;
@@ -105,11 +235,11 @@ void init_block_highlight() {
 
 	// Bind and upload vertex data
 	glBindBuffer(GL_ARRAY_BUFFER, highlight_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_template), vertices_template, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
 
 	// Bind and upload edge index data
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, highlight_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(edge_indices), edge_indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
 
 	// Set up vertex attribute pointers
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
@@ -134,20 +264,18 @@ void init_ui() {
 }
 
 void draw_block_highlight(vec3 pos) {
-	glDisable(GL_BLEND);
-
 	matrix4_identity(highlight_matrix);
-	matrix4_translate(highlight_matrix, pos.x, pos.y + 0.001f, pos.z);
+	matrix4_translate(highlight_matrix, pos.x + 0.5, pos.y + 0.5, pos.z + 0.5);
+	matrix4_scale(highlight_matrix, 1.001, 1.001, 1.001);
 
 	glUseProgram(shaderProgram);
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, highlight_matrix);
+	glUniform1i(atlas_uniform_location, 1);
 
 	glLineWidth(2.0f);
 	glBindVertexArray(highlight_vao);
-	glDrawElements(GL_LINES, sizeof(edge_indices), GL_UNSIGNED_BYTE, (void*)0);
+	glDrawElements(GL_LINE_STRIP, sizeof(cube_indices), GL_UNSIGNED_BYTE, (void*)0);
 	draw_calls++;
-
-	glEnable(GL_BLEND);
 }
 
 void draw_cube_element(const cube_element_t* cube) {
@@ -185,9 +313,9 @@ void draw_cube_element(const cube_element_t* cube) {
 
 	uint8_t face_mapping[] = {2, 3, 4, 5, 6, 7};
 	
-	for (int face = 0; face < 6; face++) {
+	for (uint8_t face = 0; face < 6; face++) {
 		uint8_t tex_id = block_data[block_type][face_mapping[face]];
-		for (int vertex = 0; vertex < 4; vertex++) {
+		for (uint8_t vertex = 0; vertex < 4; vertex++) {
 			face_tex_ids[face * 4 + vertex] = tex_id;
 		}
 	}
@@ -250,18 +378,16 @@ void render_ui() {
 		glBindVertexArray(ui_vao);
 		
 		GLuint current_texture = 0;
-		bool texture_bound = false;
 		
 		for (uint8_t i = 0; i < ui_active_2d_elements; i++) {
 			const ui_element_t* element = &ui_elements[i];
-			
+
 			// Only bind texture if it's different from the current one
 			if (element->texture_id != current_texture) {
 				glBindTexture(GL_TEXTURE_2D, element->texture_id);
 				current_texture = element->texture_id;
-				texture_bound = true;
 			}
-			
+
 			// Draw this element (4 vertices per element)
 			glDrawArrays(GL_TRIANGLE_STRIP, i * 4, 4);
 			draw_calls++;

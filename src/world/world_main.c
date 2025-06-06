@@ -10,14 +10,6 @@ int last_cx = -1;
 int last_cy = -1;
 int last_cz = -1;
 
-const int SEA_LEVEL = 64;
-
-const float continent_scale = 0.005f;
-const float mountain_scale = 0.03f;
-const float flatness_scale = 0.02f;
-const float cave_scale = 0.1f;
-const float cave_simplex_scale = 0.1f;
-
 // Threading variables
 typedef struct {
 	int ci_x, ci_y, ci_z;
@@ -119,36 +111,22 @@ void* world_gen_thread_func(void* arg) {
 		chunks[req.ci_x][req.ci_y][req.ci_z].is_loaded = true;
 		
 		// Mark adjacent chunks for update
-		if (req.ci_x > 0) {
-			for (int face = 0; face < 6; face++) {
-				if (chunks[req.ci_x-1][req.ci_y][req.ci_z].faces[face].vertices != NULL) {
+		for (uint8_t face = 0; face < 6; face++) {
+			if (req.ci_x > 0) {
+				if (chunks[req.ci_x-1][req.ci_y][req.ci_z].faces[face].vertices != NULL)
 					chunks[req.ci_x-1][req.ci_y][req.ci_z].needs_update = true;
-					break;
-				}
 			}
-		}
-		if (req.ci_x < RENDER_DISTANCE-1) {
-			for (int face = 0; face < 6; face++) {
-				if (chunks[req.ci_x+1][req.ci_y][req.ci_z].faces[face].vertices != NULL) {
+			if (req.ci_x < RENDER_DISTANCE-1) {
+				if (chunks[req.ci_x+1][req.ci_y][req.ci_z].faces[face].vertices != NULL)
 					chunks[req.ci_x+1][req.ci_y][req.ci_z].needs_update = true;
-					break;
-				}
 			}
-		}
-		if (req.ci_z > 0) {
-			for (int face = 0; face < 6; face++) {
-				if (chunks[req.ci_x][req.ci_y][req.ci_z-1].faces[face].vertices != NULL) {
+			if (req.ci_z > 0) {
+				if (chunks[req.ci_x][req.ci_y][req.ci_z-1].faces[face].vertices != NULL)
 					chunks[req.ci_x][req.ci_y][req.ci_z-1].needs_update = true;
-					break;
-				}
 			}
-		}
-		if (req.ci_z < RENDER_DISTANCE-1) {
-			for (int face = 0; face < 6; face++) {
-				if (chunks[req.ci_x][req.ci_y][req.ci_z+1].faces[face].vertices != NULL) {
+			if (req.ci_z < RENDER_DISTANCE-1) {
+				if (chunks[req.ci_x][req.ci_y][req.ci_z+1].faces[face].vertices != NULL)
 					chunks[req.ci_x][req.ci_y][req.ci_z+1].needs_update = true;
-					break;
-				}
 			}
 		}
 		

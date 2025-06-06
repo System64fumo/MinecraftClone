@@ -2,9 +2,34 @@
 #include "world.h"
 #include "gui.h"
 #include <math.h>
+#include <stdio.h>
 
 #define GRAVITY 40.0f
 #define MAX_FALL_SPEED 78.4f
+
+typedef struct {
+	float min_x, max_x;
+	float min_y, max_y;
+	float min_z, max_z;
+} AABB;
+
+AABB get_entity_aabb(float x, float y, float z, float width, float height) {
+	float half_width = width / 2.0f;
+	return (AABB) {
+		.min_x = x - half_width,
+		.max_x = x + half_width,
+		.min_y = y,
+		.max_y = y + height,
+		.min_z = z - half_width,
+		.max_z = z + half_width
+	};
+}
+
+bool aabb_intersect(AABB a, AABB b) {
+	return (a.min_x < b.max_x && a.max_x > b.min_x) &&
+			(a.min_y < b.max_y && a.max_y > b.min_y) &&
+			(a.min_z < b.max_z && a.max_z > b.min_z);
+}
 
 vec3 get_direction(float pitch, float yaw) {
 	float pr = pitch * (M_PI / 180.0f);
@@ -98,31 +123,41 @@ void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_ou
 }
 
 bool check_entity_collision(float x, float y, float z, float width, float height) {
-	float half_width = width / 2.0f;
-
-	float check_points[][3] = {
-		{x - half_width, y, z - half_width},
-		{x + half_width, y, z - half_width},
-		{x - half_width, y, z + half_width},
-		{x + half_width, y, z + half_width},
-		{x - half_width, y + height, z - half_width},
-		{x + half_width, y + height, z - half_width},
-		{x - half_width, y + height, z + half_width},
-		{x + half_width, y + height, z + half_width}
-	};
-
-	// Check each point for collision
-	for (int i = 0; i < 8; i++) {
-		if (is_block_solid(
-			(int)floorf(check_points[i][0]), 
-			(int)floorf(check_points[i][1]), 
-			(int)floorf(check_points[i][2])
-		)) {
-			return false;  // Collision detected
+	AABB entity_aabb = get_entity_aabb(x, y, z, width, height);
+	
+	// Calculate the range of blocks we need to check
+	int min_x = (int)floorf(entity_aabb.min_x);
+	int max_x = (int)floorf(entity_aabb.max_x);
+	int min_y = (int)floorf(entity_aabb.min_y);
+	int max_y = (int)floorf(entity_aabb.max_y);
+	int min_z = (int)floorf(entity_aabb.min_z);
+	int max_z = (int)floorf(entity_aabb.max_z);
+	
+	// Check all blocks in the entity's AABB volume
+	for (int bx = min_x; bx <= max_x; bx++) {
+		for (int by = min_y; by <= max_y; by++) {
+			for (int bz = min_z; bz <= max_z; bz++) {
+				if (by < 0 || by >= WORLD_HEIGHT * CHUNK_SIZE) continue;
+				
+				if (is_block_solid(bx, by, bz)) {
+					AABB block_aabb = {
+						.min_x = bx,
+						.max_x = bx + 1.0f,
+						.min_y = by,
+						.max_y = by + 1.0f,
+						.min_z = bz,
+						.max_z = bz + 1.0f
+					};
+					
+					if (aabb_intersect(entity_aabb, block_aabb)) {
+						return false; // Collision detected
+					}
+				}
+			}
 		}
 	}
 
-	return true;  // No collision
+	return true; // No collision
 }
 
 void update_entity_physics(Entity* entity, float delta_time) {

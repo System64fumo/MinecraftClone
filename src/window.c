@@ -1,5 +1,6 @@
 #include "main.h"
 #include "framebuffer.h"
+#include "config.h"
 #include "gui.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {

@@ -1,4 +1,5 @@
 #include "main.h"
+#include <stdio.h>
 
 unsigned int shaderProgram, postProcessingShader, ui_shader, cube_shader;
 
