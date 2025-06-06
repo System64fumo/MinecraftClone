@@ -1,4 +1,5 @@
 #include "main.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +13,28 @@
 
 IniFile ini;
 config settings;
+
+void parse_config(IniFile* ini) {
+	// TODO: Fix hot-reloading..
+	const char* width = ini_get(ini, "main", "window_width");
+	if (width)
+		settings.window_width = atoi(width);
+
+	const char* height = ini_get(ini, "main", "window_height");
+	if (height)
+		settings.window_height = atoi(height);
+
+	const char* fov = ini_get(ini, "main", "fov");
+	if (fov)
+		settings.fov = atof(fov);
+
+	settings.sky_brightness = 1.0;
+
+	printf("Config loaded: %dx%d, fov=%.1f\n", 
+			settings.window_width,
+			settings.window_height,
+			settings.fov);
+}
 
 static char* trim(char* str) {
 	while (isspace(*str)) str++;
@@ -105,25 +128,4 @@ const char* ini_get(IniFile* ini, const char* section, const char* key) {
 		}
 	}
 	return NULL;
-}
-
-
-void parse_config(IniFile* ini) {
-	// TODO: Fix hot-reloading..
-	const char* width = ini_get(ini, "main", "window_width");
-	if (width)
-		settings.window_width = atoi(width);
-
-	const char* height = ini_get(ini, "main", "window_height");
-	if (height)
-		settings.window_height = atoi(height);
-
-	const char* fov = ini_get(ini, "main", "fov");
-	if (fov)
-		settings.fov = atof(fov);
-
-	printf("Config loaded: %dx%d, fov=%.1f\n", 
-		   settings.window_width,
-		   settings.window_height,
-		   settings.fov);
 }

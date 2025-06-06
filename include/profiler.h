@@ -1,3 +1,6 @@
+#ifndef PROFILER_H
+#define PROFILER_H
+
 #include <time.h>
 #include <stdbool.h>
 
@@ -29,3 +32,5 @@ void profiler_start(int timer_id, bool time_gpu);
 void profiler_stop(int timer_id, bool time_gpu);
 void profiler_print_all();
 void profiler_cleanup();
+
+#endif

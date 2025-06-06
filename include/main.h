@@ -1,17 +1,14 @@
+#ifndef MAIN_H
+#define MAIN_H
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <stdio.h>
 #include <stdbool.h>
 #include "renderer.h"
 #include "misc.h"
-#include "config.h"
 
 #ifdef DEBUG
 #include "profiler.h"
-#endif
-
-#ifndef M_PI
-#define M_PI		3.14159265358979323846
 #endif
 
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
@@ -47,20 +44,12 @@ typedef struct {
 	bool needs_mesh_update;
 	bool is_loaded;
 	bool lighting_changed;
-	
-	// Face-based storage
+
 	FaceMesh faces[6]; // 0:Front, 1:Left, 2:Back, 3:Right, 4:Bottom, 5:Top
 	FaceMesh transparent_faces[6];
 } Chunk;
 
-typedef struct {
-	uint32_t start_index;
-	uint32_t index_count;
-	bool visible;
-} ChunkRenderData;
-
 // Externs
-extern config settings;
 extern unsigned short screen_center_x;
 extern unsigned short screen_center_y;
 
@@ -70,8 +59,6 @@ extern char game_dir[255];
 extern float near;
 extern float far;
 extern float aspect;
-
-extern float sky_brightness;
 
 extern double delta_time;
 extern float framerate;
@@ -83,7 +70,6 @@ extern unsigned int block_textures, ui_textures, font_textures;
 
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
 extern Chunk*** chunks;
-extern ChunkRenderData chunk_render_data[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK];
 
 extern unsigned int model_uniform_location;
@@ -115,21 +101,19 @@ bool check_entity_collision(float x, float y, float z, float width, float height
 void update_entity_physics(Entity* player, float delta_time);
 Entity create_entity(uint8_t id);
 
-unsigned int load_shader(const char* vertex_path, const char* fragment_path);
 void load_shaders();
 
 void process_chunks();
 
+bool are_all_neighbors_loaded(uint8_t x, uint8_t y, uint8_t z);
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);
 void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, uint8_t* y, uint8_t* z);
 uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block);
 uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block, uint8_t width);
-void generate_slab_vertices(float x, float y, float z, Block* block, Vertex vertices[], uint32_t* vertex_count);
-void generate_cross_vertices(float x, float y, float z, Block* block, Vertex vertices[], uint32_t* vertex_count);
-void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint32_t* vertex_count);
-void generate_indices(uint32_t base_vertex, uint32_t indices[], uint32_t* index_count);
 void generate_chunk_mesh(Chunk* chunk);
 void set_chunk_lighting(Chunk* chunk);
 
 Chunk*** allocate_chunks(int render_distance, int world_height);
 void free_chunks(Chunk ***chunks, int render_distance, int world_height);
+
+#endif

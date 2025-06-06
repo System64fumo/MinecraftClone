@@ -1,5 +1,6 @@
 #include "main.h"
 #include "world.h"
+#include "config.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -15,8 +16,6 @@ unsigned int transparent_EBOs[6] = {0};
 
 bool mesh_mode = false;
 uint16_t draw_calls = 0;
-bool frustum_culling_enabled = true;
-float frustum_offset = CHUNK_SIZE * 2;
 bool mesh_needs_rebuild = false;
 
 void init_gl_buffers() {
@@ -28,136 +27,41 @@ void init_gl_buffers() {
 	glGenBuffers(6, transparent_VBOs);
 	glGenBuffers(6, transparent_EBOs);
 
-	// Setup each face VAO
+	
+
 	for (uint8_t face = 0; face < 6; face++) {
-		// Opaque faces
-		glBindVertexArray(opaque_VAOs[face]);
-		glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaque_EBOs[face]);
+		for (uint8_t i = 0; i < 2; i++) {
+			if (i == 0) {
+				glBindVertexArray(opaque_VAOs[face]);
+				glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaque_EBOs[face]);
+			}
+			else {
+				glBindVertexArray(transparent_VAOs[face]);
+				glBindBuffer(GL_ARRAY_BUFFER, transparent_VBOs[face]);
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBOs[face]);
+			}
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
+			glEnableVertexAttribArray(0);
 
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
-		glEnableVertexAttribArray(0);
+			glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
+			glEnableVertexAttribArray(1);
 
-		glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
-		glEnableVertexAttribArray(1);
+			glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
+			glEnableVertexAttribArray(2);
 
-		glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
-		glEnableVertexAttribArray(2);
-
-		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
-		glEnableVertexAttribArray(3);
-
-		glBindVertexArray(transparent_VAOs[face]);
-		glBindBuffer(GL_ARRAY_BUFFER, transparent_VBOs[face]);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBOs[face]);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
-		glEnableVertexAttribArray(0);
-
-		glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
-		glEnableVertexAttribArray(1);
-
-		glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
-		glEnableVertexAttribArray(2);
-
-		glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
-		glEnableVertexAttribArray(3);
+			glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
+			glEnableVertexAttribArray(3);
+		}
 	}
+
 
 	glBindVertexArray(0);
 }
 
-bool is_chunk_in_frustum(vec3 pos, vec3 dir, int chunk_x, int chunk_y, int chunk_z, float fov_angle) {
-	float dir_length = sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
-	
-	if (dir_length < 0.001f) {
-		return true;
-	}
-
-	vec3 normalized_dir = {dir.x / dir_length, dir.y / dir_length, dir.z / dir_length};
-
-	vec3 frustum_origin = {
-		pos.x - normalized_dir.x * frustum_offset,
-		pos.y - (CHUNK_SIZE * 4) - normalized_dir.y * frustum_offset,
-		pos.z - normalized_dir.z * frustum_offset
-	};
-
-	vec3 chunk_pos = {
-		chunk_x * CHUNK_SIZE + CHUNK_SIZE / 2,
-		chunk_y * CHUNK_SIZE + CHUNK_SIZE / 2,
-		chunk_z * CHUNK_SIZE + CHUNK_SIZE / 2
-	};
-
-	vec3 origin_to_chunk = {
-		chunk_pos.x - frustum_origin.x,
-		chunk_pos.y - frustum_origin.y,
-		chunk_pos.z - frustum_origin.z
-	};
-
-	float origin_to_chunk_length = sqrt(
-		origin_to_chunk.x * origin_to_chunk.x + 
-		origin_to_chunk.y * origin_to_chunk.y + 
-		origin_to_chunk.z * origin_to_chunk.z
-	);
-
-	if (origin_to_chunk_length < 0.001f) {
-		return true;
-	}
-
-	vec3 normalized_origin_to_chunk = {
-		origin_to_chunk.x / origin_to_chunk_length, 
-		origin_to_chunk.y / origin_to_chunk_length, 
-		origin_to_chunk.z / origin_to_chunk_length
-	};
-
-	float dot_product = 
-		normalized_dir.x * normalized_origin_to_chunk.x + 
-		normalized_dir.y * normalized_origin_to_chunk.y +
-		normalized_dir.z * normalized_origin_to_chunk.z;
-
-	return dot_product >= fov_angle;
-}
-
-void update_frustum() {
-	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
-	vec3 pos;
-	pos.x = global_entities[0].pos.x;
-	pos.y = global_entities[0].pos.y + global_entities[0].eye_level;
-	pos.z = global_entities[0].pos.z;
-
-	float fov_angle = cos(settings.fov * M_PI / 180.0f);
-
-	int center_cx = last_cx + (RENDER_DISTANCE / 2);
-	int center_cy = last_cy + (WORLD_HEIGHT / 2);
-	int center_cz = last_cz + (RENDER_DISTANCE / 2);
-
-	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
-		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
-				int chunk_x = center_cx - (RENDER_DISTANCE / 2) + x;
-				int chunk_y = center_cy - (WORLD_HEIGHT / 2) + y;
-				int chunk_z = center_cz - (RENDER_DISTANCE / 2) + z;
-
-				bool visible = true;
-
-				if (frustum_culling_enabled) {
-					visible = is_chunk_in_frustum(pos, dir, chunk_x, chunk_y, chunk_z, fov_angle);
-				}
-
-				// If visibility changed, mark for potential mesh rebuild
-				if (chunk_render_data[x][y][z].visible != visible) {
-					mesh_needs_rebuild = true;
-				}
-				
-				chunk_render_data[x][y][z].visible = visible;
-			}
-		}
-	}
-}
-
 void rebuild_combined_visible_mesh() {
 	// Reset all face counts
-	for (int face = 0; face < 6; face++) {
+	for (uint8_t face = 0; face < 6; face++) {
 		glBindVertexArray(opaque_VAOs[face]);
 		glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
 		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
@@ -172,7 +76,7 @@ void rebuild_combined_visible_mesh() {
 	}
 
 	// For each face, collect all visible chunks' face data
-	for (int face = 0; face < 6; face++) {
+	for (uint8_t face = 0; face < 6; face++) {
 		uint32_t total_opaque_vertices = 0;
 		uint32_t total_opaque_indices = 0;
 		uint32_t total_transparent_vertices = 0;
@@ -197,11 +101,9 @@ void rebuild_combined_visible_mesh() {
 		// Skip if nothing to render for this face
 		if (total_opaque_vertices == 0 && total_transparent_vertices == 0) continue;
 
-		// Opaque face data
 		if (total_opaque_vertices > 0) {
 			glBindVertexArray(opaque_VAOs[face]);
-			
-			// Resize buffers if needed
+
 			glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
 			glBufferData(GL_ARRAY_BUFFER, total_opaque_vertices * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
 			Vertex* vbo_ptr = (Vertex*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -225,7 +127,7 @@ void rebuild_combined_visible_mesh() {
 							if (chunk->faces[face].vertex_count == 0) continue;
 
 							memcpy(vbo_ptr + vertex_offset, chunk->faces[face].vertices,
-								   chunk->faces[face].vertex_count * sizeof(Vertex));
+									chunk->faces[face].vertex_count * sizeof(Vertex));
 
 							for (uint32_t i = 0; i < chunk->faces[face].index_count; i++) {
 								ebo_ptr[index_offset + i] = chunk->faces[face].indices[i] + base_vertex;
@@ -243,7 +145,6 @@ void rebuild_combined_visible_mesh() {
 			if (ebo_ptr) glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 		}
 
-		// Transparent face data (similar to opaque)
 		if (total_transparent_vertices > 0) {
 			glBindVertexArray(transparent_VAOs[face]);
 			
@@ -270,7 +171,7 @@ void rebuild_combined_visible_mesh() {
 							if (chunk->transparent_faces[face].vertex_count == 0) continue;
 
 							memcpy(vbo_ptr + vertex_offset, chunk->transparent_faces[face].vertices,
-								   chunk->transparent_faces[face].vertex_count * sizeof(Vertex));
+									chunk->transparent_faces[face].vertex_count * sizeof(Vertex));
 
 							for (uint32_t i = 0; i < chunk->transparent_faces[face].index_count; i++) {
 								ebo_ptr[index_offset + i] = chunk->transparent_faces[face].indices[i] + base_vertex;
@@ -297,18 +198,34 @@ void render_chunks() {
 	if (mesh_needs_rebuild)
 		rebuild_combined_visible_mesh();
 
+	Entity* player = &global_entities[0];
+	vec3 view_dir = get_direction(player->pitch, player->yaw);
+	vec3 player_pos = {
+		player->pos.x,
+		player->pos.y + player->eye_level,
+		player->pos.z
+	};
+	
+	float fov_angle = cosf(settings.fov * M_PI / 360.0f);
+	
 	glUseProgram(shaderProgram);
 	matrix4_identity(model);
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, model);
 
+	vec3 approx_chunk_pos = {
+		last_cx * CHUNK_SIZE + RENDER_DISTANCE * CHUNK_SIZE / 2.0f,
+		last_cy * CHUNK_SIZE + WORLD_HEIGHT * CHUNK_SIZE / 2.0f,
+		last_cz * CHUNK_SIZE + RENDER_DISTANCE * CHUNK_SIZE / 2.0f
+	};
+
 	// Render opaque faces
-	for (int face = 0; face < 6; face++) {
+	for (uint8_t face = 0; face < 6; face++) {
 		glBindVertexArray(opaque_VAOs[face]);
 		GLint index_count;
 		glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &index_count);
 		index_count /= sizeof(uint32_t);
 		
-		if (index_count > 0) {
+		if (index_count) {
 			if (mesh_mode)
 				glDrawElements(GL_LINES, index_count, GL_UNSIGNED_INT, 0);
 			else
@@ -317,14 +234,14 @@ void render_chunks() {
 		}
 	}
 
-	// Render transparent faces (back to front sorting might be needed)
-	for (int face = 0; face < 6; face++) {
+	// Render transparent faces
+	for (uint8_t face = 0; face < 6; face++) {
 		glBindVertexArray(transparent_VAOs[face]);
 		GLint index_count;
 		glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &index_count);
 		index_count /= sizeof(uint32_t);
-		
-		if (index_count > 0) {
+
+		if (index_count) {
 			if (mesh_mode)
 				glDrawElements(GL_LINES, index_count, GL_UNSIGNED_INT, 0);
 			else

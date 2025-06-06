@@ -76,7 +76,7 @@ void generate_slab_vertices(float x, float y, float z, Block* block, Vertex vert
 	vertices[(*vertex_count)++] = (Vertex){x, y + height, z, 5, texture_id, 1, 1}; // Top
 }
 
-void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint32_t* vertex_count) {
+void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, uint8_t height, Block* block, Vertex vertices[], uint16_t* vertex_count) {
 	uint8_t width_blocks = (face == 1 || face == 3) ? 1 : width;
 	uint8_t height_blocks = (face >= 4) ? 1 : height;
 	uint8_t depth_blocks = (face == 0 || face == 2) ? 1 : (face >= 4 ? height : width);
@@ -134,7 +134,7 @@ void generate_vertices(uint8_t face, float x, float y, float z, uint8_t width, u
 	}
 }
 
-void generate_indices(uint32_t base_vertex, uint32_t indices[], uint32_t* index_count) {
+void generate_indices(uint32_t base_vertex, uint32_t indices[], uint16_t* index_count) {
 	indices[(*index_count)++] = base_vertex;
 	indices[(*index_count)++] = base_vertex + 1;
 	indices[(*index_count)++] = base_vertex + 2;
@@ -144,10 +144,8 @@ void generate_indices(uint32_t base_vertex, uint32_t indices[], uint32_t* index_
 }
 
 void generate_chunk_mesh(Chunk* chunk) {
-	if (chunk == NULL) {
-		fprintf(stderr, "Error: Null chunk pointer passed to generate_chunk_mesh\n");
+	if (chunk == NULL)
 		return;
-	}
 
 	// Clear existing face data
 	for (int face = 0; face < 6; face++) {
@@ -176,13 +174,13 @@ void generate_chunk_mesh(Chunk* chunk) {
 	for (uint8_t face = 0; face < 6; face++) {
 		Vertex face_vertices[MAX_VERTICES / 6] = {0};
 		uint32_t face_indices[MAX_VERTICES / 6] = {0};
-		uint32_t face_vertex_count = 0;
-		uint32_t face_index_count = 0;
+		uint16_t face_vertex_count = 0;
+		uint16_t face_index_count = 0;
 
 		Vertex transparent_face_vertices[MAX_VERTICES / 6] = {0};
 		uint32_t transparent_face_indices[MAX_VERTICES / 6] = {0};
-		uint32_t transparent_face_vertex_count = 0;
-		uint32_t transparent_face_index_count = 0;
+		uint16_t transparent_face_vertex_count = 0;
+		uint16_t transparent_face_index_count = 0;
 
 		for (uint8_t d = 0; d < CHUNK_SIZE; d++) {
 			memset(mask, 0, sizeof(mask));

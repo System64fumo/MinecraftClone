@@ -1,3 +1,6 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
 #define MAX_SECTIONS 32
 #define MAX_KEYS 64
 #define MAX_NAME 64
@@ -29,7 +32,9 @@ typedef struct {
 } config;
 
 extern IniFile ini;
+extern config settings;
 
 void initialize_config();
 const char* ini_get(IniFile* ini, const char* section, const char* key);
-void parse_config(IniFile* ini);
+
+#endif

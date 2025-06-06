@@ -1,10 +1,12 @@
 #include "main.h"
 #include "world.h"
+#include "config.h"
 #include "gui.h"
 #include "framebuffer.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 unsigned short screen_center_x = 640;
 unsigned short screen_center_y = 360;

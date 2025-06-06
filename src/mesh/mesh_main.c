@@ -6,7 +6,7 @@ ChunkRenderData chunk_render_data[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE
 
 void update_gl_buffers() {
 	// Update opaque face buffers
-	for (int face = 0; face < 6; face++) {
+	for (uint8_t face = 0; face < 6; face++) {
 		glBindVertexArray(opaque_VAOs[face]);
 		glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
 		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
@@ -15,7 +15,7 @@ void update_gl_buffers() {
 	}
 
 	// Update transparent face buffers
-	for (int face = 0; face < 6; face++) {
+	for (uint8_t face = 0; face < 6; face++) {
 		glBindVertexArray(transparent_VAOs[face]);
 		glBindBuffer(GL_ARRAY_BUFFER, transparent_VBOs[face]);
 		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
@@ -35,7 +35,7 @@ void combine_meshes() {
 	update_gl_buffers();
 
 	// For each face, combine all chunks' face data
-	for (int face = 0; face < 6; face++) {
+	for (uint8_t face = 0; face < 6; face++) {
 		uint32_t total_opaque_vertices = 0;
 		uint32_t total_opaque_indices = 0;
 		uint32_t total_transparent_vertices = 0;
@@ -90,7 +90,7 @@ void combine_meshes() {
 							chunk_render_data[x][y][z].visible = true;
 
 							memcpy(vbo_ptr + vertex_offset, chunk->faces[face].vertices,
-								   chunk->faces[face].vertex_count * sizeof(Vertex));
+									chunk->faces[face].vertex_count * sizeof(Vertex));
 
 							for (uint32_t i = 0; i < chunk->faces[face].index_count; i++) {
 								ebo_ptr[index_offset + i] = chunk->faces[face].indices[i] + base_vertex;
@@ -132,7 +132,7 @@ void combine_meshes() {
 							if (chunk->transparent_faces[face].vertex_count == 0) continue;
 
 							memcpy(vbo_ptr + vertex_offset, chunk->transparent_faces[face].vertices,
-								   chunk->transparent_faces[face].vertex_count * sizeof(Vertex));
+									chunk->transparent_faces[face].vertex_count * sizeof(Vertex));
 
 							for (uint32_t i = 0; i < chunk->transparent_faces[face].index_count; i++) {
 								ebo_ptr[index_offset + i] = chunk->transparent_faces[face].indices[i] + base_vertex;
@@ -172,10 +172,13 @@ void process_chunks() {
 				Chunk* chunk = &chunks[x][y][z];
 				
 				if (chunk->needs_update) {
-					set_chunk_lighting(chunk);
-					generate_chunk_mesh(chunk);
-					chunk->needs_update = false;
-					chunks_updated = true;
+					// Only process if all neighbors are loaded
+					if (are_all_neighbors_loaded(x, y, z)) {
+						set_chunk_lighting(chunk);
+						generate_chunk_mesh(chunk);
+						chunk->needs_update = false;
+						chunks_updated = true;
+					}
 				}
 			}
 		}

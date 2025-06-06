@@ -61,8 +61,6 @@ float getSharpLightLevel(vec2 uv) {
 }
 
 void main() {
-	if (texID == 0u) discard;
-
 	vec4 textureColor = texture(textureAtlas, getTextureCoords());
 	vec3 faceShade = faceShades[faceID];
 

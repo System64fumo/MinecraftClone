@@ -1,5 +1,6 @@
 #include "main.h"
 #include "gui.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <webp/decode.h>
@@ -35,6 +36,10 @@ void do_time_stuff() {
 		time_counter = 0;
 
 		process_chunks();
+		if (frustum_changed) {
+			update_frustum();
+			frustum_changed = false;
+		}
 
 		#ifdef DEBUG
 		uint16_t total_opaque_vertices = 0;

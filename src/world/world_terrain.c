@@ -3,6 +3,14 @@
 #define STB_PERLIN_IMPLEMENTATION
 #include "stb_perlin.h"
 
+const int SEA_LEVEL = 64;
+
+const float continent_scale = 0.005f;
+const float mountain_scale = 0.03f;
+const float flatness_scale = 0.02f;
+const float cave_scale = 0.1f;
+const float cave_simplex_scale = 0.1f;
+
 void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z) {
 	int chunk_base_y = chunk_y * CHUNK_SIZE;
 	int world_x_base = chunk_x * CHUNK_SIZE;

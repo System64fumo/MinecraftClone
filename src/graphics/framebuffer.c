@@ -1,9 +1,11 @@
 #include "main.h"
 #include "gui.h"
+#include "config.h"
 
 // Framebuffer objects
 unsigned int FBO, colorTexture, RBO;
 unsigned int quadVAO, quadVBO;
+uint8_t last_ui_state = 0;
 
 void setup_framebuffer(int width, int height) {
 	// Delete existing resources if they exist
@@ -62,7 +64,7 @@ void render_to_framebuffer() {
 	draw_calls = 0;
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
-	glClearColor(0.471f * sky_brightness, 0.655f * sky_brightness, 1.0f * sky_brightness, 1.0f);
+	glClearColor(0.471f * settings.sky_brightness, 0.655f * settings.sky_brightness, 1.0f * settings.sky_brightness, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
@@ -97,7 +99,10 @@ void render_to_framebuffer() {
 void render_to_screen() {
 	glDisable(GL_DEPTH_TEST);
 	glUseProgram(postProcessingShader);
-	glUniform1i(ui_state_uniform_location, ui_state);
+	if (last_ui_state != ui_state) {
+		glUniform1i(ui_state_uniform_location, ui_state);
+		last_ui_state = ui_state;
+	}
 
 	glBindVertexArray(quadVAO);
 	glBindTexture(GL_TEXTURE_2D, colorTexture);

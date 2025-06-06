@@ -9,6 +9,10 @@
 #define MAX_VERTICES 98304 // CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4;
 #define UI_SCALING 3.0f
 
+#ifndef M_PI
+#define M_PI		3.14159265358979323846
+#endif
+
 typedef struct {
 	float x, y, z;
 } vec3;
