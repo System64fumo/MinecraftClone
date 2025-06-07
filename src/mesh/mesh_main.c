@@ -1,4 +1,5 @@
 #include "main.h"
+#include "world.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -165,6 +166,7 @@ void process_chunks() {
 
 	bool chunks_updated = false;
 	
+	pthread_mutex_lock(&chunks_mutex);
 	// Process all chunks directly
 	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
@@ -183,6 +185,7 @@ void process_chunks() {
 			}
 		}
 	}
+	pthread_mutex_unlock(&chunks_mutex);
 
 	if (chunks_updated) {
 		combine_meshes();

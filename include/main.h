@@ -49,17 +49,19 @@ typedef struct {
 	FaceMesh transparent_faces[6];
 } Chunk;
 
+typedef struct {
+	float min_x, max_x;
+	float min_y, max_y;
+	float min_z, max_z;
+} AABB;
+
 // Externs
 extern unsigned short screen_center_x;
 extern unsigned short screen_center_y;
 
 extern uint8_t hotbar_slot;
-extern char game_dir[255];
 
-extern float near;
-extern float far;
-extern float aspect;
-
+extern double time_difference;
 extern double delta_time;
 extern float framerate;
 extern float frametime;
@@ -100,6 +102,8 @@ void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x
 bool check_entity_collision(float x, float y, float z, float width, float height);
 void update_entity_physics(Entity* player, float delta_time);
 Entity create_entity(uint8_t id);
+AABB get_entity_aabb(float x, float y, float z, float width, float height);
+bool aabb_intersect(AABB a, AABB b);
 
 void load_shaders();
 

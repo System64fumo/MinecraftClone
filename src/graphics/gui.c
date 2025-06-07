@@ -233,15 +233,12 @@ void init_block_highlight() {
 
 	glBindVertexArray(highlight_vao);
 
-	// Bind and upload vertex data
 	glBindBuffer(GL_ARRAY_BUFFER, highlight_vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
 
-	// Bind and upload edge index data
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, highlight_ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
 
-	// Set up vertex attribute pointers
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
@@ -310,11 +307,9 @@ void draw_cube_element(const cube_element_t* cube) {
 
 	uint8_t block_type = cube->id;
 	uint8_t face_tex_ids[24]; // 4 vertices per face, 6 faces
-
-	uint8_t face_mapping[] = {2, 3, 4, 5, 6, 7};
 	
 	for (uint8_t face = 0; face < 6; face++) {
-		uint8_t tex_id = block_data[block_type][face_mapping[face]];
+		uint8_t tex_id = block_data[block_type][2 + face];
 		for (uint8_t vertex = 0; vertex < 4; vertex++) {
 			face_tex_ids[face * 4 + vertex] = tex_id;
 		}

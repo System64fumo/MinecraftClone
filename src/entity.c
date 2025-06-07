@@ -7,12 +7,6 @@
 #define GRAVITY 40.0f
 #define MAX_FALL_SPEED 78.4f
 
-typedef struct {
-	float min_x, max_x;
-	float min_y, max_y;
-	float min_z, max_z;
-} AABB;
-
 AABB get_entity_aabb(float x, float y, float z, float width, float height) {
 	float half_width = width / 2.0f;
 	return (AABB) {
@@ -171,6 +165,13 @@ void update_entity_physics(Entity* entity, float delta_time) {
 
 	float new_y = entity->pos.y + entity->vertical_velocity * delta_time;
 
+	// Bounds checking
+	if (isnan(new_y) || new_y < 0.0f || new_y > WORLD_HEIGHT * CHUNK_SIZE) {
+		entity->vertical_velocity = 0.0f;
+		if (new_y < 0.0f) new_y = 0.0f;
+		if (new_y > WORLD_HEIGHT * CHUNK_SIZE) new_y = WORLD_HEIGHT * CHUNK_SIZE;
+	}
+
 	int collision_points_count = 4;
 	float half_width = entity->width / 2.0f;
 	float ground_check_points[][2] = {
@@ -216,12 +217,6 @@ void update_entity_physics(Entity* entity, float delta_time) {
 	}
 
 	entity->pos.y = new_y;
-}
-
-void set_hotbar_slot(uint8_t slot) {
-	printf("Selected block: %d\n", hotbar_slot + 1);
-	hotbar_slot = slot;
-	update_ui();
 }
 
 Entity create_entity(uint8_t id) {

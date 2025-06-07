@@ -27,8 +27,6 @@ void init_gl_buffers() {
 	glGenBuffers(6, transparent_VBOs);
 	glGenBuffers(6, transparent_EBOs);
 
-	
-
 	for (uint8_t face = 0; face < 6; face++) {
 		for (uint8_t i = 0; i < 2; i++) {
 			if (i == 0) {
@@ -197,26 +195,10 @@ void rebuild_combined_visible_mesh() {
 void render_chunks() {
 	if (mesh_needs_rebuild)
 		rebuild_combined_visible_mesh();
-
-	Entity* player = &global_entities[0];
-	vec3 view_dir = get_direction(player->pitch, player->yaw);
-	vec3 player_pos = {
-		player->pos.x,
-		player->pos.y + player->eye_level,
-		player->pos.z
-	};
-	
-	float fov_angle = cosf(settings.fov * M_PI / 360.0f);
 	
 	glUseProgram(shaderProgram);
 	matrix4_identity(model);
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, model);
-
-	vec3 approx_chunk_pos = {
-		last_cx * CHUNK_SIZE + RENDER_DISTANCE * CHUNK_SIZE / 2.0f,
-		last_cy * CHUNK_SIZE + WORLD_HEIGHT * CHUNK_SIZE / 2.0f,
-		last_cz * CHUNK_SIZE + RENDER_DISTANCE * CHUNK_SIZE / 2.0f
-	};
 
 	// Render opaque faces
 	for (uint8_t face = 0; face < 6; face++) {

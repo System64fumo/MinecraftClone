@@ -19,7 +19,7 @@ typedef struct {
 	uint8_t tex_y;
 	uint8_t tex_width;
 	uint8_t tex_height;
-	GLuint texture_id;
+	uint8_t texture_id;
 } ui_element_t;
 
 typedef struct {

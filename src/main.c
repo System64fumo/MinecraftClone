@@ -3,9 +3,7 @@
 #include "framebuffer.h"
 
 int main() {
-	if (initialize() != 0) {
-		return -1;
-	}
+	if (initialize() != 0) return -1;
 	run();
 	shutdown();
 

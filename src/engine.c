@@ -12,11 +12,6 @@ unsigned short screen_center_x = 640;
 unsigned short screen_center_y = 360;
 
 uint8_t hotbar_slot = 0;
-char game_dir[255];
-
-float near = 0.1f;
-float far = 300.0f;
-float aspect = 1.7f;
 
 float model[16], view[16], projection[16];
 unsigned int block_textures, ui_textures, font_textures;
@@ -66,7 +61,6 @@ unsigned int ui_state_uniform_location = -1;
 GLFWwindow* window = NULL;
 
 int initialize() {
-	// Config
 	initialize_config();
 
 	if (!glfwInit()) {
@@ -202,6 +196,9 @@ void shutdown() {
 	cleanup_ui();
 	cleanup_renderer();
 
+	stop_world_gen_thread();
+
+	pthread_mutex_lock(&chunks_mutex);
 	for(uint8_t cx = 0; cx < RENDER_DISTANCE; cx++) {
 		for(uint8_t cy = 0; cy < WORLD_HEIGHT; cy++) {
 			for(uint8_t cz = 0; cz < RENDER_DISTANCE; cz++) {
@@ -210,6 +207,7 @@ void shutdown() {
 			}
 		}
 	}
+	pthread_mutex_unlock(&chunks_mutex);
 
 	free_chunks(chunks, RENDER_DISTANCE, WORLD_HEIGHT);
 	glDeleteProgram(shaderProgram);
