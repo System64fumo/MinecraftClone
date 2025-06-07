@@ -29,11 +29,12 @@ void do_time_stuff() {
 
 		framerate = (1.0 / time_difference) * time_counter;
 		frametime = (time_difference / time_counter) * 1000;
+		time_previous = time_current;
+		time_counter = 0;
+
 		// TODO: There's probably a better way of doing this
 		if (ui_state == UI_STATE_RUNNING)
 			update_ui();
-		time_previous = time_current;
-		time_counter = 0;
 
 		process_chunks();
 		if (frustum_changed) {

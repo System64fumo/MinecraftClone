@@ -21,5 +21,6 @@ void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsig
 void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z);
 void start_world_gen_thread();
+void stop_world_gen_thread();
 
 #endif

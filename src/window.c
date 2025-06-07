@@ -3,6 +3,10 @@
 #include "config.h"
 #include "gui.h"
 
+float near = 0.1f;
+float far = 300.0f;
+float aspect = 1.7f;
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	// TODO: Write changes back to config file
 	settings.window_width = width;
