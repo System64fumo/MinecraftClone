@@ -239,51 +239,33 @@ void update_frustum() {
 
 	float fov_angle = cosf(settings.fov * M_PI / 180.0f);
 
-	// First update frustum culling for all chunks
 	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
-				int chunk_x = last_cx + x;
-				int chunk_y = last_cy + y;
-				int chunk_z = last_cz + z;
-
-				bool visible = true;
+				Chunk* chunk = &chunks[x][y][z];
+				bool was_visible = chunk->is_visible;
+				bool is_visible = true;
 
 				if (frustum_culling_enabled) {
-					visible = is_chunk_in_frustum(pos, dir, chunk_x, chunk_y, chunk_z, fov_angle);
+					int chunk_x = last_cx + x;
+					int chunk_y = last_cy + y;
+					int chunk_z = last_cz + z;
+					is_visible = is_chunk_in_frustum(pos, dir, chunk_x, chunk_y, chunk_z, fov_angle);
 				}
-				
-				// Store the frustum visibility result
-				chunk_render_data[x][y][z].in_frustum = visible;
+
+				if (is_visible && occlusion_culling_enabled && chunk->is_loaded) {
+					is_visible = !is_chunk_occluded(pos, dir, chunk, x, y, z);
+				}
+
+				if (was_visible != is_visible) {
+					chunk->is_visible = is_visible;
+					frustum_changed = true;
+				}
 			}
 		}
 	}
-	
-	// Then update occlusion culling only for chunks in frustum
-	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
-		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
-				// Skip chunks not in frustum
-				if (!chunk_render_data[x][y][z].in_frustum) {
-					chunk_render_data[x][y][z].visible = false;
-					continue;
-				}
-				
-				// Apply occlusion culling for chunks in frustum if enabled
-				bool occluded = false;
-				if (occlusion_culling_enabled && chunks[x][y][z].is_loaded) {
-					occluded = is_chunk_occluded(pos, dir, &chunks[x][y][z], x, y, z);
-				}
-				
-				bool new_visible = chunk_render_data[x][y][z].in_frustum && !occluded;
-				
-				// Check if visibility changed
-				if (chunk_render_data[x][y][z].visible != new_visible) {
-					mesh_needs_rebuild = true;
-				}
-				
-				chunk_render_data[x][y][z].visible = new_visible;
-			}
-		}
+
+	if (frustum_changed) {
+		mesh_needs_rebuild = true;
 	}
 }

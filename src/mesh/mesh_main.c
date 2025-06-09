@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-ChunkRenderData chunk_render_data[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
-
 void update_gl_buffers() {
 	// Update opaque face buffers
 	for (uint8_t face = 0; face < 6; face++) {
@@ -81,14 +79,11 @@ void combine_meshes() {
 						for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
 							Chunk* chunk = &chunks[x][y][z];
 							if (chunk->faces[face].vertex_count == 0) {
-								chunk_render_data[x][y][z].index_count = 0;
-								chunk_render_data[x][y][z].visible = false;
+								chunks[x][y][z].is_visible = false;
 								continue;
 							}
 
-							chunk_render_data[x][y][z].start_index = index_offset;
-							chunk_render_data[x][y][z].index_count = chunk->faces[face].index_count;
-							chunk_render_data[x][y][z].visible = true;
+							chunks[x][y][z].is_visible = true;
 
 							memcpy(vbo_ptr + vertex_offset, chunk->faces[face].vertices,
 									chunk->faces[face].vertex_count * sizeof(Vertex));

@@ -64,24 +64,31 @@ bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
 }
 
 void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, uint8_t* y, uint8_t* z) {
-	if (face == 1 || face == 3) { *x = d; *y = v; *z = u; }  // Left/Right
-	else if (face >= 4) { *x = u; *y = d; *z = v; }  // Top/Bottom
-	else { *x = u; *y = v; *z = d; }  // Front/Back
+	switch (face) {
+		case 0: *x = u; *y = v; *z = d; break; // Front
+		case 1: *x = d; *y = v; *z = u; break; // Left
+		case 2: *x = u; *y = v; *z = d; break; // Back
+		case 3: *x = d; *y = v; *z = u; break; // Right
+		case 4: *x = u; *y = d; *z = v; break; // Bottom
+		case 5: *x = u; *y = d; *z = v; break; // Top
+	}
 }
 
 uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block) {
 	uint8_t width = 1;
-	while (u + width < CHUNK_SIZE) {
-		uint8_t next_x = x, next_z = z;
-
-		// Determine the next coordinates based on the face
-		if (face == 0 || face == 2 || face >= 4) next_x = x + width;  // Front/Back/Top/Bottom
-		if (face == 1 || face == 3) next_z = z + width;				// Left/Right
-
-		// Check if the next block is valid
-		if (mask[v][u + width] ||
-			chunk->blocks[next_x][y][next_z].id != block->id ||
-			!is_face_visible(chunk, next_x, y, next_z, face)) {
+	
+	for (uint8_t du = 1; u + du < CHUNK_SIZE; du++) {
+		if (mask[v][u + du]) break;
+		
+		uint8_t nx, ny, nz;
+		map_coordinates(face, u + du, v, (face == 0 || face == 2) ? z : (face == 1 || face == 3) ? x : y, &nx, &ny, &nz);
+		
+		if (nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) break;
+		
+		Block* neighbor = &chunk->blocks[nx][ny][nz];
+		if (neighbor->id != block->id || 
+			block_data[neighbor->id][0] != 0 || 
+			!is_face_visible(chunk, nx, ny, nz, face)) {
 			break;
 		}
 		width++;
@@ -91,29 +98,29 @@ uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, 
 
 uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block, uint8_t width) {
 	uint8_t height = 1;
-	while (v + height < CHUNK_SIZE) {
+	
+	for (uint8_t dv = 1; v + dv < CHUNK_SIZE; dv++) {
 		bool can_extend = true;
-
-		for (uint8_t dx = 0; dx < width; dx++) {
-			uint8_t next_x = x, next_y = y, next_z = z;
-
-			// Determine the next coordinates based on the face
-			if (face == 0 || face == 2) {  // Front/Back
-				next_x = x + dx;
-				next_y = y + height;
-			} else if (face == 1 || face == 3) {  // Left/Right
-				next_z = z + dx;
-				next_y = y + height;
-			} else if (face >= 4) {  // Top/Bottom
-				next_x = x + dx;
-				next_z = z + height;
-			}
-
-			// Check if the next block is valid
-			if (mask[v + height][u + dx] ||
-				chunk->blocks[next_x][next_y][next_z].id != block->id ||
-				!is_face_visible(chunk, next_x, next_y, next_z, face)) {
+		
+		for (uint8_t du = 0; du < width; du++) {
+			if (mask[v + dv][u + du]) {
 				can_extend = false;
+				break;
+			}
+			
+			uint8_t nx, ny, nz;
+			map_coordinates(face, u + du, v + dv, (face == 0 || face == 2) ? z : (face == 1 || face == 3) ? x : y, &nx, &ny, &nz);
+			
+			if (nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
+				can_extend = false;
+				break;
+			}
+			
+			Block* neighbor = &chunk->blocks[nx][ny][nz];
+			if (neighbor->id != block->id || 
+				block_data[neighbor->id][0] != 0 || 
+				!is_face_visible(chunk, nx, ny, nz, face)) {
+					can_extend = false;
 				break;
 			}
 		}
