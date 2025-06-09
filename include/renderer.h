@@ -12,20 +12,16 @@ typedef struct {
 } Vertex;
 
 typedef struct {
+	float pos[3];
+	float uv[2];
+} face_vertex_t;
+
+typedef struct {
 	Vertex* vertices;
 	uint32_t* indices;
 	uint16_t vertex_count;
 	uint16_t index_count;
 } FaceMesh;
-
-typedef struct {
-	uint32_t start_index;
-	uint32_t index_count;
-	bool visible;
-	bool in_frustum;
-} ChunkRenderData;
-
-extern ChunkRenderData chunk_render_data[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
 
 extern unsigned int opaque_VAOs[6];
 extern unsigned int opaque_VBOs[6];

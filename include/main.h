@@ -43,6 +43,7 @@ typedef struct {
 	bool needs_update;
 	bool needs_mesh_update;
 	bool is_loaded;
+	bool is_visible;
 	bool lighting_changed;
 
 	FaceMesh faces[6]; // 0:Front, 1:Left, 2:Back, 3:Right, 4:Bottom, 5:Top
