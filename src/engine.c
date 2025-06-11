@@ -119,6 +119,13 @@ int initialize() {
 	if (lastSlash)
 		*lastSlash = '\0';
 
+	char font_path[1024];
+	if (snprintf(font_path, sizeof(font_path), "%s/%s", exec_path, "assets/font.webp") >= sizeof(font_path)) {
+		fprintf(stderr, "font_path truncated\n");
+		exit(EXIT_FAILURE);
+	}
+	font_textures = load_texture(font_path);
+
 	char atlas_path[1024];
 	if (snprintf(atlas_path, sizeof(atlas_path), "%s/%s", exec_path, "assets/atlas.webp") >= sizeof(atlas_path)) {
 		fprintf(stderr, "atlas_path truncated\n");
@@ -132,13 +139,6 @@ int initialize() {
 		exit(EXIT_FAILURE);
 	}
 	ui_textures = load_texture(gui_path);
-
-	char font_path[1024];
-	if (snprintf(font_path, sizeof(font_path), "%s/%s", exec_path, "assets/font.webp") >= sizeof(font_path)) {
-		fprintf(stderr, "font_path truncated\n");
-		exit(EXIT_FAILURE);
-	}
-	font_textures = load_texture(font_path);
 
 	// Initialization
 	load_shaders();

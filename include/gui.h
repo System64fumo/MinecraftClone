@@ -4,7 +4,6 @@
 #include "misc.h"
 #include <stdint.h>
 
-#define MAX_UI_ELEMENTS 15
 #define MAX_CUBE_ELEMENTS 9
 
 #define UI_STATE_RUNNING 0
@@ -32,12 +31,14 @@ typedef struct {
 extern uint8_t ui_state;
 extern uint8_t ui_active_2d_elements;
 extern uint8_t ui_active_3d_elements;
-extern ui_element_t ui_elements[MAX_UI_ELEMENTS];
+extern ui_element_t* ui_elements;
 
 void init_cube_rendering();
 void draw_cube_element(const cube_element_t* cube);
 void render_3d_elements();
+bool add_ui_element(const ui_element_t *element);
 
+uint16_t get_text_length(char* ptr);
 void draw_char(char chr, uint16_t x, uint16_t y);
 void draw_text(char* ptr, uint16_t x, uint16_t y);
 
