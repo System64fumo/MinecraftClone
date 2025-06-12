@@ -6,6 +6,8 @@
 unsigned int FBO, colorTexture, RBO;
 unsigned int quadVAO, quadVBO;
 uint8_t last_ui_state = 0;
+unsigned int depthTexture;
+GLuint depth_loc = 0;
 
 void setup_framebuffer(int width, int height) {
 	// Delete existing resources if they exist
@@ -13,6 +15,8 @@ void setup_framebuffer(int width, int height) {
 		glDeleteTextures(1, &colorTexture);
 	if (RBO)
 		glDeleteRenderbuffers(1, &RBO);
+	if (depthTexture)
+		glDeleteTextures(1, &depthTexture);
 
 	// Create or recreate framebuffer if it doesn't exist
 	if (!FBO)
@@ -27,11 +31,13 @@ void setup_framebuffer(int width, int height) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
 
-	// Create/recreate depth/stencil renderbuffer
-	glGenRenderbuffers(1, &RBO);
-	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+	// Create depth texture instead of renderbuffer
+	glGenTextures(1, &depthTexture);
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -99,12 +105,21 @@ void render_to_framebuffer() {
 void render_to_screen() {
 	glDisable(GL_DEPTH_TEST);
 	glUseProgram(postProcessingShader);
+
+	if (depth_loc == 0)
+		depth_loc = glGetUniformLocation(postProcessingShader, "u_depthTexture");
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
+	glUniform1i(depth_loc, 1);
+
 	if (last_ui_state != ui_state) {
 		glUniform1i(ui_state_uniform_location, ui_state);
 		last_ui_state = ui_state;
 	}
 
 	glBindVertexArray(quadVAO);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, colorTexture);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -120,5 +135,6 @@ void render_to_screen() {
 void cleanup_framebuffer() {
 	glDeleteFramebuffers(1, &FBO);
 	glDeleteTextures(1, &colorTexture);
+	glDeleteTextures(1, &depthTexture);
 	glDeleteRenderbuffers(1, &RBO);
 }

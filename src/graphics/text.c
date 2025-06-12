@@ -11,6 +11,7 @@ uint8_t font_data[255][2] = {
 	['o'] = {6, 6},
 	['i'] = {2, 8},
 	['l'] = {3, 8},
+	['t'] = {4, 8},
 };
 
 uint16_t get_text_length(char* ptr) {
