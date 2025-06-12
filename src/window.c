@@ -21,4 +21,11 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	matrix4_perspective(projection, settings.fov * M_PI / 180.0f, aspect, near, far);
 	setup_framebuffer(width, height);
 	update_ui();
+
+	// TODO: Move this to a settings area for changing the render distance
+	glUseProgram(postProcessingShader);
+	GLuint near_loc = glGetUniformLocation(postProcessingShader, "u_near");
+	GLuint far_loc = glGetUniformLocation(postProcessingShader, "u_far");
+	glUniform1f(near_loc, near);
+	glUniform1f(far_loc, far);
 }
