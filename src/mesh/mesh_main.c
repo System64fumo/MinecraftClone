@@ -184,6 +184,7 @@ void process_chunks() {
 
 	if (chunks_updated) {
 		combine_meshes();
+		update_frustum();
 	}
 
 	#ifdef DEBUG

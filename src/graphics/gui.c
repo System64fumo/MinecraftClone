@@ -5,12 +5,19 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 typedef struct {
 	vec2 position;
 	vec2 tex_coord;
 	uint32_t tex_id;
 } ui_vertex_t;
+
+typedef struct {
+	GLuint texture_id;
+	uint16_t start_index;
+	uint16_t count;
+} ui_batch_t;
 
 uint8_t ui_state = 0;
 uint8_t ui_active_2d_elements = 0;
@@ -30,6 +37,11 @@ ui_element_t* ui_elements = NULL;
 uint8_t ui_elements_capacity = 0;
 float *vertices = NULL;
 uint8_t vertices_capacity = 0;
+
+// Batch rendering
+ui_batch_t *ui_batches = NULL;
+uint8_t ui_batch_count = 0;
+uint8_t ui_batches_capacity = 0;
 
 cube_element_t cube_elements[MAX_CUBE_ELEMENTS];
 GLuint highlight_vao, highlight_vbo, highlight_ebo;
@@ -169,7 +181,6 @@ static const float cube_normals[] = {
 	0.0f, 1.0f, 0.0f
 };
 
-// Dynamic UI element management functions
 bool resize_ui_elements(uint8_t new_capacity) {
 	ui_element_t *new_elements = realloc(ui_elements, sizeof(ui_element_t) * new_capacity);
 	if (!new_elements) {
@@ -191,8 +202,23 @@ bool resize_ui_elements(uint8_t new_capacity) {
 	return true;
 }
 
+bool resize_ui_batches(uint8_t new_capacity) {
+	ui_batch_t *new_batches = realloc(ui_batches, sizeof(ui_batch_t) * new_capacity);
+	if (!new_batches) {
+		return false;
+	}
+	
+	ui_batches = new_batches;
+	ui_batches_capacity = new_capacity;
+	return true;
+}
+
 void clear_ui_elements() {
 	ui_active_2d_elements = 0;
+}
+
+void clear_ui_batches() {
+	ui_batch_count = 0;
 }
 
 bool add_ui_element(const ui_element_t *element) {
@@ -218,6 +244,51 @@ void remove_ui_element(uint8_t index) {
 	}
 	
 	ui_active_2d_elements--;
+}
+
+void create_batches() {
+	clear_ui_batches();
+	
+	if (ui_active_2d_elements == 0) {
+		return;
+	}
+	
+	// Ensure we have enough batch capacity
+	if (ui_batches_capacity == 0) {
+		if (!resize_ui_batches(8)) {
+			return;
+		}
+	}
+	
+	// Create batches based on texture ID without sorting (preserve draw order)
+	GLuint current_texture = ui_elements[0].texture_id;
+	
+	ui_batches[0].texture_id = current_texture;
+	ui_batches[0].start_index = 0;
+	ui_batches[0].count = 1;
+	ui_batch_count = 1;
+	
+	for (uint8_t i = 1; i < ui_active_2d_elements; i++) {
+		if (ui_elements[i].texture_id == current_texture) {
+			// Same texture as current batch, extend it
+			ui_batches[ui_batch_count-1].count++;
+		} else {
+			// Different texture, need a new batch
+			if (ui_batch_count >= ui_batches_capacity) {
+				uint8_t new_capacity = ui_batches_capacity * 2;
+				if (!resize_ui_batches(new_capacity)) {
+					break;
+				}
+			}
+			
+			current_texture = ui_elements[i].texture_id;
+			
+			ui_batches[ui_batch_count].texture_id = current_texture;
+			ui_batches[ui_batch_count].start_index = i;
+			ui_batches[ui_batch_count].count = 1;
+			ui_batch_count++;
+		}
+	}
 }
 
 void update_cube_projection() {
@@ -308,6 +379,12 @@ void init_ui() {
 	// Initialize with a small capacity
 	if (!resize_ui_elements(16)) {
 		printf("Failed to initialize UI elements\n");
+		return;
+	}
+
+	// Initialize batches
+	if (!resize_ui_batches(8)) {
+		printf("Failed to initialize UI batches\n");
 		return;
 	}
 
@@ -456,19 +533,15 @@ void render_ui() {
 		glUniformMatrix4fv(ui_projection_uniform_location, 1, GL_FALSE, ortho);
 		glBindVertexArray(ui_vao);
 		
-		GLuint current_texture = 0;
-		
-		for (uint8_t i = 0; i < ui_active_2d_elements; i++) {
-			const ui_element_t* element = &ui_elements[i];
+		// Render all batches
+		for (uint8_t i = 0; i < ui_batch_count; i++) {
+			const ui_batch_t *batch = &ui_batches[i];
+			
+			// Bind the texture for this batch
+			glBindTexture(GL_TEXTURE_2D, batch->texture_id);
 
-			// Only bind texture if it's different from the current one
-			if (element->texture_id != current_texture) {
-				glBindTexture(GL_TEXTURE_2D, element->texture_id);
-				current_texture = element->texture_id;
-			}
-
-			// Draw this element (4 vertices per element)
-			glDrawArrays(GL_TRIANGLE_STRIP, i * 4, 4);
+			// Draw all elements in this batch
+			glDrawArrays(GL_TRIANGLE_STRIP, batch->start_index * 4, batch->count * 4);
 			draw_calls++;
 		}
 	}
@@ -554,8 +627,8 @@ void update_ui() {
 				ui_active_3d_elements = i;
 			}
 
-			char fps_text[22];
-			snprintf(fps_text, sizeof(fps_text), "FPS: %1.2f, %1.3f ms", framerate, frametime);
+			char fps_text[23];
+			snprintf(fps_text, sizeof(fps_text), "FPS: %1.2f, %1.3fms", framerate, frametime);
 			draw_text(fps_text, 3, ui_center_y * 2 - 12);
 			break;
 
@@ -599,6 +672,7 @@ void update_ui() {
 	}
 
 	update_ui_buffer();
+	create_batches();
 
 	matrix4_identity(ortho);
 	matrix4_translate(ortho, -1.0f, -1.0f, 0.0f);
@@ -636,9 +710,15 @@ void cleanup_ui() {
 		free(vertex_buffer);
 		vertex_buffer = NULL;
 	}
+	if (ui_batches) {
+		free(ui_batches);
+		ui_batches = NULL;
+	}
 	ui_elements_capacity = 0;
 	vertex_buffer_capacity = 0;
+	ui_batches_capacity = 0;
 	ui_active_2d_elements = 0;
+	ui_batch_count = 0;
 	
 	glDeleteVertexArrays(1, &ui_vao);
 	glDeleteBuffers(1, &ui_vbo);

@@ -113,19 +113,19 @@ void* world_gen_thread_func(void* arg) {
 		// Mark adjacent chunks for update
 		for (uint8_t face = 0; face < 6; face++) {
 			if (req.ci_x > 0) {
-				if (chunks[req.ci_x-1][req.ci_y][req.ci_z].faces[face].vertices != NULL)
+				if (chunks[req.ci_x-1][req.ci_y][req.ci_z].faces[face].vertices)
 					chunks[req.ci_x-1][req.ci_y][req.ci_z].needs_update = true;
 			}
 			if (req.ci_x < RENDER_DISTANCE-1) {
-				if (chunks[req.ci_x+1][req.ci_y][req.ci_z].faces[face].vertices != NULL)
+				if (chunks[req.ci_x+1][req.ci_y][req.ci_z].faces[face].vertices)
 					chunks[req.ci_x+1][req.ci_y][req.ci_z].needs_update = true;
 			}
 			if (req.ci_z > 0) {
-				if (chunks[req.ci_x][req.ci_y][req.ci_z-1].faces[face].vertices != NULL)
+				if (chunks[req.ci_x][req.ci_y][req.ci_z-1].faces[face].vertices)
 					chunks[req.ci_x][req.ci_y][req.ci_z-1].needs_update = true;
 			}
 			if (req.ci_z < RENDER_DISTANCE-1) {
-				if (chunks[req.ci_x][req.ci_y][req.ci_z+1].faces[face].vertices != NULL)
+				if (chunks[req.ci_x][req.ci_y][req.ci_z+1].faces[face].vertices)
 					chunks[req.ci_x][req.ci_y][req.ci_z+1].needs_update = true;
 			}
 		}
@@ -201,7 +201,7 @@ void load_around_entity(Entity* entity) {
 				for (int z = 0; z < RENDER_DISTANCE; z++) {
 					bool has_data = false;
 					for (int face = 0; face < 6; face++) {
-						if (temp_chunks[x][y][z].faces[face].vertices != NULL) {
+						if (temp_chunks[x][y][z].faces[face].vertices) {
 							has_data = true;
 							break;
 						}
@@ -229,7 +229,7 @@ void load_around_entity(Entity* entity) {
 				for (int z = start_z; z < end_z; z++) {
 					bool has_data = false;
 					for (int face = 0; face < 6; face++) {
-						if (temp_chunks[x][y][z].faces[face].vertices != NULL) {
+						if (temp_chunks[x][y][z].faces[face].vertices) {
 							has_data = true;
 							break;
 						}
@@ -266,7 +266,7 @@ void load_around_entity(Entity* entity) {
 					old_z >= 0 && old_z < RENDER_DISTANCE) {
 					bool has_data = false;
 					for (int face = 0; face < 6; face++) {
-						if (temp_chunks[old_x][y][old_z].faces[face].vertices != NULL) {
+						if (temp_chunks[old_x][y][old_z].faces[face].vertices) {
 							has_data = true;
 							break;
 						}
@@ -295,7 +295,7 @@ void load_around_entity(Entity* entity) {
 				pthread_mutex_lock(&chunks_mutex);
 				bool needs_load = true;
 				for (int face = 0; face < 6; face++) {
-					if (chunks[x][y][z].faces[face].vertices != NULL) {
+					if (chunks[x][y][z].faces[face].vertices) {
 						needs_load = false;
 						break;
 					}
@@ -341,19 +341,19 @@ void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsig
 
 void unload_chunk(Chunk* chunk) {
 	for (int face = 0; face < 6; face++) {
-		if (chunk->faces[face].vertices != NULL) {
+		if (chunk->faces[face].vertices) {
 			free(chunk->faces[face].vertices);
 			chunk->faces[face].vertices = NULL;
 		}
-		if (chunk->faces[face].indices != NULL) {
+		if (chunk->faces[face].indices) {
 			free(chunk->faces[face].indices);
 			chunk->faces[face].indices = NULL;
 		}
-		if (chunk->transparent_faces[face].vertices != NULL) {
+		if (chunk->transparent_faces[face].vertices) {
 			free(chunk->transparent_faces[face].vertices);
 			chunk->transparent_faces[face].vertices = NULL;
 		}
-		if (chunk->transparent_faces[face].indices != NULL) {
+		if (chunk->transparent_faces[face].indices) {
 			free(chunk->transparent_faces[face].indices);
 			chunk->transparent_faces[face].indices = NULL;
 		}

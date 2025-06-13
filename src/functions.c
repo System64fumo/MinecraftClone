@@ -76,6 +76,6 @@ Block* get_block_at(int world_block_x, int world_block_y, int world_block_z) {
 
 bool is_block_solid(int world_block_x, int world_block_y, int world_block_z) {
 	Block* block = get_block_at(world_block_x, world_block_y, world_block_z);
-	bool is_solid = block != NULL && !(block->id == 0 || block->id == 6 || block->id == 8 || block->id == 9 || block->id == 10 || block->id == 11);
+	bool is_solid = block && !(block->id == 0 || block->id == 6 || block->id == 8 || block->id == 9 || block->id == 10 || block->id == 11);
 	return is_solid;
 }

@@ -130,9 +130,7 @@ bool check_entity_collision(float x, float y, float z, float width, float height
 	// Check all blocks in the entity's AABB volume
 	for (int bx = min_x; bx <= max_x; bx++) {
 		for (int by = min_y; by <= max_y; by++) {
-			for (int bz = min_z; bz <= max_z; bz++) {
-				if (by < 0 || by >= WORLD_HEIGHT * CHUNK_SIZE) continue;
-				
+			for (int bz = min_z; bz <= max_z; bz++) {				
 				if (is_block_solid(bx, by, bz)) {
 					AABB block_aabb = {
 						.min_x = bx,
@@ -164,13 +162,6 @@ void update_entity_physics(Entity* entity, float delta_time) {
 	}
 
 	float new_y = entity->pos.y + entity->vertical_velocity * delta_time;
-
-	// Bounds checking
-	if (isnan(new_y) || new_y < 0.0f || new_y > WORLD_HEIGHT * CHUNK_SIZE) {
-		entity->vertical_velocity = 0.0f;
-		if (new_y < 0.0f) new_y = 0.0f;
-		if (new_y > WORLD_HEIGHT * CHUNK_SIZE) new_y = WORLD_HEIGHT * CHUNK_SIZE;
-	}
 
 	int collision_points_count = 4;
 	float half_width = entity->width / 2.0f;

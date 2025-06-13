@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <webp/decode.h>
+#include <math.h>
 
 double lastFrame = 0.0f;
 double delta_time = 0.0f;
@@ -23,32 +24,31 @@ void do_time_stuff() {
 
 	// 20 TPS
 	if (time_difference >= 0.05f) {
-		#ifdef DEBUG
-		profiler_print_all();
-		#endif
-
 		framerate = (1.0 / time_difference) * time_counter;
 		frametime = (time_difference / time_counter) * 1000;
 		time_previous = time_current;
 		time_counter = 0;
-
-		// TODO: There's probably a better way of doing this
-		if (ui_state == UI_STATE_RUNNING)
-			update_ui();
 
 		process_chunks();
 		if (frustum_changed) {
 			update_frustum();
 			frustum_changed = false;
 		}
+	}
+
+	// 1 TPS
+	if (fmod(time_current, 1.0f) < delta_time) {
+		if (ui_state == UI_STATE_RUNNING)
+			update_ui();
 
 		#ifdef DEBUG
+		profiler_print_all();
 		uint16_t total_opaque_vertices = 0;
 		uint16_t total_opaque_indices = 0;
 		uint16_t total_transparent_vertices = 0;
 		uint16_t total_transparent_indices = 0;
 
-		for (int face = 0; face < 6; face++) {
+		for (uint8_t face = 0; face < 6; face++) {
 			for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 				for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 					for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
@@ -80,9 +80,8 @@ const char* load_file(const char* filename) {
 	}
 
 	char* last_slash = strrchr(current_dir, '/');
-	if (last_slash != NULL) {
+	if (last_slash)
 		*last_slash = '\0';
-	}
 
 	char full_path[1025];
 	snprintf(full_path, sizeof(full_path), "%s/%s", current_dir, filename);
@@ -166,8 +165,8 @@ unsigned int load_texture(const char* path) {
 
 	// Upload to OpenGL
 	glBindTexture(GL_TEXTURE_2D, textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-		
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
+
 	// Set texture parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
