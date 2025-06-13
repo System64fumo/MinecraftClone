@@ -280,14 +280,17 @@ void process_input(GLFWwindow* window) {
 	int relative_cx = player_cx - (center_cx - (RENDER_DISTANCE / 2));
 	int relative_cz = player_cz - (center_cz - (RENDER_DISTANCE / 2));
 
-	if (relative_cx < 0 || relative_cx >= RENDER_DISTANCE || relative_cz < 0 || relative_cz >= RENDER_DISTANCE || player_cy < 0 || player_cy >= WORLD_HEIGHT) {
-		return;
-	}
+	bool within_height = player_cy > 0 && player_cy < WORLD_HEIGHT;
+	if (within_height) {
+		if (relative_cx < 0 || relative_cx >= RENDER_DISTANCE || relative_cz < 0 || relative_cz >= RENDER_DISTANCE) {
+			return;
+		}
 
-	Chunk* chunk = &chunks[relative_cx][player_cy][relative_cz];
+		Chunk* chunk = &chunks[relative_cx][player_cy][relative_cz];
 
-	if (!chunk->is_loaded || chunk->needs_update) {
-		return;
+		if (!chunk->is_loaded || chunk->needs_update) {
+			return;
+		}
 	}
 
 	float move_speed = global_entities[0].speed * delta_time;

@@ -9,10 +9,12 @@
 unsigned int opaque_VAOs[6] = {0};
 unsigned int opaque_VBOs[6] = {0};
 unsigned int opaque_EBOs[6] = {0};
+uint32_t opaque_index_counts[6] = {0};
 
 unsigned int transparent_VAOs[6] = {0};
 unsigned int transparent_VBOs[6] = {0};
 unsigned int transparent_EBOs[6] = {0};
+uint32_t transparent_index_counts[6] = {0};
 
 bool mesh_mode = false;
 uint16_t draw_calls = 0;
@@ -53,13 +55,15 @@ void init_gl_buffers() {
 		}
 	}
 
-
 	glBindVertexArray(0);
 }
 
 void rebuild_combined_visible_mesh() {
 	// Reset all face counts
 	for (uint8_t face = 0; face < 6; face++) {
+		opaque_index_counts[face] = 0;
+		transparent_index_counts[face] = 0;
+		
 		glBindVertexArray(opaque_VAOs[face]);
 		glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
 		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
@@ -99,6 +103,7 @@ void rebuild_combined_visible_mesh() {
 		if (total_opaque_vertices == 0 && total_transparent_vertices == 0) continue;
 
 		if (total_opaque_vertices > 0) {
+			opaque_index_counts[face] = total_opaque_indices;
 			glBindVertexArray(opaque_VAOs[face]);
 
 			glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
@@ -142,6 +147,7 @@ void rebuild_combined_visible_mesh() {
 		}
 
 		if (total_transparent_vertices > 0) {
+			transparent_index_counts[face] = total_transparent_indices;
 			glBindVertexArray(transparent_VAOs[face]);
 			
 			glBindBuffer(GL_ARRAY_BUFFER, transparent_VBOs[face]);
@@ -199,39 +205,31 @@ void render_chunks() {
 
 	// Render opaque faces
 	for (uint8_t face = 0; face < 6; face++) {
-		glBindVertexArray(opaque_VAOs[face]);
-		GLint index_count;
-		glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &index_count);
-		index_count /= sizeof(uint32_t);
-		
-		if (index_count) {
+		if (opaque_index_counts[face] > 0) {
+			glBindVertexArray(opaque_VAOs[face]);
 			if (mesh_mode)
-				glDrawElements(GL_LINES, index_count, GL_UNSIGNED_INT, 0);
+				glDrawElements(GL_LINES, opaque_index_counts[face], GL_UNSIGNED_INT, 0);
 			else
-				glDrawElements(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, 0);
+				glDrawElements(GL_TRIANGLES, opaque_index_counts[face], GL_UNSIGNED_INT, 0);
 			draw_calls++;
 		}
 	}
 
 	// Render transparent faces
 	for (uint8_t face = 0; face < 6; face++) {
-		glBindVertexArray(transparent_VAOs[face]);
-		GLint index_count;
-		glGetBufferParameteriv(GL_ELEMENT_ARRAY_BUFFER, GL_BUFFER_SIZE, &index_count);
-		index_count /= sizeof(uint32_t);
-
-		if (index_count) {
+		if (transparent_index_counts[face] > 0) {
+			glBindVertexArray(transparent_VAOs[face]);
 			if (mesh_mode)
-				glDrawElements(GL_LINES, index_count, GL_UNSIGNED_INT, 0);
+				glDrawElements(GL_LINES, transparent_index_counts[face], GL_UNSIGNED_INT, 0);
 			else
-				glDrawElements(GL_TRIANGLES, index_count, GL_UNSIGNED_INT, 0);
+				glDrawElements(GL_TRIANGLES, transparent_index_counts[face], GL_UNSIGNED_INT, 0);
 			draw_calls++;
 		}
 	}
 }
 
 void cleanup_renderer() {
-	for (int i = 0; i < 6; i++) {
+	for (uint8_t i = 0; i < 6; i++) {
 		glDeleteVertexArrays(1, &opaque_VAOs[i]);
 		glDeleteBuffers(1, &opaque_VBOs[i]);
 		glDeleteBuffers(1, &opaque_EBOs[i]);
