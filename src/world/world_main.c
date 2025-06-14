@@ -30,7 +30,60 @@ pthread_t world_gen_thread;
 bool world_gen_thread_running = false;
 pthread_mutex_t chunks_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-// Initialize the chunk load queue
+typedef struct {
+	bool tracking_active;
+	uint32_t chunks_queued;
+	uint32_t chunks_completed;
+	pthread_mutex_t mutex;
+} world_gen_tracker_t;
+
+world_gen_tracker_t world_gen_tracker = {0};
+
+void init_world_gen_tracker(void) {
+	pthread_mutex_init(&world_gen_tracker.mutex, NULL);
+	world_gen_tracker.tracking_active = false;
+	world_gen_tracker.chunks_queued = 0;
+	world_gen_tracker.chunks_completed = 0;
+}
+
+void cleanup_world_gen_tracker(void) {
+	pthread_mutex_destroy(&world_gen_tracker.mutex);
+}
+
+void start_world_gen_tracking(void) {
+	pthread_mutex_lock(&world_gen_tracker.mutex);
+	world_gen_tracker.tracking_active = true;
+	world_gen_tracker.chunks_queued = 0;
+	world_gen_tracker.chunks_completed = 0;
+	pthread_mutex_unlock(&world_gen_tracker.mutex);
+}
+
+void track_chunk_queued(void) {
+	pthread_mutex_lock(&world_gen_tracker.mutex);
+	if (world_gen_tracker.tracking_active) {
+		world_gen_tracker.chunks_queued++;
+	}
+	pthread_mutex_unlock(&world_gen_tracker.mutex);
+}
+
+void track_chunk_completed(void) {
+	pthread_mutex_lock(&world_gen_tracker.mutex);
+	if (world_gen_tracker.tracking_active) {
+		world_gen_tracker.chunks_completed++;
+
+		if (world_gen_tracker.chunks_completed >= world_gen_tracker.chunks_queued && 
+			world_gen_tracker.chunks_queued > 0) {
+
+			world_gen_tracker.tracking_active = false;
+
+			#ifdef DEBUG
+			profiler_stop(PROFILER_ID_WORLD_GEN, false);
+			#endif
+		}
+	}
+	pthread_mutex_unlock(&world_gen_tracker.mutex);
+}
+
 void init_chunk_load_queue() {
 	chunk_load_queue.capacity = 128;
 	chunk_load_queue.size = 0;
@@ -39,18 +92,15 @@ void init_chunk_load_queue() {
 	pthread_cond_init(&chunk_load_queue.cond, NULL);
 }
 
-// Add a chunk load request to the queue
 void enqueue_chunk_load(int ci_x, int ci_y, int ci_z, int cx, int cy, int cz, float priority) {
 	pthread_mutex_lock(&chunk_load_queue.mutex);
-	
-	// Resize if needed
+
 	if (chunk_load_queue.size >= chunk_load_queue.capacity) {
 		chunk_load_queue.capacity *= 2;
 		chunk_load_queue.requests = realloc(chunk_load_queue.requests, 
 										  chunk_load_queue.capacity * sizeof(chunk_load_request_t));
 	}
-	
-	// Add the request
+
 	chunk_load_request_t* req = &chunk_load_queue.requests[chunk_load_queue.size++];
 	req->ci_x = ci_x;
 	req->ci_y = ci_y;
@@ -59,14 +109,14 @@ void enqueue_chunk_load(int ci_x, int ci_y, int ci_z, int cx, int cy, int cz, fl
 	req->cy = cy;
 	req->cz = cz;
 	req->priority = priority;
-	
-	// Insertion sort
+
 	for (int i = chunk_load_queue.size - 1; i > 0; i--) {
 		if (chunk_load_queue.requests[i].priority < chunk_load_queue.requests[i-1].priority) {
 			chunk_load_request_t tmp = chunk_load_queue.requests[i];
 			chunk_load_queue.requests[i] = chunk_load_queue.requests[i-1];
 			chunk_load_queue.requests[i-1] = tmp;
-		} else {
+		}
+		else {
 			break;
 		}
 	}
@@ -75,12 +125,10 @@ void enqueue_chunk_load(int ci_x, int ci_y, int ci_z, int cx, int cy, int cz, fl
 	pthread_mutex_unlock(&chunk_load_queue.mutex);
 }
 
-// World generation thread function
 void* world_gen_thread_func(void* arg) {
 	while (world_gen_thread_running) {
 		pthread_mutex_lock(&chunk_load_queue.mutex);
-		
-		// Wait for work if queue is empty
+
 		while (chunk_load_queue.size == 0 && world_gen_thread_running) {
 			pthread_cond_wait(&chunk_load_queue.cond, &chunk_load_queue.mutex);
 		}
@@ -89,28 +137,23 @@ void* world_gen_thread_func(void* arg) {
 			pthread_mutex_unlock(&chunk_load_queue.mutex);
 			break;
 		}
-		
-		// Get the highest priority request
+
 		chunk_load_request_t req = chunk_load_queue.requests[0];
-		
-		// Shift remaining requests
+
 		for (int i = 1; i < chunk_load_queue.size; i++) {
 			chunk_load_queue.requests[i-1] = chunk_load_queue.requests[i];
 		}
 		chunk_load_queue.size--;
 		
 		pthread_mutex_unlock(&chunk_load_queue.mutex);
-		
-		// Generate the chunk
+
 		Chunk temp_chunk = {0};
 		load_chunk_data(&temp_chunk, req.ci_x, req.ci_y, req.ci_z, req.cx, req.cy, req.cz);
-		
-		// Lock chunks array to update it
+
 		pthread_mutex_lock(&chunks_mutex);
 		chunks[req.ci_x][req.ci_y][req.ci_z] = temp_chunk;
 		chunks[req.ci_x][req.ci_y][req.ci_z].is_loaded = true;
-		
-		// Mark adjacent chunks for update
+
 		for (uint8_t face = 0; face < 6; face++) {
 			if (req.ci_x > 0) {
 				if (chunks[req.ci_x-1][req.ci_y][req.ci_z].faces[face].vertices)
@@ -131,12 +174,15 @@ void* world_gen_thread_func(void* arg) {
 		}
 		
 		pthread_mutex_unlock(&chunks_mutex);
+
+		track_chunk_completed();
 	}
 	return NULL;
 }
 
 void start_world_gen_thread() {
 	init_chunk_load_queue();
+	init_world_gen_tracker();
 	world_gen_thread_running = true;
 	pthread_create(&world_gen_thread, NULL, world_gen_thread_func, NULL);
 }
@@ -154,6 +200,7 @@ void stop_world_gen_thread() {
 void load_around_entity(Entity* entity) {
 	#ifdef DEBUG
 	profiler_start(PROFILER_ID_WORLD_GEN, false);
+	start_world_gen_tracking();
 	#endif
 	
 	int center_cx = floorf(entity->pos.x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
@@ -173,7 +220,6 @@ void load_around_entity(Entity* entity) {
 		return;
 	}
 
-	// Allocate temporary chunks
 	Chunk*** temp_chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 	if (!temp_chunks) {
 		#ifdef DEBUG
@@ -182,7 +228,6 @@ void load_around_entity(Entity* entity) {
 		return;
 	}
 
-	// Copy chunks
 	pthread_mutex_lock(&chunks_mutex);
 	for (int x = 0; x < RENDER_DISTANCE; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
@@ -247,7 +292,6 @@ void load_around_entity(Entity* entity) {
 		}
 	}
 
-	// Clear chunks array
 	pthread_mutex_lock(&chunks_mutex);
 	for (int x = 0; x < RENDER_DISTANCE; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
@@ -283,7 +327,6 @@ void load_around_entity(Entity* entity) {
 	}
 	pthread_mutex_unlock(&chunks_mutex);
 
-	// Entity position within chunk coordinates
 	float entity_chunk_x = entity->pos.x / CHUNK_SIZE;
 	float entity_chunk_y = entity->pos.y / CHUNK_SIZE;
 	float entity_chunk_z = entity->pos.z / CHUNK_SIZE;
@@ -314,17 +357,28 @@ void load_around_entity(Entity* entity) {
 					float dz = world_chunk_z - entity_chunk_z;
 					float dist_sq = dx*dx + dy*dy + dz*dz;
 					
-					// Enqueue the chunk load request
+					// Enqueue the chunk load request and track it
 					enqueue_chunk_load(x, y, z, x + center_cx, y, z + center_cz, dist_sq);
+					track_chunk_queued();  // Track each queued chunk
 				}
 			}
 		}
 	}
 	
+	// Check if no chunks were queued
+	pthread_mutex_lock(&world_gen_tracker.mutex);
+	if (world_gen_tracker.chunks_queued == 0) {
+		#ifdef DEBUG
+		// No work to do, stop profiler immediately
+		profiler_stop(PROFILER_ID_WORLD_GEN, false);
+		#endif
+	}
+	pthread_mutex_unlock(&world_gen_tracker.mutex);
+	
 	free_chunks(temp_chunks, RENDER_DISTANCE, WORLD_HEIGHT);
-	#ifdef DEBUG
-	profiler_stop(PROFILER_ID_WORLD_GEN, false);
-	#endif
+	
+	// NOTE: Don't stop profiler here anymore - it will be stopped by track_chunk_completed()
+	// when all queued chunks are actually finished processing
 }
 
 void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz) {

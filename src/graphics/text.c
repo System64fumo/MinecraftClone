@@ -25,12 +25,12 @@ uint8_t font_data[255][2] = {
 uint16_t get_text_length(char* ptr) {
 	uint16_t offset = 0;
 	while (*ptr != '\0') {
-		offset += font_data[*ptr++][0] * 2;
+		offset += font_data[(unsigned char)*ptr++][0] * 2;
 	}
 	return offset;
 }
 
-void draw_char(char chr, uint16_t x, uint16_t y) {
+void draw_char(unsigned char chr, uint16_t x, uint16_t y) {
 	uint8_t index_x, index_y;
 	uint8_t col = chr % 16;
 	uint8_t row = chr / 16;
@@ -56,7 +56,7 @@ void draw_text(char* ptr, uint16_t x, uint16_t y) {
 	uint16_t offset = 9;
 	while (*ptr != '\0') {
 		draw_char(*ptr, x + offset, y);
-		offset += font_data[*ptr][0] * 2;
+		offset += font_data[(unsigned char)*ptr][0] * 2;
 		ptr++;
 		char_index++;
 	}

@@ -1,4 +1,5 @@
 #include "main.h"
+#include "framebuffer.h"
 #include "gui.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,18 +44,25 @@ void do_time_stuff() {
 
 		#ifdef DEBUG
 		profiler_print_all();
-		uint16_t total_opaque_vertices = 0;
-		uint16_t total_opaque_indices = 0;
-		uint16_t total_transparent_vertices = 0;
-		uint16_t total_transparent_indices = 0;
+		
+		// Chunk memory tracking
+		uint32_t total_opaque_vertices = 0;
+		uint32_t total_opaque_indices = 0;
+		uint32_t total_transparent_vertices = 0;
+		uint32_t total_transparent_indices = 0;
+		uint32_t loaded_chunks = 0;
+		uint32_t visible_chunks = 0;
 
-		for (uint8_t face = 0; face < 6; face++) {
-			for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
-				for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-					for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
-						if (!chunks[x][y][z].is_visible) continue;
-						
-						Chunk* chunk = &chunks[x][y][z];
+		for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+			for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
+				for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
+					Chunk* chunk = &chunks[x][y][z];
+					if (chunk->is_loaded) loaded_chunks++;
+					if (chunk->is_visible) visible_chunks++;
+					
+					if (!chunk->is_visible) continue;
+					
+					for (uint8_t face = 0; face < 6; face++) {
 						total_opaque_vertices += chunk->faces[face].vertex_count;
 						total_opaque_indices += chunk->faces[face].index_count;
 						total_transparent_vertices += chunk->transparent_faces[face].vertex_count;
@@ -64,10 +72,51 @@ void do_time_stuff() {
 			}
 		}
 
-		printf("Vertex count: %d\n", total_opaque_vertices + total_transparent_vertices);
-		printf("Index count: %d\n", total_transparent_vertices + total_transparent_indices);
-		printf("VRAM estimate: %ldkb\n", (sizeof(Vertex) * total_opaque_vertices + total_transparent_vertices) / 1024);
+		// Framebuffer memory tracking
+		size_t fb_memory = 0;
+		if (colorTexture) {
+			GLint width, height, internal_format;
+			glBindTexture(GL_TEXTURE_2D, colorTexture);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internal_format);
+			fb_memory += width * height * (internal_format == GL_RGB8 ? 3 : 4); // 3 bytes for RGB8, 4 for RGBA8
+		}
+		if (depthTexture) {
+			GLint width, height;
+			glBindTexture(GL_TEXTURE_2D, depthTexture);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+			fb_memory += width * height * 4; // Depth24 typically uses 4 bytes
+		}
+
+		// UI memory tracking
+		size_t ui_memory = 0;
+		ui_memory += ui_active_2d_elements * sizeof(ui_element_t);
+		ui_memory += ui_active_2d_elements * 4 * sizeof(ui_vertex_t); // 4 vertices per element
+		ui_memory += ui_batch_count * sizeof(ui_batch_t);
+		ui_memory += ui_active_3d_elements * sizeof(cube_element_t);
+
+		// Calculate total VRAM usage
+		size_t vram_usage = 0;
+		// Chunk geometry VRAM
+		vram_usage += (total_opaque_vertices * sizeof(Vertex)) + (total_opaque_indices * sizeof(uint32_t));
+		vram_usage += (total_transparent_vertices * sizeof(Vertex)) + (total_transparent_indices * sizeof(uint32_t));
+		// Framebuffer VRAM
+		vram_usage += fb_memory;
+		// UI VRAM
+		vram_usage += ui_memory;
+		// Texture VRAM (estimate)
+		vram_usage += (256 * 256 * 4) * 2; // block_textures + ui_textures estimate
+
+		printf("Chunks: %d loaded, %d visible\n", loaded_chunks, visible_chunks);
+		printf("Verticies: %d opaque, %d transparent\n", total_opaque_vertices, total_transparent_vertices);
+		printf("Indices: %d opaque, %d transparent\n", total_opaque_indices, total_transparent_indices);
+		printf("Framebuffer: %zukb\n", fb_memory / 1024);
+		printf("UI: %d elements, %zukb\n", ui_active_2d_elements, ui_memory / 1024);
+		printf("Total VRAM estimate: %zukb\n", vram_usage / 1024);
 		printf("Draw calls: %d\n", draw_calls);
+		printf("FPS: %.1f (%.2fms)\n", framerate, frametime);
 		#endif
 	}
 }

@@ -3,10 +3,10 @@
 #include "config.h"
 
 // Framebuffer objects
-unsigned int FBO, colorTexture, RBO;
+unsigned int FBO, RBO;
 unsigned int quadVAO, quadVBO;
 uint8_t last_ui_state = 0;
-unsigned int depthTexture;
+unsigned int colorTexture, depthTexture;
 GLuint depth_loc = 0;
 
 void setup_framebuffer(int width, int height) {
@@ -94,7 +94,7 @@ void render_to_framebuffer() {
 	vec3 block_pos = {0};
 	get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &block_face);
 	if (block_face != 'N')
-		draw_block_highlight(block_pos);
+		draw_block_highlight(block_pos); // TODO: Drawing block highlight breaks hotbar block rendering
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	#ifdef DEBUG

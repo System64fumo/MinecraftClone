@@ -28,9 +28,22 @@ typedef struct {
 	uint8_t id;
 } cube_element_t;
 
+typedef struct {
+	vec2 position;
+	vec2 tex_coord;
+	uint32_t tex_id;
+} ui_vertex_t;
+
+typedef struct {
+	GLuint texture_id;
+	uint16_t start_index;
+	uint16_t count;
+} ui_batch_t;
+
 extern uint8_t ui_state;
 extern uint8_t ui_active_2d_elements;
 extern uint8_t ui_active_3d_elements;
+extern uint8_t ui_batch_count;
 extern ui_element_t* ui_elements;
 
 void init_cube_rendering();
@@ -39,7 +52,7 @@ void render_3d_elements();
 bool add_ui_element(const ui_element_t *element);
 
 uint16_t get_text_length(char* ptr);
-void draw_char(char chr, uint16_t x, uint16_t y);
+void draw_char(unsigned char chr, uint16_t x, uint16_t y);
 void draw_text(char* ptr, uint16_t x, uint16_t y);
 
 void init_ui();
