@@ -102,35 +102,6 @@ void add_quad(float x, float y, float z, uint8_t face_id, uint8_t texture_id,
 	}
 }
 
-void generate_block_mesh(float x, float y, float z, Block* block, uint8_t block_type,
-						Vertex vertices[], uint32_t indices[], uint32_t* vertex_count, uint32_t* index_count) {
-	switch (block_type) {
-		case 0: // Regular cube
-			for (int face = 0; face < 6; face++) {
-				uint8_t texture_id = block_data[block->id][2 + face];
-				add_quad(x, y, z, face, texture_id, cube_faces[face], 1, 1,
-						vertices, indices, vertex_count, index_count);
-			}
-			break;
-
-		case 1: // Slab
-			for (int face = 0; face < 6; face++) {
-				uint8_t texture_id = block_data[block->id][2 + face];
-				add_quad(x, y, z, face, texture_id, slab_faces[face], 1, 1,
-						vertices, indices, vertex_count, index_count);
-			}
-			break;
-
-		case 2: // Cross
-			for (int face = 0; face < 4; face++) {
-				uint8_t texture_id = block_data[block->id][2 + face];
-				add_quad(x, y, z, face, texture_id, cross_faces[face], 1, 1,
-						vertices, indices, vertex_count, index_count);
-			}
-			break;
-	}
-}
-
 void clear_face_data(FaceMesh faces[6]) {
 	for (int face = 0; face < 6; face++) {
 		free(faces[face].vertices);
@@ -154,6 +125,47 @@ void store_face_data(FaceMesh* face_mesh, Vertex vertices[], uint32_t indices[],
 		memcpy(face_mesh->indices, indices, index_count * sizeof(uint32_t));
 		face_mesh->vertex_count = vertex_count;
 		face_mesh->index_count = index_count;
+	}
+}
+
+void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, FaceMesh faces[6]) {
+	// Clear existing face data
+	clear_face_data(faces);
+
+	uint8_t block_type = block_data[block_id][0];
+	bool is_transparent = block_data[block_id][1] != 0;
+
+	// For regular blocks and slabs
+	if (block_type == 0 || block_type == 1) {
+		const face_vertex_t (*face_data)[4] = (block_type == 0) ? cube_faces : slab_faces;
+		
+		for (uint8_t face = 0; face < 6; face++) {
+			Vertex vertices[4];
+			uint32_t indices[6];
+			uint32_t vertex_count = 0;
+			uint32_t index_count = 0;
+
+			uint8_t texture_id = block_data[block_id][2 + face];
+			add_quad(x, y, z, face, texture_id, face_data[face], 1, 1,
+					vertices, indices, &vertex_count, &index_count);
+
+			store_face_data(&faces[face], vertices, indices, vertex_count, index_count);
+		}
+	}
+	// For cross-type blocks (like plants)
+	else if (block_type == 2) {
+		for (uint8_t face = 0; face < 4; face++) {
+			Vertex vertices[4];
+			uint32_t indices[6];
+			uint32_t vertex_count = 0;
+			uint32_t index_count = 0;
+
+			uint8_t texture_id = block_data[block_id][2 + face];
+			add_quad(x, y, z, face, texture_id, cross_faces[face], 1, 1,
+					vertices, indices, &vertex_count, &index_count);
+
+			store_face_data(&faces[face], vertices, indices, vertex_count, index_count);
+		}
 	}
 }
 
@@ -241,13 +253,13 @@ void generate_chunk_mesh(Chunk* chunk) {
 			for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
 				Block* block = &chunk->blocks[x][y][z];
 				if (block == NULL || block->id == 0) continue;
-				
+
 				uint8_t block_type = block_data[block->id][0];
 				if (block_type == 0) continue; // Regular blocks already handled
-	
+
 				bool is_transparent = block_data[block->id][1] != 0;
 				FaceMesh* target_faces = is_transparent ? chunk->transparent_faces : chunk->faces;
-	
+
 				// For each face of the special block
 				int face_count = (block_type == 2) ? 4 : 6; // Cross has 4 faces, slab has 6
 				for (int face = 0; face < face_count; face++) {

@@ -68,7 +68,7 @@ extern float framerate;
 extern float frametime;
 extern float model[16], view[16], projection[16];
 
-extern unsigned int shaderProgram, postProcessingShader, ui_shader, cube_shader;
+extern unsigned int shaderProgram, postProcessingShader, ui_shader;
 extern unsigned int block_textures, ui_textures, font_textures;
 
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
@@ -105,7 +105,7 @@ void update_entity_physics(Entity* player, float delta_time);
 Entity create_entity(uint8_t id);
 AABB get_entity_aabb(float x, float y, float z, float width, float height);
 bool aabb_intersect(AABB a, AABB b);
-
+void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, FaceMesh faces[6]);
 void load_shaders();
 
 void process_chunks();

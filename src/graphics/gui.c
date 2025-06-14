@@ -7,52 +7,33 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-typedef struct {
-	vec2 position;
-	vec2 tex_coord;
-	uint32_t tex_id;
-} ui_vertex_t;
-
-typedef struct {
-	GLuint texture_id;
-	uint16_t start_index;
-	uint16_t count;
-} ui_batch_t;
 
 uint8_t ui_state = 0;
 uint8_t ui_active_2d_elements = 0;
 uint8_t ui_active_3d_elements = 0;
-ui_vertex_t *vertex_buffer = NULL;
-uint16_t vertex_buffer_capacity = 0;
-unsigned int highlight_vbo = 0, highlight_vao = 0;
-unsigned int ui_vao, ui_vbo;
-float ortho[16];
-float cube_projection[16];
-float cube_view[16];
-float highlight_matrix[16];
-float cube_matrix[16];
+static ui_vertex_t *vertex_buffer = NULL;
+static uint16_t vertex_buffer_capacity = 0;
+static unsigned int highlight_vbo = 0, highlight_vao = 0;
+static unsigned int ui_vao, ui_vbo;
+static float ortho[16];
+static float cube_projection[16];
+static float cube_view[16];
+static float highlight_matrix[16];
+static float cube_matrix[16];
 
-// Dynamic UI elements
 ui_element_t* ui_elements = NULL;
-uint8_t ui_elements_capacity = 0;
-float *vertices = NULL;
-uint8_t vertices_capacity = 0;
+static uint8_t ui_elements_capacity = 0;
 
-// Batch rendering
-ui_batch_t *ui_batches = NULL;
+static ui_batch_t *ui_batches = NULL;
 uint8_t ui_batch_count = 0;
-uint8_t ui_batches_capacity = 0;
+static uint8_t ui_batches_capacity = 0;
 
-cube_element_t cube_elements[MAX_CUBE_ELEMENTS];
-GLuint highlight_vao, highlight_vbo, highlight_ebo;
-GLuint cube_vao, cube_vbo, cube_ebo;
-GLuint cube_color_vbo;
-GLuint cube_normal_vbo;
-GLuint cube_tex_id_vbo;
-uint16_t ui_center_x, ui_center_y;
-GLint proj_loc, view_loc, model_loc;
+static cube_element_t cube_elements[MAX_CUBE_ELEMENTS];
+static GLuint highlight_vao, highlight_vbo, highlight_ebo;
+static GLuint cube_vao, cube_vbo, cube_ebo;
+static uint16_t ui_center_x, ui_center_y;
 
-static const float cube_vertices[] = {
+static const float highlight_vertices[] = {
 	// Front face (Z+)
 	-0.5f, -0.5f,  0.5f,
 	 0.5f, -0.5f,  0.5f,
@@ -90,123 +71,40 @@ static const float cube_vertices[] = {
 	 0.5f,  0.5f, -0.5f
 };
 
-static const uint8_t cube_indices[] = {
-	// Front face
-	0, 1, 2,   2, 3, 0,
-	// Back face
-	4, 5, 6,   6, 7, 4,
-	// Left face
-	8, 9, 10,  10, 11, 8,
-	// Right face
-	12, 13, 14, 14, 15, 12,
-	// Bottom face
-	16, 17, 18, 18, 19, 16,
-	// Top face
-	20, 21, 22, 22, 23, 20
-};
-
-static const float cube_tex_coords[] = {
-	// Front face
-	0.0f, 1.0f,
-	1.0f, 1.0f,
-	1.0f, 0.0f,
-	0.0f, 0.0f,
-	
-	// Back face
-	1.0f, 1.0f,
-	1.0f, 0.0f,
-	0.0f, 0.0f,
-	0.0f, 1.0f,
-	
-	// Left face
-	1.0f, 1.0f,
-	0.0f, 1.0f,
-	0.0f, 0.0f,
-	1.0f, 0.0f,
-	
-	// Right face
-	0.0f, 1.0f,
-	1.0f, 0.0f,
-	0.0f, 0.0f,
-	1.0f, 1.0f,
-	
-	// Bottom face
-	0.0f, 0.0f,
-	1.0f, 0.0f,
-	1.0f, 1.0f,
-	0.0f, 1.0f,
-	
-	// Top face
-	0.0f, 1.0f,
-	0.0f, 0.0f,
-	1.0f, 0.0f,
-	1.0f, 1.0f
-};
-
-static const float cube_normals[] = {
+static const uint8_t highlight_indices[] = {
 	// Front face (Z+)
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	0.0f, 0.0f, 1.0f,
-	
+	0, 1, 2, 3, 0,
 	// Back face (Z-)
-	0.0f, 0.0f, -1.0f,
-	0.0f, 0.0f, -1.0f,
-	0.0f, 0.0f, -1.0f,
-	0.0f, 0.0f, -1.0f,
-	
+	4, 5, 6, 7, 4,
 	// Left face (X-)
-	-1.0f, 0.0f, 0.0f,
-	-1.0f, 0.0f, 0.0f,
-	-1.0f, 0.0f, 0.0f,
-	-1.0f, 0.0f, 0.0f,
-	
+	8, 9, 10, 11, 8,
 	// Right face (X+)
-	1.0f, 0.0f, 0.0f,
-	1.0f, 0.0f, 0.0f,
-	1.0f, 0.0f, 0.0f,
-	1.0f, 0.0f, 0.0f,
-	
+	12, 13, 14, 15, 12,
 	// Bottom face (Y-)
-	0.0f, -1.0f, 0.0f,
-	0.0f, -1.0f, 0.0f,
-	0.0f, -1.0f, 0.0f,
-	0.0f, -1.0f, 0.0f,
-	
+	16, 17, 18, 19, 16,
 	// Top face (Y+)
-	0.0f, 1.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
-	0.0f, 1.0f, 0.0f
+	20, 21, 22, 23, 20
 };
 
-bool resize_ui_elements(uint8_t new_capacity) {
+static bool resize_ui_elements(uint8_t new_capacity) {
 	ui_element_t *new_elements = realloc(ui_elements, sizeof(ui_element_t) * new_capacity);
-	if (!new_elements) {
-		return false;
-	}
+	if (!new_elements) return false;
 	
 	ui_elements = new_elements;
 	ui_elements_capacity = new_capacity;
 
-	// 4 vertices per UI element
 	uint16_t vertices_needed = new_capacity * 4;
 	ui_vertex_t *new_vertex_buffer = realloc(vertex_buffer, sizeof(ui_vertex_t) * vertices_needed);
-	if (!new_vertex_buffer) {
-		return false;
-	}
+	if (!new_vertex_buffer) return false;
+	
 	vertex_buffer = new_vertex_buffer;
 	vertex_buffer_capacity = vertices_needed;
-
 	return true;
 }
 
-bool resize_ui_batches(uint8_t new_capacity) {
+static bool resize_ui_batches(uint8_t new_capacity) {
 	ui_batch_t *new_batches = realloc(ui_batches, sizeof(ui_batch_t) * new_capacity);
-	if (!new_batches) {
-		return false;
-	}
+	if (!new_batches) return false;
 	
 	ui_batches = new_batches;
 	ui_batches_capacity = new_capacity;
@@ -224,69 +122,44 @@ void clear_ui_batches() {
 bool add_ui_element(const ui_element_t *element) {
 	if (ui_active_2d_elements >= ui_elements_capacity) {
 		uint8_t new_capacity = ui_elements_capacity == 0 ? 16 : ui_elements_capacity * 2;
-		if (!resize_ui_elements(new_capacity)) {
-			return false;
-		}
+		if (!resize_ui_elements(new_capacity)) return false;
 	}
 	
-	ui_elements[ui_active_2d_elements] = *element;
-	ui_active_2d_elements++;
+	ui_elements[ui_active_2d_elements++] = *element;
 	return true;
 }
 
 void remove_ui_element(uint8_t index) {
-	if (index >= ui_active_2d_elements) {
-		return;
-	}
-
-	for (uint8_t i = index; i < ui_active_2d_elements - 1; i++) {
-		ui_elements[i] = ui_elements[i + 1];
-	}
+	if (index >= ui_active_2d_elements) return;
 	
+	memmove(&ui_elements[index], &ui_elements[index + 1], 
+		   (ui_active_2d_elements - index - 1) * sizeof(ui_element_t));
 	ui_active_2d_elements--;
 }
 
 void create_batches() {
 	clear_ui_batches();
-	
-	if (ui_active_2d_elements == 0) {
+	if (ui_active_2d_elements == 0) return;
+
+	if (ui_batches_capacity == 0 && !resize_ui_batches(8)) {
 		return;
 	}
-	
-	// Ensure we have enough batch capacity
-	if (ui_batches_capacity == 0) {
-		if (!resize_ui_batches(8)) {
-			return;
-		}
-	}
-	
-	// Create batches based on texture ID without sorting (preserve draw order)
+
 	GLuint current_texture = ui_elements[0].texture_id;
-	
-	ui_batches[0].texture_id = current_texture;
-	ui_batches[0].start_index = 0;
-	ui_batches[0].count = 1;
+	ui_batches[0] = (ui_batch_t){current_texture, 0, 1};
 	ui_batch_count = 1;
 	
 	for (uint8_t i = 1; i < ui_active_2d_elements; i++) {
 		if (ui_elements[i].texture_id == current_texture) {
-			// Same texture as current batch, extend it
 			ui_batches[ui_batch_count-1].count++;
 		} else {
-			// Different texture, need a new batch
 			if (ui_batch_count >= ui_batches_capacity) {
 				uint8_t new_capacity = ui_batches_capacity * 2;
-				if (!resize_ui_batches(new_capacity)) {
-					break;
-				}
+				if (!resize_ui_batches(new_capacity)) break;
 			}
 			
 			current_texture = ui_elements[i].texture_id;
-			
-			ui_batches[ui_batch_count].texture_id = current_texture;
-			ui_batches[ui_batch_count].start_index = i;
-			ui_batches[ui_batch_count].count = 1;
-			ui_batch_count++;
+			ui_batches[ui_batch_count++] = (ui_batch_t){current_texture, i, 1};
 		}
 	}
 }
@@ -316,40 +189,21 @@ void init_cube_rendering() {
 
 	glGenBuffers(1, &cube_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glGenBuffers(1, &cube_color_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, cube_color_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_tex_coords), cube_tex_coords, GL_STATIC_DRAW);
 	
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-
-	glGenBuffers(1, &cube_normal_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, cube_normal_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_normals), cube_normals, GL_STATIC_DRAW);
-	
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(2);
-
-	glGenBuffers(1, &cube_tex_id_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, cube_tex_id_vbo);
-	glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(uint8_t), (void*)0);
-	glEnableVertexAttribArray(3);
-
 	glGenBuffers(1, &cube_ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
+
+	// Set up vertex attributes
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
+	glEnableVertexAttribArray(0);
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
+	glEnableVertexAttribArray(1);
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
+	glEnableVertexAttribArray(3);
 
 	glBindVertexArray(0);
-
-	proj_loc = glGetUniformLocation(cube_shader, "projection");
-	view_loc = glGetUniformLocation(cube_shader, "view");
-	model_loc = glGetUniformLocation(cube_shader, "model");
-
 	update_cube_projection();
 }
 
@@ -359,16 +213,12 @@ void init_block_highlight() {
 	glGenBuffers(1, &highlight_ebo);
 
 	glBindVertexArray(highlight_vao);
-
 	glBindBuffer(GL_ARRAY_BUFFER, highlight_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
-
+	glBufferData(GL_ARRAY_BUFFER, sizeof(highlight_vertices), highlight_vertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, highlight_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_indices), cube_indices, GL_STATIC_DRAW);
-
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(highlight_indices), highlight_indices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-
 	glBindVertexArray(0);
 }
 
@@ -376,13 +226,11 @@ void init_ui() {
 	init_block_highlight();
 	init_cube_rendering();
 
-	// Initialize with a small capacity
 	if (!resize_ui_elements(16)) {
 		printf("Failed to initialize UI elements\n");
 		return;
 	}
 
-	// Initialize batches
 	if (!resize_ui_batches(8)) {
 		printf("Failed to initialize UI batches\n");
 		return;
@@ -393,19 +241,11 @@ void init_ui() {
 	glBindVertexArray(ui_vao);
 	glBindBuffer(GL_ARRAY_BUFFER, ui_vbo);
 
-	// Position attribute (location 0)
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 
-		sizeof(ui_vertex_t), (void*)offsetof(ui_vertex_t, position));
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(ui_vertex_t), (void*)offsetof(ui_vertex_t, position));
 	glEnableVertexAttribArray(0);
-
-	// Texture coordinate attribute (location 1)
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 
-		sizeof(ui_vertex_t), (void*)offsetof(ui_vertex_t, tex_coord));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(ui_vertex_t), (void*)offsetof(ui_vertex_t, tex_coord));
 	glEnableVertexAttribArray(1);
-
-	// Texture ID attribute (location 2)
-	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, 
-		sizeof(ui_vertex_t), (void*)offsetof(ui_vertex_t, tex_id));
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(ui_vertex_t), (void*)offsetof(ui_vertex_t, tex_id));
 	glEnableVertexAttribArray(2);
 }
 
@@ -420,7 +260,7 @@ void draw_block_highlight(vec3 pos) {
 
 	glLineWidth(2.0f);
 	glBindVertexArray(highlight_vao);
-	glDrawElements(GL_LINE_STRIP, sizeof(cube_indices), GL_UNSIGNED_BYTE, (void*)0);
+	glDrawElements(GL_LINE_STRIP, sizeof(highlight_indices), GL_UNSIGNED_BYTE, (void*)0);
 	draw_calls++;
 }
 
@@ -450,39 +290,40 @@ void draw_cube_element(const cube_element_t* cube) {
 	matrix4_translate(cube_matrix, cube->pos.x, cube->pos.y, 0);
 	matrix4_scale(cube_matrix, cube->width, cube->height, cube->depth);
 
-	glUniformMatrix4fv(proj_loc, 1, GL_FALSE, cube_projection);
-	glUniformMatrix4fv(view_loc, 1, GL_FALSE, cube_view);
-	glUniformMatrix4fv(model_loc, 1, GL_FALSE, cube_matrix);
+	glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, cube_projection);
+	glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, cube_view);
+	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, cube_matrix);
 
-	uint8_t block_type = cube->id;
-	uint8_t face_tex_ids[24]; // 4 vertices per face, 6 faces
-	
-	for (uint8_t face = 0; face < 6; face++) {
-		uint8_t tex_id = block_data[block_type][2 + face];
-		for (uint8_t vertex = 0; vertex < 4; vertex++) {
-			face_tex_ids[face * 4 + vertex] = tex_id;
-		}
-	}
+	FaceMesh faces[6] = {0};
+	generate_single_block_mesh(0, 0, 0, cube->id, faces);
 
-	glBindBuffer(GL_ARRAY_BUFFER, cube_tex_id_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(face_tex_ids), face_tex_ids, GL_DYNAMIC_DRAW);
-
-	glBindTexture(GL_TEXTURE_2D, block_textures);
 	glBindVertexArray(cube_vao);
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_BYTE, 0);
+
+	for (uint8_t face = 0; face < 6; face++) {
+		if (faces[face].vertex_count == 0) continue;
+
+		glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
+		glBufferData(GL_ARRAY_BUFFER, faces[face].vertex_count * sizeof(Vertex), faces[face].vertices, GL_DYNAMIC_DRAW);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_ebo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, faces[face].index_count * sizeof(uint32_t), faces[face].indices, GL_DYNAMIC_DRAW);
+
+		glDrawElements(GL_TRIANGLES, faces[face].index_count, GL_UNSIGNED_INT, 0);
+
+		free(faces[face].vertices);
+		free(faces[face].indices);
+	}
 }
 
 void update_ui_buffer() {
-	if (ui_active_2d_elements == 0) {
-		return;
-	}
+	if (ui_active_2d_elements == 0) return;
 	
 	for (uint8_t i = 0; i < ui_active_2d_elements; i++) {
-		ui_element_t* element = &ui_elements[i];
-		float tx = (float)element->tex_x / 256.0f;
-		float ty = (float)element->tex_y / 256.0f;
-		float tw = (float)element->tex_width / 256.0f;
-		float th = (float)element->tex_height / 256.0f;
+		const ui_element_t* element = &ui_elements[i];
+		float tx = element->tex_x / 256.0f;
+		float ty = element->tex_y / 256.0f;
+		float tw = element->tex_width / 256.0f;
+		float th = element->tex_height / 256.0f;
 
 		float x0 = floor(element->x - element->width) + 0.375f;
 		float x1 = floor(element->x + element->width) + 0.375f;
@@ -491,40 +332,16 @@ void update_ui_buffer() {
 
 		uint16_t vertex_offset = i * 4;
 
-		// Top-left vertex
-		vertex_buffer[vertex_offset + 0].position.x = x0;
-		vertex_buffer[vertex_offset + 0].position.y = y1;
-		vertex_buffer[vertex_offset + 0].tex_coord.x = tx;
-		vertex_buffer[vertex_offset + 0].tex_coord.y = ty;
-		vertex_buffer[vertex_offset + 0].tex_id = element->texture_id;
-
-		// Bottom-left vertex
-		vertex_buffer[vertex_offset + 1].position.x = x0;
-		vertex_buffer[vertex_offset + 1].position.y = y0;
-		vertex_buffer[vertex_offset + 1].tex_coord.x = tx;
-		vertex_buffer[vertex_offset + 1].tex_coord.y = ty + th;
-		vertex_buffer[vertex_offset + 1].tex_id = element->texture_id;
-
-		// Top-right vertex
-		vertex_buffer[vertex_offset + 2].position.x = x1;
-		vertex_buffer[vertex_offset + 2].position.y = y1;
-		vertex_buffer[vertex_offset + 2].tex_coord.x = tx + tw;
-		vertex_buffer[vertex_offset + 2].tex_coord.y = ty;
-		vertex_buffer[vertex_offset + 2].tex_id = element->texture_id;
-
-		// Bottom-right vertex
-		vertex_buffer[vertex_offset + 3].position.x = x1;
-		vertex_buffer[vertex_offset + 3].position.y = y0;
-		vertex_buffer[vertex_offset + 3].tex_coord.x = tx + tw;
-		vertex_buffer[vertex_offset + 3].tex_coord.y = ty + th;
-		vertex_buffer[vertex_offset + 3].tex_id = element->texture_id;
+		// Set vertex data
+		vertex_buffer[vertex_offset + 0] = (ui_vertex_t){{x0, y1}, {tx, ty}, element->texture_id};
+		vertex_buffer[vertex_offset + 1] = (ui_vertex_t){{x0, y0}, {tx, ty + th}, element->texture_id};
+		vertex_buffer[vertex_offset + 2] = (ui_vertex_t){{x1, y1}, {tx + tw, ty}, element->texture_id};
+		vertex_buffer[vertex_offset + 3] = (ui_vertex_t){{x1, y0}, {tx + tw, ty + th}, element->texture_id};
 	}
 
-	// Upload buffer data
 	glBindBuffer(GL_ARRAY_BUFFER, ui_vbo);
-	glBufferData(GL_ARRAY_BUFFER, 
-		sizeof(ui_vertex_t) * ui_active_2d_elements * 4, 
-		vertex_buffer, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(ui_vertex_t) * ui_active_2d_elements * 4, 
+				vertex_buffer, GL_DYNAMIC_DRAW);
 }
 
 void render_ui() {
@@ -533,23 +350,17 @@ void render_ui() {
 		glUniformMatrix4fv(ui_projection_uniform_location, 1, GL_FALSE, ortho);
 		glBindVertexArray(ui_vao);
 		
-		// Render all batches
 		for (uint8_t i = 0; i < ui_batch_count; i++) {
 			const ui_batch_t *batch = &ui_batches[i];
-			
-			// Bind the texture for this batch
 			glBindTexture(GL_TEXTURE_2D, batch->texture_id);
-
-			// Draw all elements in this batch
 			glDrawArrays(GL_TRIANGLE_STRIP, batch->start_index * 4, batch->count * 4);
 			draw_calls++;
 		}
 	}
 
 	if (ui_active_3d_elements) {
-		glUseProgram(cube_shader);
-
-		// Hotbar blocks
+		glUseProgram(shaderProgram);
+		glBindTexture(GL_TEXTURE_2D, block_textures);
 		for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++) {
 			draw_cube_element(&cube_elements[i]);
 			draw_calls++;
@@ -564,11 +375,11 @@ void update_ui() {
 	ui_active_3d_elements = 0;
 	
 	switch (ui_state) {
-		case UI_STATE_RUNNING: // Game view
+		case UI_STATE_RUNNING: {
 			uint16_t hotbar_offset = 80 * UI_SCALING;
 
 			// Crosshair
-			ui_element_t crosshair = {
+			add_ui_element(&(ui_element_t) {
 				.x = ui_center_x,
 				.y = ui_center_y,
 				.width = 16,
@@ -578,11 +389,10 @@ void update_ui() {
 				.tex_width = 16,
 				.tex_height = 16,
 				.texture_id = ui_textures
-			};
-			add_ui_element(&crosshair);
+			});
 
 			// Hotbar
-			ui_element_t hotbar = {
+			add_ui_element(&(ui_element_t) {
 				.x = ui_center_x,
 				.y = 20,
 				.width = 182,
@@ -592,11 +402,10 @@ void update_ui() {
 				.tex_width = 182,
 				.tex_height = 22,
 				.texture_id = ui_textures
-			};
-			add_ui_element(&hotbar);
+			});
 		
 			// Hotbar slot
-			ui_element_t hotbar_slot_active = {
+			add_ui_element(&(ui_element_t) {
 				.x = ui_center_x - 182 + 22 + (40 * (hotbar_slot % 9)),
 				.y = 20,
 				.width = 24,
@@ -606,12 +415,11 @@ void update_ui() {
 				.tex_width = 24,
 				.tex_height = 24,
 				.texture_id = ui_textures
-			};
-			add_ui_element(&hotbar_slot_active);
+			});
 		
 			// Hotbar blocks
 			const cube_element_t base_cube = {
-				.pos.y = 10.333f * UI_SCALING,
+				.pos.y = 6 * UI_SCALING,
 				.width = 10.05 * UI_SCALING,
 				.height = 10.05 * UI_SCALING,
 				.depth = 10.05 * UI_SCALING,
@@ -623,7 +431,7 @@ void update_ui() {
 			for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++) {
 				cube_elements[i] = base_cube;
 				cube_elements[i].id = i + 1;
-				cube_elements[i].pos.x = screen_center_x + 1 - hotbar_offset + ((20 * UI_SCALING) * i);
+				cube_elements[i].pos.x = screen_center_x + 1 - hotbar_offset + ((20 * UI_SCALING) * i) - (7 * UI_SCALING);
 				ui_active_3d_elements = i;
 			}
 
@@ -631,10 +439,11 @@ void update_ui() {
 			snprintf(fps_text, sizeof(fps_text), "FPS: %1.2f, %1.3fms", framerate, frametime);
 			draw_text(fps_text, 3, ui_center_y * 2 - 12);
 			break;
+		}
 
 		case UI_STATE_PAUSED:
 			// Resume button
-			ui_element_t resume_button = {
+			add_ui_element(&(ui_element_t) {
 				.x = ui_center_x,
 				.y = ui_center_y + 25,
 				.width = 200,
@@ -644,11 +453,10 @@ void update_ui() {
 				.tex_width = 200,
 				.tex_height = 20,
 				.texture_id = ui_textures
-			};
-			add_ui_element(&resume_button);
+			});
 
 			// Quit button
-			ui_element_t quit_button = {
+			add_ui_element(&(ui_element_t) {
 				.x = ui_center_x,
 				.y = ui_center_y - 25,
 				.width = 200,
@@ -658,8 +466,7 @@ void update_ui() {
 				.tex_width = 200,
 				.tex_height = 20,
 				.texture_id = ui_textures
-			};
-			add_ui_element(&quit_button);
+			});
 
 			char back_text[13];
 			snprintf(back_text, sizeof(back_text), "Back to Game");
@@ -681,12 +488,9 @@ void update_ui() {
 }
 
 bool check_hit(uint16_t hit_x, uint16_t hit_y, uint8_t element_id) {
-	if (element_id >= ui_active_2d_elements) {
-		return false;
-	}
+	if (element_id >= ui_active_2d_elements) return false;
 	
 	hit_y = settings.window_height - hit_y;
-
 	const ui_element_t *element = &ui_elements[element_id];
 
 	uint16_t scaled_half_width = (uint16_t)(element->width * UI_SCALING) / 2;
@@ -695,39 +499,32 @@ bool check_hit(uint16_t hit_x, uint16_t hit_y, uint8_t element_id) {
 	uint16_t center_y = (uint16_t)(element->y * UI_SCALING) / 2;
 
 	return (hit_x >= center_x - scaled_half_width &&
-		hit_x <= center_x + scaled_half_width &&
-		hit_y >= center_y - scaled_half_height &&
-		hit_y <= center_y + scaled_half_height);
+			hit_x <= center_x + scaled_half_width &&
+			hit_y >= center_y - scaled_half_height &&
+			hit_y <= center_y + scaled_half_height);
 }
 
 void cleanup_ui() {
 	// Free dynamic arrays
-	if (ui_elements) {
-		free(ui_elements);
-		ui_elements = NULL;
-	}
-	if (vertex_buffer) {
-		free(vertex_buffer);
-		vertex_buffer = NULL;
-	}
-	if (ui_batches) {
-		free(ui_batches);
-		ui_batches = NULL;
-	}
+	free(ui_elements);
+	free(vertex_buffer);
+	free(ui_batches);
+	
+	ui_elements = NULL;
+	vertex_buffer = NULL;
+	ui_batches = NULL;
+	
 	ui_elements_capacity = 0;
 	vertex_buffer_capacity = 0;
 	ui_batches_capacity = 0;
 	ui_active_2d_elements = 0;
 	ui_batch_count = 0;
 	
+	// Delete OpenGL resources
 	glDeleteVertexArrays(1, &ui_vao);
 	glDeleteBuffers(1, &ui_vbo);
 	glDeleteBuffers(1, &cube_vbo);
-	glDeleteBuffers(1, &cube_color_vbo);
-	glDeleteBuffers(1, &cube_normal_vbo);
-	glDeleteBuffers(1, &cube_tex_id_vbo);
 	glDeleteBuffers(1, &cube_ebo);
 	glDeleteVertexArrays(1, &cube_vao);
 	glDeleteProgram(ui_shader);
-	glDeleteProgram(cube_shader);
 }
