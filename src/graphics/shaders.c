@@ -1,7 +1,7 @@
 #include "main.h"
 #include <stdio.h>
 
-unsigned int shaderProgram, postProcessingShader, ui_shader;
+unsigned int world_shader, post_process_shader, ui_shader;
 
 unsigned int compile_shader(const char* shader_source, int type) {
 	int success;
@@ -37,8 +37,8 @@ void load_shaders() {
 	#ifdef DEBUG
 	profiler_start(PROFILER_ID_SHADER, false);
 	#endif
-	shaderProgram = load_shader("../shaders/world.vert", "../shaders/world.frag");
-	postProcessingShader = load_shader("../shaders/postprocess.vert", "../shaders/postprocess.frag");
+	world_shader = load_shader("../shaders/world.vert", "../shaders/world.frag");
+	post_process_shader = load_shader("../shaders/postprocess.vert", "../shaders/postprocess.frag");
 	ui_shader = load_shader("../shaders/ui.vert", "../shaders/ui.frag");
 	#ifdef DEBUG
 	profiler_stop(PROFILER_ID_SHADER, false);

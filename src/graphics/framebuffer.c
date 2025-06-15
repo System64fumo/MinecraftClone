@@ -74,7 +74,7 @@ void render_to_framebuffer() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
-	glUseProgram(shaderProgram);
+	glUseProgram(world_shader);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, block_textures);
 	glUniform1i(atlas_uniform_location, 0);
@@ -104,10 +104,10 @@ void render_to_framebuffer() {
 
 void render_to_screen() {
 	glDisable(GL_DEPTH_TEST);
-	glUseProgram(postProcessingShader);
+	glUseProgram(post_process_shader);
 
 	if (depth_loc == 0)
-		depth_loc = glGetUniformLocation(postProcessingShader, "u_depthTexture");
+		depth_loc = glGetUniformLocation(post_process_shader, "u_depthTexture");
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, depthTexture);

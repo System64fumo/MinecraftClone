@@ -133,9 +133,7 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Fac
 	clear_face_data(faces);
 
 	uint8_t block_type = block_data[block_id][0];
-	bool is_transparent = block_data[block_id][1] != 0;
 
-	// For regular blocks and slabs
 	if (block_type == 0 || block_type == 1) {
 		const face_vertex_t (*face_data)[4] = (block_type == 0) ? cube_faces : slab_faces;
 		
@@ -152,7 +150,6 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Fac
 			store_face_data(&faces[face], vertices, indices, vertex_count, index_count);
 		}
 	}
-	// For cross-type blocks (like plants)
 	else if (block_type == 2) {
 		for (uint8_t face = 0; face < 4; face++) {
 			Vertex vertices[4];

@@ -254,7 +254,7 @@ void draw_block_highlight(vec3 pos) {
 	matrix4_translate(highlight_matrix, pos.x + 0.5, pos.y + 0.5, pos.z + 0.5);
 	matrix4_scale(highlight_matrix, 1.001, 1.001, 1.001);
 
-	glUseProgram(shaderProgram);
+	glUseProgram(world_shader);
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, highlight_matrix);
 	glUniform1i(atlas_uniform_location, 1);
 
@@ -359,7 +359,7 @@ void render_ui() {
 	}
 
 	if (ui_active_3d_elements) {
-		glUseProgram(shaderProgram);
+		glUseProgram(world_shader);
 		glBindTexture(GL_TEXTURE_2D, block_textures);
 		for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++) {
 			draw_cube_element(&cube_elements[i]);
@@ -430,7 +430,7 @@ void update_ui() {
 
 			for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++) {
 				cube_elements[i] = base_cube;
-				cube_elements[i].id = i + 1;
+				cube_elements[i].id = i + 1 + (floor(hotbar_slot / 9) * 9);
 				cube_elements[i].pos.x = screen_center_x + 1 - hotbar_offset + ((20 * UI_SCALING) * i) - (7 * UI_SCALING);
 				ui_active_3d_elements = i;
 			}

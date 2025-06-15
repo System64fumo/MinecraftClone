@@ -202,7 +202,7 @@ void load_around_entity(Entity* entity) {
 	profiler_start(PROFILER_ID_WORLD_GEN, false);
 	start_world_gen_tracking();
 	#endif
-	
+
 	int center_cx = floorf(entity->pos.x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
 	last_cy = floorf(entity->pos.y / CHUNK_SIZE) - (WORLD_HEIGHT / 2);
 	int center_cz = floorf(entity->pos.z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
@@ -332,12 +332,12 @@ void load_around_entity(Entity* entity) {
 	float entity_chunk_z = entity->pos.z / CHUNK_SIZE;
 	
 	// Enqueue chunks that need to be loaded
-	for (int x = 0; x < RENDER_DISTANCE; x++) {
-		for (int y = 0; y < WORLD_HEIGHT; y++) {
-			for (int z = 0; z < RENDER_DISTANCE; z++) {
+	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
+			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
 				pthread_mutex_lock(&chunks_mutex);
 				bool needs_load = true;
-				for (int face = 0; face < 6; face++) {
+				for (uint8_t face = 0; face < 6; face++) {
 					if (chunks[x][y][z].faces[face].vertices) {
 						needs_load = false;
 						break;
@@ -346,39 +346,31 @@ void load_around_entity(Entity* entity) {
 				pthread_mutex_unlock(&chunks_mutex);
 				
 				if (needs_load) {
-					// Calculate world position of this chunk
 					float world_chunk_x = (x + center_cx);
 					float world_chunk_y = (y + last_cy);
 					float world_chunk_z = (z + center_cz);
-					
-					// Calculate distance to entity (squared)
+
 					float dx = world_chunk_x - entity_chunk_x;
 					float dy = world_chunk_y - entity_chunk_y;
 					float dz = world_chunk_z - entity_chunk_z;
 					float dist_sq = dx*dx + dy*dy + dz*dz;
-					
-					// Enqueue the chunk load request and track it
+
 					enqueue_chunk_load(x, y, z, x + center_cx, y, z + center_cz, dist_sq);
-					track_chunk_queued();  // Track each queued chunk
+					track_chunk_queued();
 				}
 			}
 		}
 	}
-	
-	// Check if no chunks were queued
+
 	pthread_mutex_lock(&world_gen_tracker.mutex);
 	if (world_gen_tracker.chunks_queued == 0) {
 		#ifdef DEBUG
-		// No work to do, stop profiler immediately
 		profiler_stop(PROFILER_ID_WORLD_GEN, false);
 		#endif
 	}
 	pthread_mutex_unlock(&world_gen_tracker.mutex);
 	
 	free_chunks(temp_chunks, RENDER_DISTANCE, WORLD_HEIGHT);
-	
-	// NOTE: Don't stop profiler here anymore - it will be stopped by track_chunk_completed()
-	// when all queued chunks are actually finished processing
 }
 
 void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz) {
@@ -394,7 +386,9 @@ void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsig
 }
 
 void unload_chunk(Chunk* chunk) {
-	for (int face = 0; face < 6; face++) {
+	if (!chunk) return;
+
+	for (uint8_t face = 0; face < 6; face++) {
 		if (chunk->faces[face].vertices) {
 			free(chunk->faces[face].vertices);
 			chunk->faces[face].vertices = NULL;

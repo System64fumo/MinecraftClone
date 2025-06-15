@@ -7,7 +7,7 @@ Chunk*** allocate_chunks(int render_distance, int world_height) {
 	for (int i = 0; i < render_distance; i++) {
 		chunks[i] = (Chunk **)malloc(world_height * sizeof(Chunk *));
 		for (int j = 0; j < world_height; j++) {
-			chunks[i][j] = (Chunk *)malloc(render_distance * sizeof(Chunk));
+			chunks[i][j] = (Chunk *)calloc(render_distance, sizeof(Chunk));
 		}
 	}
 	return chunks;

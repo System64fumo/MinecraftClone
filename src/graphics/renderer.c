@@ -109,7 +109,7 @@ void rebuild_combined_visible_mesh() {
 			glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
 			glBufferData(GL_ARRAY_BUFFER, total_opaque_vertices * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
 			Vertex* vbo_ptr = (Vertex*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-			
+
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaque_EBOs[face]);
 			glBufferData(GL_ELEMENT_ARRAY_BUFFER, total_opaque_indices * sizeof(uint32_t), NULL, GL_DYNAMIC_DRAW);
 			uint32_t* ebo_ptr = (uint32_t*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
@@ -199,7 +199,7 @@ void render_chunks() {
 	if (mesh_needs_rebuild)
 		rebuild_combined_visible_mesh();
 	
-	glUseProgram(shaderProgram);
+	glUseProgram(world_shader);
 	matrix4_identity(model);
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, model);
 

@@ -68,10 +68,10 @@ int initialize() {
 		return -1;
 	}
 
-	/*glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_SAMPLES, 8);*/
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
+	//glfwWindowHint(GLFW_SAMPLES, 8);
 
 	window = glfwCreateWindow(settings.window_width, settings.window_height, "Minecraft Clone", NULL, NULL);
 	if (!window) {
@@ -93,6 +93,7 @@ int initialize() {
 
 	// Debugging
 	#ifdef DEBUG
+	glfwWindowHint(GLFW_CONTEXT_DEBUG, GLFW_TRUE);
 	printf("OpenGL Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
 	printf("OpenGL Renderer: %s\n", (const char*)glGetString(GL_RENDERER));
 	printf("OpenGL Version: %s\n", (const char*)glGetString(GL_VERSION));
@@ -150,12 +151,12 @@ int initialize() {
 	start_world_gen_thread();
 
 	// Cache uniform locations
-	model_uniform_location = glGetUniformLocation(shaderProgram, "model");
-	atlas_uniform_location = glGetUniformLocation(shaderProgram, "textureAtlas");
-	view_uniform_location = glGetUniformLocation(shaderProgram, "view");
-	projection_uniform_location = glGetUniformLocation(shaderProgram, "projection");
+	model_uniform_location = glGetUniformLocation(world_shader, "model");
+	atlas_uniform_location = glGetUniformLocation(world_shader, "textureAtlas");
+	view_uniform_location = glGetUniformLocation(world_shader, "view");
+	projection_uniform_location = glGetUniformLocation(world_shader, "projection");
 	ui_projection_uniform_location = glGetUniformLocation(ui_shader, "projection");
-	ui_state_uniform_location = glGetUniformLocation(postProcessingShader, "ui_state");
+	ui_state_uniform_location = glGetUniformLocation(post_process_shader, "ui_state");
 
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 
@@ -165,6 +166,7 @@ int initialize() {
 	glFrontFace(GL_CCW);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthFunc(GL_LESS);
 	//glEnable(GL_MULTISAMPLE);
 
 	// Initialize player
@@ -210,7 +212,7 @@ void shutdown() {
 	pthread_mutex_unlock(&chunks_mutex);
 
 	free_chunks(chunks, RENDER_DISTANCE, WORLD_HEIGHT);
-	glDeleteProgram(shaderProgram);
+	glDeleteProgram(world_shader);
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
