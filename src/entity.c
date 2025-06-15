@@ -155,59 +155,113 @@ bool check_entity_collision(float x, float y, float z, float width, float height
 void update_entity_physics(Entity* entity, float delta_time) {
 	if (!entity->is_grounded) {
 		entity->vertical_velocity -= GRAVITY * delta_time;
-		entity->vertical_velocity = fmaxf(
-			-MAX_FALL_SPEED, 
-			entity->vertical_velocity
-		);
+		entity->vertical_velocity = fmaxf(-MAX_FALL_SPEED, entity->vertical_velocity);
 	}
 
-	float new_y = entity->pos.y + entity->vertical_velocity * delta_time;
-
-	int collision_points_count = 4;
-	float half_width = entity->width / 2.0f;
-	float ground_check_points[][2] = {
-		{entity->pos.x - half_width, entity->pos.z - half_width},
-		{entity->pos.x + half_width, entity->pos.z - half_width},
-		{entity->pos.x - half_width, entity->pos.z + half_width},
-		{entity->pos.x + half_width, entity->pos.z + half_width}
-	};
-
+	const float max_step = 0.25f;
+	float remaining_time = delta_time;
+	int iterations = 0;
+	const int max_iterations = 5;
+	
 	entity->is_grounded = false;
+	bool hit_ceiling = false;
 
-	// Check ground collision
-	for (int i = 0; i < collision_points_count; i++) {
-		int ground_collision = is_block_solid(
-			(int)floorf(ground_check_points[i][0]), 
-			(int)floorf(new_y), 
-			(int)floorf(ground_check_points[i][1])
-		);
+	while (remaining_time > 0.0f && iterations < max_iterations) {
+		iterations++;
+		hit_ceiling = false;
 
-		if (ground_collision) {
-			new_y = ceilf(new_y);
-			entity->vertical_velocity = 0.0f;
-			entity->is_grounded = true;
-			break;
-		}
-	}
+		// Calculate movement for this substep
+		float step_time = fminf(remaining_time, max_step / fmaxf(fabsf(entity->vertical_velocity), 0.1f));
+		float step_y = entity->vertical_velocity * step_time;
 
-	// Check ceiling collision
-	if (entity->vertical_velocity > 0) {
-		for (int i = 0; i < collision_points_count; i++) {
-			int ceiling_collision = is_block_solid(
-				(int)floorf(ground_check_points[i][0]), 
-				(int)floorf(new_y + entity->height), 
-				(int)floorf(ground_check_points[i][1])
-			);
+		// Check ground collision (moving down)
+		if (step_y < 0) {
+			int collision_points_count = 4;
+			float half_width = entity->width / 2.0f;
+			float ground_check_points[][2] = {
+				{entity->pos.x - half_width, entity->pos.z - half_width},
+				{entity->pos.x + half_width, entity->pos.z - half_width},
+				{entity->pos.x - half_width, entity->pos.z + half_width},
+				{entity->pos.x + half_width, entity->pos.z + half_width}
+			};
 
-			if (ceiling_collision) {
-				new_y = floorf(new_y + entity->height) - entity->height;
+			float min_distance = step_y;
+			bool hit_ground = false;
+
+			// Find the highest ground collision point
+			for (int i = 0; i < collision_points_count; i++) {
+				float test_y = entity->pos.y + step_y;
+				int ground_collision = is_block_solid(
+					(int)floorf(ground_check_points[i][0]), 
+					(int)floorf(test_y), 
+					(int)floorf(ground_check_points[i][1])
+				);
+
+				if (ground_collision) {
+					float collision_y = ceilf(test_y);
+					float distance = collision_y - entity->pos.y;
+					if (distance > min_distance) {
+						min_distance = distance;
+						hit_ground = true;
+					}
+				}
+			}
+
+			if (hit_ground) {
+				entity->pos.y += min_distance;
 				entity->vertical_velocity = 0.0f;
+				entity->is_grounded = true;
+				remaining_time = 0.0f;
 				break;
 			}
 		}
-	}
+		
+		// Check ceiling collision (moving up)
+		if (step_y > 0) {
+			int collision_points_count = 4;
+			float half_width = entity->width / 2.0f;
+			float ceiling_check_points[][2] = {
+				{entity->pos.x - half_width, entity->pos.z - half_width},
+				{entity->pos.x + half_width, entity->pos.z - half_width},
+				{entity->pos.x - half_width, entity->pos.z + half_width},
+				{entity->pos.x + half_width, entity->pos.z + half_width}
+			};
 
-	entity->pos.y = new_y;
+			float max_distance = step_y;
+			hit_ceiling = false;
+
+			// Find the lowest ceiling collision point
+			for (int i = 0; i < collision_points_count; i++) {
+				float test_y = entity->pos.y + entity->height + step_y;
+				int ceiling_collision = is_block_solid(
+					(int)floorf(ceiling_check_points[i][0]), 
+					(int)floorf(test_y), 
+					(int)floorf(ceiling_check_points[i][1])
+				);
+
+				if (ceiling_collision) {
+					float collision_y = floorf(test_y) - entity->height;
+					float distance = collision_y - entity->pos.y;
+					if (distance < max_distance) {
+						max_distance = distance;
+						hit_ceiling = true;
+					}
+				}
+			}
+
+			if (hit_ceiling) {
+				entity->pos.y += max_distance;
+				entity->vertical_velocity = 0.0f;
+				step_y = max_distance;
+			}
+		}
+
+		if (!entity->is_grounded && !hit_ceiling) {
+			entity->pos.y += step_y;
+		}
+
+		remaining_time -= step_time;
+	}
 }
 
 Entity create_entity(uint8_t id) {
