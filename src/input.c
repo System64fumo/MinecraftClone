@@ -294,7 +294,7 @@ void process_input(GLFWwindow* window) {
 	}
 
 	float move_speed = global_entities[0].speed * delta_time;
-	float yaw = global_entities[0].yaw * (M_PI / 180.0f);
+	float yaw = global_entities[0].yaw * DEG_TO_RAD;
 	float dx = 0.0f, dy = 0.0f, dz = 0.0f;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {

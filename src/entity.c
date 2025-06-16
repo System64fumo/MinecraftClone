@@ -26,8 +26,8 @@ bool aabb_intersect(AABB a, AABB b) {
 }
 
 vec3 get_direction(float pitch, float yaw) {
-	float pr = pitch * (M_PI / 180.0f);
-	float yr = (yaw - 90.0f) * (M_PI / 180.0f);
+	float pr = pitch * DEG_TO_RAD;
+	float yr = (yaw - 90.0f) * DEG_TO_RAD;
 	return (vec3) {
 		.x = -sinf(yr) * cosf(pr),
 		.y = sinf(pr),
