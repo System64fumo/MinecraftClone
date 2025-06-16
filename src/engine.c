@@ -19,6 +19,7 @@ unsigned int block_textures, ui_textures, font_textures;
 // Type, Translucent, Face textures
 // t,	t,		   f,f,f,f,f,f
 uint8_t block_data[MAX_BLOCK_TYPES][8] = {
+	[0 ... 255] = {0, 0, 31, 31, 31, 31, 31, 31},	// Null
 	[0] =  {0, 1, 0,   0,   0,   0,   0,   0  },	// Air
 	[1] =  {0, 0, 3,   3,   3,   3,   3,   3  },	// Dirt
 	[2] =  {0, 0, 4,   4,   4,   4,   3,   1  },	// Grass
@@ -146,7 +147,6 @@ int initialize() {
 	setup_framebuffer(settings.window_width, settings.window_height);
 	init_fullscreen_quad();
 	init_ui();
-	init_block_highlight();
 	init_gl_buffers();
 	start_world_gen_thread();
 

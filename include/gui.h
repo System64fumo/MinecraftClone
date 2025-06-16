@@ -4,7 +4,7 @@
 #include "misc.h"
 #include <stdint.h>
 
-#define MAX_CUBE_ELEMENTS 9
+#define MAX_CUBE_ELEMENTS 10
 
 #define UI_STATE_RUNNING 0
 #define UI_STATE_PAUSED 1
@@ -56,7 +56,6 @@ void draw_char(unsigned char chr, uint16_t x, uint16_t y);
 void draw_text(char* ptr, uint16_t x, uint16_t y);
 
 void init_ui();
-void init_block_highlight();
 bool check_hit(uint16_t hit_x, uint16_t hit_y, uint8_t element_id);
 void update_ui_buffer();
 void update_ui();

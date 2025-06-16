@@ -5,8 +5,8 @@
 void setup_matrices() {
 	matrix4_identity(view);
 
-	float pitch = global_entities[0].pitch * (M_PI / 180.0f);
-	float yaw = global_entities[0].yaw * (M_PI / 180.0f);
+	float pitch = global_entities[0].pitch * DEG_TO_RAD;
+	float yaw = global_entities[0].yaw * DEG_TO_RAD;
 
 	#if USE_ARM_OPTIMIZED_CODE
 

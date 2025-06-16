@@ -7,31 +7,27 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-
 uint8_t ui_state = 0;
 uint8_t ui_active_2d_elements = 0;
 uint8_t ui_active_3d_elements = 0;
 static ui_vertex_t *vertex_buffer = NULL;
 static uint16_t vertex_buffer_capacity = 0;
-static unsigned int highlight_vbo = 0, highlight_vao = 0;
+static unsigned int highlight_vao, highlight_vbo, highlight_ebo;
+static unsigned int cube_vao, cube_vbo, cube_ebo;
 static unsigned int ui_vao, ui_vbo;
 static float ortho[16];
 static float cube_projection[16];
 static float cube_view[16];
 static float highlight_matrix[16];
 static float cube_matrix[16];
+static uint16_t ui_center_x, ui_center_y;
 
 ui_element_t* ui_elements = NULL;
 static uint8_t ui_elements_capacity = 0;
-
 static ui_batch_t *ui_batches = NULL;
 uint8_t ui_batch_count = 0;
 static uint8_t ui_batches_capacity = 0;
-
 static cube_element_t cube_elements[MAX_CUBE_ELEMENTS];
-static GLuint highlight_vao, highlight_vbo, highlight_ebo;
-static GLuint cube_vao, cube_vbo, cube_ebo;
-static uint16_t ui_center_x, ui_center_y;
 
 static const float highlight_vertices[] = {
 	// Front face (Z+)
@@ -183,31 +179,7 @@ void update_cube_projection() {
 	matrix4_identity(cube_view);
 }
 
-void init_cube_rendering() {
-	glGenVertexArrays(1, &cube_vao);
-	glBindVertexArray(cube_vao);
-
-	glGenBuffers(1, &cube_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
-	
-	glGenBuffers(1, &cube_ebo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_ebo);
-
-	// Set up vertex attributes
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
-	glEnableVertexAttribArray(0);
-	glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
-	glEnableVertexAttribArray(1);
-	glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
-	glEnableVertexAttribArray(3);
-
-	glBindVertexArray(0);
-	update_cube_projection();
-}
-
-void init_block_highlight() {
+void init_highlight() {
 	glGenVertexArrays(1, &highlight_vao);
 	glGenBuffers(1, &highlight_vbo);
 	glGenBuffers(1, &highlight_ebo);
@@ -222,20 +194,29 @@ void init_block_highlight() {
 	glBindVertexArray(0);
 }
 
-void init_ui() {
-	init_block_highlight();
-	init_cube_rendering();
+void init_cube_rendering() {
+	glGenVertexArrays(1, &cube_vao);
+	glBindVertexArray(cube_vao);
 
-	if (!resize_ui_elements(16)) {
-		printf("Failed to initialize UI elements\n");
-		return;
-	}
+	glGenBuffers(1, &cube_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
+	
+	glGenBuffers(1, &cube_ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_ebo);
 
-	if (!resize_ui_batches(8)) {
-		printf("Failed to initialize UI batches\n");
-		return;
-	}
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
+	glEnableVertexAttribArray(0);
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
+	glEnableVertexAttribArray(1);
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
+	glEnableVertexAttribArray(3);
 
+	glBindVertexArray(0);
+}
+
+void init_ui_rendering() {
 	glGenVertexArrays(1, &ui_vao);
 	glGenBuffers(1, &ui_vbo);
 	glBindVertexArray(ui_vao);
@@ -249,6 +230,22 @@ void init_ui() {
 	glEnableVertexAttribArray(2);
 }
 
+void init_ui() {
+	init_highlight();
+	init_cube_rendering();
+	init_ui_rendering();
+
+	if (!resize_ui_elements(16)) {
+		printf("Failed to initialize UI elements\n");
+		return;
+	}
+
+	if (!resize_ui_batches(8)) {
+		printf("Failed to initialize UI batches\n");
+		return;
+	}
+}
+
 void draw_block_highlight(vec3 pos) {
 	matrix4_identity(highlight_matrix);
 	matrix4_translate(highlight_matrix, pos.x + 0.5, pos.y + 0.5, pos.z + 0.5);
@@ -256,7 +253,6 @@ void draw_block_highlight(vec3 pos) {
 
 	glUseProgram(world_shader);
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, highlight_matrix);
-	glUniform1i(atlas_uniform_location, 1);
 
 	glLineWidth(2.0f);
 	glBindVertexArray(highlight_vao);
@@ -290,8 +286,6 @@ void draw_cube_element(const cube_element_t* cube) {
 	matrix4_translate(cube_matrix, cube->pos.x, cube->pos.y, 0);
 	matrix4_scale(cube_matrix, cube->width, cube->height, cube->depth);
 
-	glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, cube_projection);
-	glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, cube_view);
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, cube_matrix);
 
 	FaceMesh faces[6] = {0};
@@ -332,7 +326,6 @@ void update_ui_buffer() {
 
 		uint16_t vertex_offset = i * 4;
 
-		// Set vertex data
 		vertex_buffer[vertex_offset + 0] = (ui_vertex_t){{x0, y1}, {tx, ty}, element->texture_id};
 		vertex_buffer[vertex_offset + 1] = (ui_vertex_t){{x0, y0}, {tx, ty + th}, element->texture_id};
 		vertex_buffer[vertex_offset + 2] = (ui_vertex_t){{x1, y1}, {tx + tw, ty}, element->texture_id};
@@ -361,8 +354,29 @@ void render_ui() {
 	if (ui_active_3d_elements) {
 		glUseProgram(world_shader);
 		glBindTexture(GL_TEXTURE_2D, block_textures);
-		for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++) {
-			draw_cube_element(&cube_elements[i]);
+
+		if (ui_active_3d_elements > 1) {
+			glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, cube_projection);
+			glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, cube_view);
+			for (uint8_t i = 0; i < ui_active_3d_elements - 1; i++) {
+				draw_cube_element(&cube_elements[i]);
+				draw_calls++;
+			}
+		}
+
+		if (ui_active_3d_elements > 0) {
+			float perspective_proj[16];
+			float aspect = (float)settings.window_width / (float)settings.window_height;
+			matrix4_identity(perspective_proj);
+			matrix4_perspective(perspective_proj, 45.0f * DEG_TO_RAD, aspect, 0.1f, 100.0f);
+
+			float view[16];
+			matrix4_identity(view);
+			matrix4_translate(view, 0, 0, -3.5f);
+
+			glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, perspective_proj);
+			glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, view);
+			draw_cube_element(&cube_elements[ui_active_3d_elements - 1]);
 			draw_calls++;
 		}
 	}
@@ -423,16 +437,32 @@ void update_ui() {
 				.width = 10.05 * UI_SCALING,
 				.height = 10.05 * UI_SCALING,
 				.depth = 10.05 * UI_SCALING,
-				.rotation_x = -30 * (M_PI / 180.0f),
-				.rotation_y = 45 * (M_PI / 180.0f),
+				.rotation_x = -30 * DEG_TO_RAD,
+				.rotation_y = 45 * DEG_TO_RAD,
 				.id = 0
 			};
 
-			for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS; i++) {
+			for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS - 1; i++) {
 				cube_elements[i] = base_cube;
 				cube_elements[i].id = i + 1 + (floor(hotbar_slot / 9) * 9);
 				cube_elements[i].pos.x = screen_center_x + 1 - hotbar_offset + ((20 * UI_SCALING) * i) - (7 * UI_SCALING);
-				ui_active_3d_elements = i;
+				ui_active_3d_elements++;
+			}
+
+			// Selected block
+			if (ui_active_3d_elements < MAX_CUBE_ELEMENTS) {
+				cube_elements[ui_active_3d_elements] = (cube_element_t){
+					.pos.x = 1.15,
+					.pos.y = -1.65,
+					.width = 1,
+					.height = 1,
+					.depth = 1,
+					.rotation_x = -10 * DEG_TO_RAD,
+					.rotation_y = -30 * DEG_TO_RAD,
+					.rotation_z = -2.5 * DEG_TO_RAD,
+					.id = hotbar_slot + 1
+				};
+				ui_active_3d_elements++;
 			}
 
 			char fps_text[23];
@@ -505,7 +535,6 @@ bool check_hit(uint16_t hit_x, uint16_t hit_y, uint8_t element_id) {
 }
 
 void cleanup_ui() {
-	// Free dynamic arrays
 	free(ui_elements);
 	free(vertex_buffer);
 	free(ui_batches);
@@ -520,7 +549,6 @@ void cleanup_ui() {
 	ui_active_2d_elements = 0;
 	ui_batch_count = 0;
 	
-	// Delete OpenGL resources
 	glDeleteVertexArrays(1, &ui_vao);
 	glDeleteBuffers(1, &ui_vbo);
 	glDeleteBuffers(1, &cube_vbo);
