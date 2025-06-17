@@ -108,7 +108,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			if (face == 'N') return;
 				
 			Block* block = get_block_at(block_pos.x, block_pos.y, block_pos.z);
-			printf("Adjacent Light data: %d\n", block->light_data);
+			printf("Adjacent Light data: %d\n", block->light_level);
 		}
 	}
 }
@@ -158,8 +158,8 @@ bool is_valid_block_position(float x, float y, float z) {
 	// Check if we're trying to place blocks too far away
 	int chunk_x = (int)floorf(x / CHUNK_SIZE);
 	int chunk_z = (int)floorf(z / CHUNK_SIZE);
-	int render_x = chunk_x - last_cx;
-	int render_z = chunk_z - last_cz;
+	int render_x = chunk_x - chunks[0][0][0].x;
+	int render_z = chunk_z - chunks[0][0][0].z;
 	
 	return (render_x >= 0 && render_x < RENDER_DISTANCE && 
 			render_z >= 0 && render_z < RENDER_DISTANCE);
@@ -190,8 +190,8 @@ void process_input(GLFWwindow* window) {
 				int chunk_y = block_pos.y / CHUNK_SIZE;
 				int block_y = (((int)block_pos.y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
 				
-				int render_x = chunk_x - last_cx;
-				int render_z = chunk_z - last_cz;
+				int render_x = chunk_x - chunks[0][0][0].x;
+				int render_z = chunk_z - chunks[0][0][0].z;
 				
 				if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
 					Chunk* chunk = &chunks[render_x][chunk_y][render_z];
@@ -253,13 +253,13 @@ void process_input(GLFWwindow* window) {
 						int chunk_y = block_pos.y / CHUNK_SIZE;
 						int block_y = (((int)block_pos.y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
 						
-						int render_x = chunk_x - last_cx;
-						int render_z = chunk_z - last_cz;
+						int render_x = chunk_x - chunks[0][0][0].x;
+						int render_z = chunk_z - chunks[0][0][0].z;
 						
 						if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
 							Chunk* chunk = &chunks[render_x][chunk_y][render_z];
 							block->id = hotbar_slot + 1;
-							block->light_data = 0;
+							block->light_level = 0;
 							chunk->needs_update = true;
 							update_adjacent_chunks(render_x, chunk_y, render_z, block_x, block_y, block_z);
 						}
@@ -274,8 +274,8 @@ void process_input(GLFWwindow* window) {
 	int player_cy = (int)(global_entities[0].pos.y / CHUNK_SIZE);
 	int player_cz = (int)(global_entities[0].pos.z / CHUNK_SIZE);
 
-	int center_cx = last_cx + (RENDER_DISTANCE / 2);
-	int center_cz = last_cz + (RENDER_DISTANCE / 2);
+	int center_cx = chunks[0][0][0].x + (RENDER_DISTANCE / 2);
+	int center_cz = chunks[0][0][0].z + (RENDER_DISTANCE / 2);
 
 	int relative_cx = player_cx - (center_cx - (RENDER_DISTANCE / 2));
 	int relative_cz = player_cz - (center_cz - (RENDER_DISTANCE / 2));

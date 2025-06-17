@@ -33,7 +33,7 @@ typedef struct {
 
 typedef struct {
 	uint8_t id;
-	uint8_t light_data;
+	uint8_t light_level;
 } Block;
 
 typedef struct {

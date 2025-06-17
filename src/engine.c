@@ -171,7 +171,7 @@ int initialize() {
 
 	// Initialize player
 	global_entities[0] = create_entity(0);
-	global_entities[0].pos.y = 75;
+	global_entities[0].pos.y = 73;
 	global_entities[0].yaw = 90;
 
 	return 0;

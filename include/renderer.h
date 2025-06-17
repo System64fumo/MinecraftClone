@@ -9,6 +9,14 @@ typedef struct {
 	uint8_t face_id;
 	uint8_t texture_id;
 	float size_u, size_v;
+	// uvec4 ligh_level0;
+	// uvec4 ligh_level1;
+	// uvec4 ligh_level2;
+	// uvec4 ligh_level3;
+	// uvec4 ligh_level4;
+	// uvec4 ligh_level5;
+	// uvec4 ligh_level6;
+	// uvec4 ligh_level7;
 } Vertex;
 
 typedef struct {
@@ -37,7 +45,6 @@ extern uint16_t draw_calls;
 
 void init_gl_buffers();
 void update_frustum();
-void render_chunks_combined();
 void rebuild_combined_visible_mesh();
 void render_chunks();
 void cleanup_renderer();

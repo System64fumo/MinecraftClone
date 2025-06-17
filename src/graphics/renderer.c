@@ -52,6 +52,24 @@ void init_gl_buffers() {
 
 			glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
 			glEnableVertexAttribArray(3);
+
+			// TODO: Re-Enable lighting
+			// glVertexAttribIPointer(4, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level0));
+			// glEnableVertexAttribArray(4);
+			// glVertexAttribIPointer(5, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level1));
+			// glEnableVertexAttribArray(5);
+			// glVertexAttribIPointer(6, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level2));
+			// glEnableVertexAttribArray(6);
+			// glVertexAttribIPointer(7, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level3));
+			// glEnableVertexAttribArray(7);
+			// glVertexAttribIPointer(8, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level4));
+			// glEnableVertexAttribArray(8);
+			// glVertexAttribIPointer(9, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level5));
+			// glEnableVertexAttribArray(9);
+			// glVertexAttribIPointer(10, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level6));
+			// glEnableVertexAttribArray(10);
+			// glVertexAttribIPointer(11, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level7));
+			// glEnableVertexAttribArray(11);
 		}
 	}
 

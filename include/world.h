@@ -10,10 +10,6 @@ typedef struct {
 	float distance;
 } chunk_load_item_t;
 
-extern int last_cx;
-extern int last_cy;
-extern int last_cz;
-
 extern pthread_mutex_t chunks_mutex;
 
 void load_around_entity(Entity* entity);
