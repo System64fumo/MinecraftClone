@@ -91,7 +91,7 @@ bool is_chunk_in_frustum(vec3 pos, vec3 dir, int chunk_x, int chunk_y, int chunk
 
 	vec3 frustum_origin = {
 		pos.x - normalized_dir.x * frustum_offset,
-		pos.y - (CHUNK_SIZE * 4) - normalized_dir.y * frustum_offset,
+		pos.y - normalized_dir.y * frustum_offset,
 		pos.z - normalized_dir.z * frustum_offset
 	};
 
@@ -247,9 +247,9 @@ void update_frustum() {
 				bool is_visible = true;
 
 				if (frustum_culling_enabled) {
-					int chunk_x = last_cx + x;
-					int chunk_y = last_cy + y;
-					int chunk_z = last_cz + z;
+					int chunk_x = chunks[0][0][0].x + x;
+					int chunk_y = chunks[0][0][0].y + y;
+					int chunk_z = chunks[0][0][0].z + z;
 					is_visible = is_chunk_in_frustum(pos, dir, chunk_x, chunk_y, chunk_z, fov_angle);
 				}
 

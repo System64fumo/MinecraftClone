@@ -25,11 +25,6 @@ typedef struct {
 	pthread_cond_t cond;
 } chunk_load_queue_t;
 
-chunk_load_queue_t chunk_load_queue;
-pthread_t world_gen_thread;
-bool world_gen_thread_running = false;
-pthread_mutex_t chunks_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 typedef struct {
 	bool tracking_active;
 	uint32_t chunks_queued;
@@ -37,6 +32,10 @@ typedef struct {
 	pthread_mutex_t mutex;
 } world_gen_tracker_t;
 
+chunk_load_queue_t chunk_load_queue;
+pthread_t world_gen_thread;
+bool world_gen_thread_running = false;
+pthread_mutex_t chunks_mutex = PTHREAD_MUTEX_INITIALIZER;
 world_gen_tracker_t world_gen_tracker = {0};
 
 void init_world_gen_tracker(void) {

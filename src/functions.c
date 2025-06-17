@@ -51,7 +51,6 @@ void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x
 		chunks[render_x][chunk_y][render_z + 1].needs_update = true;
 }
 
-// TODO: Avoid using last_cx and last_cz
 Block* get_block_at(int world_block_x, int world_block_y, int world_block_z) {
 	int chunk_x, chunk_z, block_x, block_z;
 	calculate_chunk_and_block(world_block_x, &chunk_x, &block_x);
@@ -60,8 +59,8 @@ Block* get_block_at(int world_block_x, int world_block_y, int world_block_z) {
 	int chunk_y = world_block_y / CHUNK_SIZE;
 	int block_y = ((world_block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
 
-	int render_x = chunk_x - last_cx;
-	int render_z = chunk_z - last_cz;
+	int render_x = chunk_x - chunks[0][0][0].x;
+	int render_z = chunk_z - chunks[0][0][0].z;
 
 	if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
 		Chunk* chunk = &chunks[render_x][chunk_y][render_z];

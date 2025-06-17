@@ -11,6 +11,7 @@ const float flatness_scale = 0.02f;
 const float cave_scale = 0.1f;
 const float cave_simplex_scale = 0.1f;
 const float structure_scale = 0.1f;
+const bool flat_world_gen = false;
 
 typedef struct {
 	int8_t x, y, z;
@@ -148,6 +149,40 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 	int world_x_base = chunk_x * CHUNK_SIZE;
 	int world_z_base = chunk_z * CHUNK_SIZE;
 	bool empty_chunk = true;
+
+	if (flat_world_gen) {
+		for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
+			for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
+				for (uint8_t y = 0; y < CHUNK_SIZE; y++) {
+					int absolute_y = chunk_base_y + y;
+					
+					if (absolute_y == 0) {
+						chunk->blocks[x][y][z] = (Block){.id = 7};  // Bedrock
+						empty_chunk = false;
+					}
+					else if (absolute_y == 4) {
+						chunk->blocks[x][y][z] = (Block){.id = 2};  // Grass
+						empty_chunk = false;
+					}
+					else if (absolute_y > 0 && absolute_y < 4) {
+						if (absolute_y >= 4 - 2) {
+							chunk->blocks[x][y][z] = (Block){.id = 1};  // Dirt (2 layers)
+						} else {
+							chunk->blocks[x][y][z] = (Block){.id = 3};  // Stone
+						}
+						empty_chunk = false;
+					}
+					else {
+							chunk->blocks[x][y][z] = (Block){.id = 0};  // Air
+					}
+				}
+			}
+		}
+		
+		if (empty_chunk)
+			chunk->needs_update = false;
+		return;
+	}
 
 	// Pre-calculate noise for each (x,z) position
 	float continent_noise[CHUNK_SIZE][CHUNK_SIZE];

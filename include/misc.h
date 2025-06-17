@@ -16,6 +16,10 @@
 static const float DEG_TO_RAD = M_PI / 180.0f;
 
 typedef struct {
+	uint32_t x, y, z, w;
+} uvec4;
+
+typedef struct {
 	float x, y, z;
 } vec3;
 
