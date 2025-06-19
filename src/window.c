@@ -4,7 +4,7 @@
 #include "gui.h"
 
 float near = 0.1f;
-float far = 300.0f;
+float far = 500.0f;
 float aspect = 1.7f;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -18,7 +18,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 
 	glViewport(0, 0, settings.window_width, settings.window_height);
 	matrix4_identity(projection);
-	matrix4_perspective(projection, settings.fov * M_PI / 180.0f, aspect, near, far);
+	matrix4_perspective(projection, settings.fov * DEG_TO_RAD, aspect, near, far);
 	setup_framebuffer(width, height);
 	update_ui();
 

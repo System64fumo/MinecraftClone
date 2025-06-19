@@ -237,7 +237,7 @@ void update_frustum() {
 	pos.y = global_entities[0].pos.y + global_entities[0].eye_level;
 	pos.z = global_entities[0].pos.z;
 
-	float fov_angle = cosf(settings.fov * M_PI / 180.0f);
+	float fov_angle = cosf(settings.fov * DEG_TO_RAD);
 
 	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {

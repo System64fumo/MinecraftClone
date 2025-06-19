@@ -1,4 +1,5 @@
 #include "main.h"
+#include "skybox.h"
 #include "gui.h"
 #include "config.h"
 
@@ -40,6 +41,7 @@ void setup_framebuffer(int width, int height) {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	skybox_init();
 }
 
 void init_fullscreen_quad() {
@@ -70,7 +72,6 @@ void render_to_framebuffer() {
 	draw_calls = 0;
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
-	glClearColor(0.471f * settings.sky_brightness, 0.655f * settings.sky_brightness, 1.0f * settings.sky_brightness, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
@@ -88,13 +89,14 @@ void render_to_framebuffer() {
 	glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, projection);
 
 	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
+	skybox_render();
 	render_chunks();
 
 	char block_face = 'N';
 	vec3 block_pos = {0};
 	get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &block_face);
 	if (block_face != 'N')
-		draw_block_highlight(block_pos); // TODO: Drawing block highlight breaks hotbar block rendering
+		draw_block_highlight(block_pos);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	#ifdef DEBUG

@@ -1,4 +1,4 @@
-#version 300 es
+#version 310 es
 precision mediump float;
 out vec4 FragColor;
 in vec2 TexCoords;
@@ -9,37 +9,44 @@ uniform int ui_state; // 0 = running, 1 = paused
 uniform float u_near;
 uniform float u_far;
 
+const float SKYBOX_DEPTH = 0.9999999;
+
 float linearizeDepth(float depth) {
 	return (2.0 * u_near) / (u_far + u_near - depth * (u_far - u_near));
 }
 
 void main() {
 	vec3 color = texture(screenTexture, TexCoords).rgb;
-
 	float depth = texture(u_depthTexture, TexCoords).r;
-	float linearDepth = linearizeDepth(depth);
+	
+	// Skip fog calculation for skybox pixels
+	if (depth < SKYBOX_DEPTH && depth > 0.0) {
+		float fogStart = u_near * 6.0;
+		float fogEnd = 1.0 * u_far;
+		float fogDensity = 4.0;
+		
+		float linearDepth = linearizeDepth(depth) * u_far;
+		
+		// Only apply fog between start and end distances
+		if (linearDepth > fogStart) {
+			float fogFactor = smoothstep(fogStart, fogEnd, linearDepth);
+			fogFactor = pow(fogFactor, 3.0) * fogDensity; // Cubic falloff
+			fogFactor = clamp(fogFactor, 0.0, 1.0);
+			
+			vec3 fogColor = vec3(0.753,0.847, 1.0);
+			color = mix(color, fogColor, fogFactor);
+		}
+	}
 
-	float fogStart = 0.6 * u_far;
-	float fogEnd = u_far;
-	float fogDensity = 0.9;
-
-	float fogFactor = (linearDepth * u_far - fogStart) / (fogEnd - fogStart);
-	fogFactor = clamp(fogFactor * fogDensity, 0.0, 1.0);
-
-	vec3 fogColor = vec3(0.471, 0.655, 1.0);
-	color = mix(color, fogColor, fogFactor);
-
+	// Apply vignette
 	vec2 uv = TexCoords * 2.0 - 1.0;
 	float dist = length(uv);
-
-	// Apply vignette effect
-	float vignette = smoothstep(0.5, 2.0, dist);
-	vignette = 1.0 - vignette * 0.25;
+	float vignette = 1.0 - smoothstep(0.5, 2.0, dist) * 0.15;
 	color *= vignette;
 
-	// Dim the screen when paused (ui_state == 1)
+	// Pause dimming
 	if (ui_state == 1) {
-		color *= 0.5; // Reduce brightness by 50%
+		color *= 0.5;
 	}
 
 	FragColor = vec4(color, 1.0);
