@@ -12,7 +12,7 @@ int last_cz = -1;
 
 // Threading variables
 typedef struct {
-	int ci_x, ci_y, ci_z;
+	uint8_t ci_x, ci_y, ci_z;
 	int cx, cy, cz;
 	float priority;	
 } chunk_load_request_t;
@@ -228,8 +228,8 @@ void load_around_entity(Entity* entity) {
 	}
 
 	pthread_mutex_lock(&chunks_mutex);
-	for (int x = 0; x < RENDER_DISTANCE; x++) {
-		for (int y = 0; y < WORLD_HEIGHT; y++) {
+	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 			memcpy(temp_chunks[x][y], chunks[x][y], RENDER_DISTANCE * sizeof(Chunk));
 		}
 	}
@@ -240,11 +240,11 @@ void load_around_entity(Entity* entity) {
 		int start_x = (dx > 0) ? 0 : RENDER_DISTANCE + dx;
 		int end_x = (dx > 0) ? dx : RENDER_DISTANCE;
 		
-		for (int x = start_x; x < end_x; x++) {
-			for (int y = 0; y < WORLD_HEIGHT; y++) {
-				for (int z = 0; z < RENDER_DISTANCE; z++) {
+		for (uint8_t x = start_x; x < end_x; x++) {
+			for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
+				for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
 					bool has_data = false;
-					for (int face = 0; face < 6; face++) {
+					for (uint8_t face = 0; face < 6; face++) {
 						if (temp_chunks[x][y][z].faces[face].vertices) {
 							has_data = true;
 							break;
@@ -292,8 +292,8 @@ void load_around_entity(Entity* entity) {
 	}
 
 	pthread_mutex_lock(&chunks_mutex);
-	for (int x = 0; x < RENDER_DISTANCE; x++) {
-		for (int y = 0; y < WORLD_HEIGHT; y++) {
+	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 			memset(chunks[x][y], 0, RENDER_DISTANCE * sizeof(Chunk));
 		}
 	}
@@ -405,5 +405,4 @@ void unload_chunk(Chunk* chunk) {
 			chunk->transparent_faces[face].indices = NULL;
 		}
 	}
-	memset(chunk, 0, sizeof(Chunk));
 }

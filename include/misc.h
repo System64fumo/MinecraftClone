@@ -1,6 +1,8 @@
 #ifndef MISC_H
 #define MISC_H
 
+#include <stdint.h>
+
 #define CHUNK_SIZE 16
 #define WORLD_HEIGHT 16
 #define MAX_ENTITIES_PER_CHUNK 128
@@ -26,6 +28,8 @@ typedef struct {
 typedef struct {
 	float x, y;
 } vec2;
+
+typedef float mat4[16];
 
 void setup_matrices();
 void matrix4_identity(float* mat);

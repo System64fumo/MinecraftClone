@@ -21,7 +21,7 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * Greedy meshing
 * DDA raycasting
 * AABB collision
-* Basic face culling
+* Basic back face culling
 * 3D Frustum culling
 * Occlusion culling (Currently disabled)
 * Data packing
@@ -35,10 +35,10 @@ This project is not affiliated with Mojang or Microsoft in any way.<br>
 * [GLFW](https://github.com/glfw/glfw)
 * [GLEW](https://github.com/nigels-com/glew)
 * [libwebp](https://chromium.googlesource.com/webm/libwebp)
-* OpenGL 3.0 ES (or newer)
+* OpenGL 3.1 ES (or newer)
 * UPX (optional)
 
 # Credits
 Thanks to [Sean Barrett](https://github.com/nothings/stb/blob/master/stb_perlin.h) for the perlin noise generator.<br>
-Thanks to [SourceGraph](https://sourcegraph.com/) for cody. (like 90% of this codebase is written by it lol)<br>
+Thanks to [SourceGraph](https://sourcegraph.com/) for cody.<br>
 And obviously many thanks to [Notch](https://x.com/notch) for creating this childhood classic.<br>

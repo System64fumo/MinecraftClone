@@ -234,6 +234,7 @@ void render_chunks() {
 	}
 
 	// Render transparent faces
+	//glDepthMask(GL_FALSE);
 	for (uint8_t face = 0; face < 6; face++) {
 		if (transparent_index_counts[face] > 0) {
 			glBindVertexArray(transparent_VAOs[face]);
@@ -244,6 +245,7 @@ void render_chunks() {
 			draw_calls++;
 		}
 	}
+	//glDepthMask(GL_TRUE);
 }
 
 void cleanup_renderer() {
