@@ -74,17 +74,17 @@ void do_time_stuff() {
 
 		// Framebuffer memory tracking
 		size_t fb_memory = 0;
-		if (colorTexture) {
+		if (texture_fb_color) {
 			GLint width, height, internal_format;
-			glBindTexture(GL_TEXTURE_2D, colorTexture);
+			glBindTexture(GL_TEXTURE_2D, texture_fb_color);
 			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
 			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &internal_format);
 			fb_memory += width * height * (internal_format == GL_RGB8 ? 3 : 4); // 3 bytes for RGB8, 4 for RGBA8
 		}
-		if (depthTexture) {
+		if (texture_fb_depth) {
 			GLint width, height;
-			glBindTexture(GL_TEXTURE_2D, depthTexture);
+			glBindTexture(GL_TEXTURE_2D, texture_fb_depth);
 			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
 			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 			fb_memory += width * height * 4; // Depth24 typically uses 4 bytes

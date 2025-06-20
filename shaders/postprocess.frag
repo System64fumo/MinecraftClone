@@ -1,9 +1,9 @@
-#version 310 es
+#version 300 es
 precision mediump float;
 out vec4 FragColor;
 in vec2 TexCoords;
 uniform sampler2D screenTexture;
-uniform sampler2D u_depthTexture;
+uniform sampler2D u_texture_fb_depth;
 uniform int ui_state; // 0 = running, 1 = paused
 
 uniform float u_near;
@@ -17,7 +17,7 @@ float linearizeDepth(float depth) {
 
 void main() {
 	vec3 color = texture(screenTexture, TexCoords).rgb;
-	float depth = texture(u_depthTexture, TexCoords).r;
+	float depth = texture(u_texture_fb_depth, TexCoords).r;
 	
 	// Skip fog calculation for skybox pixels
 	if (depth < SKYBOX_DEPTH && depth > 0.0) {

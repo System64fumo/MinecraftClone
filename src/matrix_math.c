@@ -84,7 +84,7 @@ void matrix4_translate(float* mat, float x, float y, float z) {
 	mat[14] = z;
 }
 
-void matrix4_multiply(float result[16], const float mat1[16], const float mat2[16]) {
+void matrix4_multiply(mat4 result, mat4 mat1, mat4 mat2) {
 	for (int i = 0; i < 4; i++) {
 		for (int j = 0; j < 4; j++) {
 			result[i * 4 + j] = 0.0f;
@@ -120,7 +120,7 @@ void matrix4_perspective(float* mat, float fovy, float aspect, float near, float
 }
 
 void matrix4_scale(float* matrix, float sx, float sy, float sz) {
-	float temp[16];
+	mat4 temp;
 	memcpy(temp, matrix, 16 * sizeof(float));
 	
 	// Scale the matrix columns

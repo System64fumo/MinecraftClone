@@ -7,17 +7,17 @@
 unsigned int FBO, RBO;
 unsigned int quadVAO, quadVBO;
 uint8_t last_ui_state = 0;
-unsigned int colorTexture, depthTexture;
+unsigned int texture_fb_color, texture_fb_depth;
 GLuint depth_loc = 0;
 
 void setup_framebuffer(int width, int height) {
 	// Delete existing resources if they exist
-	if (colorTexture)
-		glDeleteTextures(1, &colorTexture);
+	if (texture_fb_color)
+		glDeleteTextures(1, &texture_fb_color);
 	if (RBO)
 		glDeleteRenderbuffers(1, &RBO);
-	if (depthTexture)
-		glDeleteTextures(1, &depthTexture);
+	if (texture_fb_depth)
+		glDeleteTextures(1, &texture_fb_depth);
 
 	// Create or recreate framebuffer if it doesn't exist
 	if (!FBO)
@@ -25,20 +25,20 @@ void setup_framebuffer(int width, int height) {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
 	// Create/recreate color attachment texture
-	glGenTextures(1, &colorTexture);
-	glBindTexture(GL_TEXTURE_2D, colorTexture);
+	glGenTextures(1, &texture_fb_color);
+	glBindTexture(GL_TEXTURE_2D, texture_fb_color);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_fb_color, 0);
 
 	// Create depth texture instead of renderbuffer
-	glGenTextures(1, &depthTexture);
-	glBindTexture(GL_TEXTURE_2D, depthTexture);
+	glGenTextures(1, &texture_fb_depth);
+	glBindTexture(GL_TEXTURE_2D, texture_fb_depth);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture_fb_depth, 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	skybox_init();
@@ -109,10 +109,10 @@ void render_to_screen() {
 	glUseProgram(post_process_shader);
 
 	if (depth_loc == 0)
-		depth_loc = glGetUniformLocation(post_process_shader, "u_depthTexture");
+		depth_loc = glGetUniformLocation(post_process_shader, "u_texture_fb_depth");
 
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, depthTexture);
+	glBindTexture(GL_TEXTURE_2D, texture_fb_depth);
 	glUniform1i(depth_loc, 1);
 
 	if (last_ui_state != ui_state) {
@@ -122,7 +122,7 @@ void render_to_screen() {
 
 	glBindVertexArray(quadVAO);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, colorTexture);
+	glBindTexture(GL_TEXTURE_2D, texture_fb_color);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	#ifdef DEBUG
@@ -136,7 +136,7 @@ void render_to_screen() {
 
 void cleanup_framebuffer() {
 	glDeleteFramebuffers(1, &FBO);
-	glDeleteTextures(1, &colorTexture);
-	glDeleteTextures(1, &depthTexture);
+	glDeleteTextures(1, &texture_fb_color);
+	glDeleteTextures(1, &texture_fb_depth);
 	glDeleteRenderbuffers(1, &RBO);
 }

@@ -2,52 +2,40 @@
 
 unsigned int skyboxTexture;
 unsigned int skyboxVAO, skyboxVBO;
+GLuint view_loc, proj_loc;
 
 float skyboxVertices[] = {
-	// positions		  
-	-1.0f,  1.0f, -1.0f,
 	-1.0f, -1.0f, -1.0f,
 	 1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f,  1.0f, -1.0f,
 	-1.0f,  1.0f, -1.0f,
+	 1.0f,  1.0f, -1.0f,
+
+	 1.0f, -1.0f,  1.0f,
+	-1.0f, -1.0f,  1.0f,
+	 1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
 
 	-1.0f, -1.0f,  1.0f,
 	-1.0f, -1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
 	-1.0f,  1.0f,  1.0f,
-	-1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f, -1.0f,
 
 	 1.0f, -1.0f, -1.0f,
 	 1.0f, -1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
 	 1.0f,  1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
+	 1.0f,  1.0f,  1.0f,
 
-	-1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f, -1.0f,
+	 1.0f,  1.0f, -1.0f,
 	-1.0f,  1.0f,  1.0f,
 	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
+
+	-1.0f, -1.0f,  1.0f,
 	 1.0f, -1.0f,  1.0f,
-	-1.0f, -1.0f,  1.0f,
-
-	-1.0f,  1.0f, -1.0f,
-	 1.0f,  1.0f, -1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	-1.0f,  1.0f,  1.0f,
-	-1.0f,  1.0f, -1.0f,
-
 	-1.0f, -1.0f, -1.0f,
-	-1.0f, -1.0f,  1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	-1.0f, -1.0f,  1.0f,
-	 1.0f, -1.0f,  1.0f
+	 1.0f, -1.0f, -1.0f
 };
-	
+
 void skybox_init() {
 	glGenVertexArrays(1, &skyboxVAO);
 	glGenBuffers(1, &skyboxVBO);
@@ -56,25 +44,24 @@ void skybox_init() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	view_loc = glGetUniformLocation(skybox_shader, "view");
+	proj_loc = glGetUniformLocation(skybox_shader, "projection");
 
-	// Create gradient texture
 	glGenTextures(1, &skyboxTexture);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
 
-	// Texture parameters
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-	// Generate gradient data
-	const int size = 16;
-	unsigned char skybox_data[6][size][size][3];
+	uint8_t size = 16;
+	uint8_t skybox_data[6][size][size][3];
 
-	for (int y = 0; y < size; y++) {
+	for (uint8_t y = 0; y < size; y++) {
 		float vertical_progress;
-		const int transition_width = 2;
+		uint8_t transition_width = 2;
 		
 		if (y < size/2 - transition_width/2) {
 			vertical_progress = 0.0f;
@@ -84,7 +71,7 @@ void skybox_init() {
 			vertical_progress = (float)(y - (size/2 - transition_width/2)) / (float)transition_width;
 		}
 		
-		for (int x = 0; x < size; x++) {
+		for (uint8_t x = 0; x < size; x++) {
 			unsigned char r, g, b;			
 
 			unsigned char top_r = 128;
@@ -107,7 +94,7 @@ void skybox_init() {
 			skybox_data[1][y][x][1] = bottom_g;
 			skybox_data[1][y][x][2] = bottom_b;
 	
-			for (int face = 2; face < 6; face++) {
+			for (uint8_t face = 2; face < 6; face++) {
 				skybox_data[face][y][x][0] = r;
 				skybox_data[face][y][x][1] = g;
 				skybox_data[face][y][x][2] = b;
@@ -126,21 +113,21 @@ void skybox_init() {
 void skybox_render() {
 	glDepthFunc(GL_LEQUAL);
 	glUseProgram(skybox_shader);
-	
-	GLuint view_loc = glGetUniformLocation(skybox_shader, "view");
-	GLuint proj_loc = glGetUniformLocation(skybox_shader, "projection");
-	
 	glUniformMatrix4fv(view_loc, 1, GL_FALSE, view);
 	glUniformMatrix4fv(proj_loc, 1, GL_FALSE, projection);
-	
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
 	glUniform1i(glGetUniformLocation(skybox_shader, "skybox"), 0);
-	
+
 	glBindVertexArray(skyboxVAO);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+
+	for (uint8_t i = 0; i < 6; i++) {
+		glDrawArrays(GL_TRIANGLE_STRIP, i * 4, 4);
+	}
+
 	glBindVertexArray(0);
-	
+
 	glDepthFunc(GL_LESS);
 }
 

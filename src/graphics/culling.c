@@ -247,9 +247,9 @@ void update_frustum() {
 				bool is_visible = true;
 
 				if (frustum_culling_enabled) {
-					int chunk_x = chunks[0][0][0].x + x;
-					int chunk_y = chunks[0][0][0].y + y;
-					int chunk_z = chunks[0][0][0].z + z;
+					int chunk_x = world_offset_x + x;
+					int chunk_y = y;
+					int chunk_z = world_offset_z + z;
 					is_visible = is_chunk_in_frustum(pos, dir, chunk_x, chunk_y, chunk_z, fov_angle);
 				}
 

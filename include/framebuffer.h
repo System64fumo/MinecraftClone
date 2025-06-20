@@ -1,7 +1,7 @@
 #ifndef FRAMEBUFFER_H
 #define FRAMEBUFFER_H
 
-extern unsigned int colorTexture, depthTexture;
+extern unsigned int texture_fb_color, texture_fb_depth;
 
 void setup_framebuffer(int width, int height);
 void init_fullscreen_quad();

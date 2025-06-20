@@ -15,11 +15,11 @@ static uint16_t vertex_buffer_capacity = 0;
 static unsigned int highlight_vao, highlight_vbo, highlight_ebo;
 static unsigned int cube_vao, cube_vbo, cube_ebo;
 static unsigned int ui_vao, ui_vbo;
-static float ortho[16];
-static float cube_projection[16];
-static float cube_view[16];
-static float highlight_matrix[16];
-static float cube_matrix[16];
+static mat4 ortho;
+static mat4 cube_projection;
+static mat4 cube_view;
+static mat4 highlight_matrix;
+static mat4 cube_matrix;
 static uint16_t ui_center_x, ui_center_y;
 
 ui_element_t* ui_elements = NULL;
@@ -279,7 +279,7 @@ void draw_block_highlight(vec3 pos) {
 void draw_cube_element(const cube_element_t* cube) {
 	matrix4_identity(cube_matrix);
 
-	float temp[16], rotation[16];
+	mat4 temp, rotation;
 
 	if (cube->rotation_z != 0.0f) {
 		matrix4_rotate_z(rotation, cube->rotation_z);
@@ -381,12 +381,12 @@ void render_ui() {
 		}
 
 		if (ui_active_3d_elements > 0) {
-			float perspective_proj[16];
+			mat4 perspective_proj;
 			float aspect = (float)settings.window_width / (float)settings.window_height;
 			matrix4_identity(perspective_proj);
 			matrix4_perspective(perspective_proj, 45.0f * DEG_TO_RAD, aspect, 0.1f, 100.0f);
 
-			float view[16];
+			mat4 view;
 			matrix4_identity(view);
 			matrix4_translate(view, 0, 0, -3.5f);
 

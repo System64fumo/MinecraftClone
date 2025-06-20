@@ -1,4 +1,4 @@
-#version 310 es
+#version 300 es
 precision mediump float;
 out vec4 FragColor;
 in vec2 TexCoord;
@@ -13,7 +13,7 @@ void main() {
 		return;
 	}
 
-	if (TexId == 3u) {
+	if (TexId == 4u) {
 		// Calculate shadow only if main texture is transparent
 		vec2 texSize = vec2(textureSize(uiTexture, 0));
 		vec2 shadowCoord = TexCoord + vec2(-1.0, -1.0) / texSize;
