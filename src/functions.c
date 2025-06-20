@@ -34,21 +34,21 @@ bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z) {
 			render_z >= 0 && render_z < RENDER_DISTANCE);
 }
 
-void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x, int block_y, int block_z) {
+void update_adjacent_chunks(uint8_t render_x, uint8_t render_y, uint8_t render_z, int block_x, int block_y, int block_z) {
 	if (block_x == 0 && render_x > 0)
-		chunks[render_x - 1][chunk_y][render_z].needs_update = true;
+		chunks[render_x - 1][render_y][render_z].needs_update = true;
 	else if (block_x == CHUNK_SIZE - 1 && render_x < RENDER_DISTANCE - 1)
-		chunks[render_x + 1][chunk_y][render_z].needs_update = true;
+		chunks[render_x + 1][render_y][render_z].needs_update = true;
 
-	if (block_y == 0 && chunk_y > 0)
-		chunks[render_x][chunk_y - 1][render_z].needs_update = true;
-	else if (block_y == CHUNK_SIZE - 1 && chunk_y < WORLD_HEIGHT - 1)
-		chunks[render_x][chunk_y + 1][render_z].needs_update = true;
+	if (block_y == 0 && render_y > 0)
+		chunks[render_x][render_y - 1][render_z].needs_update = true;
+	else if (block_y == CHUNK_SIZE - 1 && render_y < WORLD_HEIGHT - 1)
+		chunks[render_x][render_y + 1][render_z].needs_update = true;
 
 	if (block_z == 0 && render_z > 0)
-		chunks[render_x][chunk_y][render_z - 1].needs_update = true;
+		chunks[render_x][render_y][render_z - 1].needs_update = true;
 	else if (block_z == CHUNK_SIZE - 1 && render_z < RENDER_DISTANCE - 1)
-		chunks[render_x][chunk_y][render_z + 1].needs_update = true;
+		chunks[render_x][render_y][render_z + 1].needs_update = true;
 }
 
 Block* get_block_at(int world_block_x, int world_block_y, int world_block_z) {
@@ -59,8 +59,8 @@ Block* get_block_at(int world_block_x, int world_block_y, int world_block_z) {
 	int chunk_y = world_block_y / CHUNK_SIZE;
 	int block_y = ((world_block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
 
-	int render_x = chunk_x - chunks[0][0][0].x;
-	int render_z = chunk_z - chunks[0][0][0].z;
+	int render_x = chunk_x - world_offset_x;
+	int render_z = chunk_z - world_offset_z;
 
 	if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
 		Chunk* chunk = &chunks[render_x][chunk_y][render_z];

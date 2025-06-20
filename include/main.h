@@ -41,7 +41,6 @@ typedef struct {
 	int32_t x, y, z;
 	uint8_t ci_x, ci_y, ci_z;
 	bool needs_update;
-	bool needs_mesh_update;
 	bool is_loaded;
 	bool is_visible;
 	bool lighting_changed;
@@ -66,7 +65,7 @@ extern double time_difference;
 extern double delta_time;
 extern float framerate;
 extern float frametime;
-extern float model[16], view[16], projection[16];
+extern mat4 model, view, projection;
 
 extern unsigned int world_shader, post_process_shader, ui_shader, skybox_shader;
 extern unsigned int block_textures, ui_textures, font_textures;
@@ -99,7 +98,7 @@ void draw_block_highlight(vec3 pos);
 bool is_block_solid(int world_block_x, int world_block_y, int world_block_z);
 void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord);
 bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);
-void update_adjacent_chunks(int render_x, int chunk_y, int render_z, int block_x, int block_y, int block_z);
+void update_adjacent_chunks(uint8_t render_x, uint8_t render_y, uint8_t render_z, int block_x, int block_y, int block_z);
 bool check_entity_collision(float x, float y, float z, float width, float height);
 void update_entity_physics(Entity* player, float delta_time);
 Entity create_entity(uint8_t id);

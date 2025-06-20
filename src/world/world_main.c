@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <time.h>
 
+_Atomic int world_offset_x = 0;
+_Atomic int world_offset_z = 0;
+
 int last_cx = -1;
 int last_cy = -1;
 int last_cz = -1;
@@ -203,7 +206,7 @@ void load_around_entity(Entity* entity) {
 	#endif
 
 	int center_cx = floorf(entity->pos.x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
-	last_cy = floorf(entity->pos.y / CHUNK_SIZE) - (WORLD_HEIGHT / 2);
+	int center_cy = floorf(entity->pos.y / CHUNK_SIZE) - (WORLD_HEIGHT / 2);
 	int center_cz = floorf(entity->pos.z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
 
 	int dx = center_cx - last_cx;
@@ -211,6 +214,9 @@ void load_around_entity(Entity* entity) {
 
 	last_cx = center_cx;
 	last_cz = center_cz;
+
+	atomic_store(&world_offset_x, center_cx);
+	atomic_store(&world_offset_z, center_cz);
 
 	if (dx == 0 && dz == 0) {
 		#ifdef DEBUG

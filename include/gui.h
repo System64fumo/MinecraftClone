@@ -2,7 +2,6 @@
 #define GUI_H
 
 #include "misc.h"
-#include <stdint.h>
 
 #define MAX_CUBE_ELEMENTS 10
 

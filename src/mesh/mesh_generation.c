@@ -27,6 +27,15 @@ static const face_vertex_t cross_faces[4][4] = {
 	{{{1,1,0}, {1,0}}, {{0,1,1}, {0,0}}, {{0,0,1}, {0,1}}, {{1,0,0}, {1,1}}}
 };
 
+static const face_vertex_t liquid_faces[6][4] = {
+	{{{1,0.875,1}, {1,0}}, {{0,0.875,1}, {0,0}}, {{0,0,1}, {0,1}}, {{1,0,1}, {1,1}}},			// Front (Z+)
+	{{{1,0.875,0}, {1,0}}, {{1,0.875,1}, {0,0}}, {{1,0,1}, {0,1}}, {{1,0,0}, {1,1}}},			// Left (X-)
+	{{{0,0.875,0}, {1,0}}, {{1,0.875,0}, {0,0}}, {{1,0,0}, {0,1}}, {{0,0,0}, {1,1}}},			// Back (Z-)
+	{{{0,0.875,1}, {1,0}}, {{0,0.875,0}, {0,0}}, {{0,0,0}, {0,1}}, {{0,0,1}, {1,1}}},			// Right (X+)
+	{{{0,0,0}, {0,1}}, {{1,0,0}, {1,1}}, {{1,0,1}, {1,0}}, {{0,0,1}, {0,0}}},					// Bottom (Y-)
+	{{{0,0.875,1}, {0,0}}, {{1,0.875,1}, {1,0}}, {{1,0.875,0}, {1,1}}, {{0,0.875,0}, {0,1}}}	// Top (Y+)
+};
+
 static const uint32_t quad_indices[6] = {0, 1, 2, 0, 2, 3};
 
 uint8_t get_light_level_at(Chunk* chunk, int x, int y, int z) {
@@ -262,9 +271,11 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Fac
 	clear_face_data(faces);
 
 	uint8_t block_type = block_data[block_id][0];
+	bool is_liquid = (block_id >= 8 && block_id <= 11);
 
 	if (block_type == 0 || block_type == 1) {
-		const face_vertex_t (*face_data)[4] = (block_type == 0) ? cube_faces : slab_faces;
+		const face_vertex_t (*face_data)[4] = (block_type == 0) ? 
+			(is_liquid ? liquid_faces : cube_faces) : slab_faces;
 		
 		for (uint8_t face = 0; face < 6; face++) {
 			Vertex vertices[4];
@@ -295,6 +306,7 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Fac
 	}
 }
 
+// TODO: Fix water greedy mesh
 void generate_chunk_mesh(Chunk* chunk) {
 	if (chunk == NULL)
 		return;
@@ -348,15 +360,17 @@ void generate_chunk_mesh(Chunk* chunk) {
 
 					bool is_transparent = block_data[block->id][1] != 0;
 					uint8_t texture_id = block_data[block->id][2 + face];
+
+					const face_vertex_t (*face_data)[4] = (block->id >= 8 && block->id <= 11) ? liquid_faces : cube_faces;
 					
 					if (is_transparent) {
 						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, 
-								cube_faces[face], width, height,
+								face_data[face], width, height,
 								transparent_face_vertices, transparent_face_indices,
 								&transparent_face_vertex_count, &transparent_face_index_count);
 					} else {
 						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, 
-								cube_faces[face], width, height,
+								face_data[face], width, height,
 								face_vertices, face_indices,
 								&face_vertex_count, &face_index_count);
 					}
@@ -377,7 +391,7 @@ void generate_chunk_mesh(Chunk* chunk) {
 				if (block == NULL || block->id == 0) continue;
 
 				uint8_t block_type = block_data[block->id][0];
-				if (block_type == 0) continue;
+				if (block_type == 0) continue; // Skip full blocks (already handled above)
 
 				bool is_transparent = block_data[block->id][1] != 0;
 				FaceMesh* target_faces = is_transparent ? chunk->transparent_faces : chunk->faces;
@@ -394,7 +408,15 @@ void generate_chunk_mesh(Chunk* chunk) {
 					target_faces[face].indices = realloc(target_faces[face].indices, 
 						(base_index + 6) * sizeof(uint32_t));
 
-					const face_vertex_t* face_data = (block_type == 2) ? cross_faces[face] : slab_faces[face];
+					// Use liquid_faces for water blocks if they're non-cube type (though water should be type 0)
+					const face_vertex_t* face_data;
+					if (block_type == 2) {
+						face_data = cross_faces[face];
+					} else if (block_type == 1) {
+						face_data = slab_faces[face];
+					} else {
+						face_data = (block->id >= 8 && block->id <= 11) ? liquid_faces[face] : cube_faces[face];
+					}
 					
 					Vertex temp_vertices[4];
 					uint32_t temp_indices[6];

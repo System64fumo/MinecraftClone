@@ -13,7 +13,7 @@ unsigned short screen_center_y = 360;
 
 uint8_t hotbar_slot = 0;
 
-float model[16], view[16], projection[16];
+mat4 model, view, projection;
 unsigned int block_textures, ui_textures, font_textures;
 
 // Type, Translucent, Face textures
@@ -28,10 +28,10 @@ uint8_t block_data[MAX_BLOCK_TYPES][8] = {
 	[5] =  {0, 0, 5,   5,   5,   5,   5,   5  },	// Planks
 	[6] =  {2, 1, 16,  16,  16,  16,  16,  16 },	// Sapling
 	[7] =  {0, 0, 18,  18,  18,  18,  18,  18 },	// Bedrock
-	[8] =  {0, 1, 208, 208, 208, 208, 208, 208},	// Flowing water
-	[9] =  {0, 1, 208, 208, 208, 208, 208, 208},	// Stationary water
-	[10] = {0, 0, 238, 238, 238, 238, 238, 238},	// Flowing lava
-	[11] = {0, 0, 238, 238, 238, 238, 238, 238},	// Stationary lava
+	[8] =  {0, 1, 206, 206, 206, 206, 206, 206},	// Flowing water
+	[9] =  {0, 1, 206, 206, 206, 206, 206, 206},	// Stationary water
+	[10] = {0, 0, 236, 236, 236, 236, 236, 236},	// Flowing lava
+	[11] = {0, 0, 236, 236, 236, 236, 236, 236},	// Stationary lava
 	[12] = {0, 0, 19,  19,  19,  19,  19,  19 },	// Sand
 	[13] = {0, 0, 20,  20,  20,  20,  20,  20 },	// Gravel
 	[14] = {0, 0, 33,  33,  33,  33,  33,  33 },	// Gold Ore
@@ -160,7 +160,6 @@ int initialize() {
 
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	glFrontFace(GL_CCW);

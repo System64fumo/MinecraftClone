@@ -2,7 +2,6 @@
 #define RENDERER_H
 
 #include "misc.h"
-#include <stdint.h>
 
 typedef struct {
 	float x, y, z;

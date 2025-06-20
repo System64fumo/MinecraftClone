@@ -22,6 +22,10 @@ typedef struct {
 } uvec4;
 
 typedef struct {
+	float x, y, z, w;
+} vec4;
+
+typedef struct {
 	float x, y, z;
 } vec3;
 
@@ -34,7 +38,7 @@ typedef float mat4[16];
 void setup_matrices();
 void matrix4_identity(float* mat);
 void matrix4_translate(float* mat, float x, float y, float z);
-void matrix4_multiply(float result[16], const float mat1[16], const float mat2[16]);
+void matrix4_multiply(mat4 result, mat4 mat1, mat4 mat2);
 void matrix4_rotate(float* mat, float angle, float x, float y, float z);
 void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far);
 void matrix4_scale(float* mat, float x, float y, float z);

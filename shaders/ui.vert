@@ -1,4 +1,4 @@
-#version 310 es
+#version 300 es
 layout (location = 0) in vec2 aPos;
 layout (location = 1) in vec2 aTexCoord;
 layout (location = 2) in uint aTexId;
