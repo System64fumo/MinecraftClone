@@ -29,6 +29,10 @@ uint8_t ui_batch_count = 0;
 static uint8_t ui_batches_capacity = 0;
 static cube_element_t cube_elements[MAX_CUBE_ELEMENTS];
 
+static GLuint ui_indirect_buffer;
+static DrawElementsIndirectCommand *ui_indirect_commands = NULL;
+static size_t ui_indirect_capacity = 0;
+
 static const float highlight_vertices[] = {
 	// Front face (Z+)
 	-0.5f, -0.5f,  0.5f,
@@ -244,6 +248,11 @@ void init_ui_rendering() {
 	glEnableVertexAttribArray(1);
 	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(ui_vertex_t), (void*)offsetof(ui_vertex_t, tex_id));
 	glEnableVertexAttribArray(2);
+
+	// Create indirect buffer for UI elements (initially empty)
+	glGenBuffers(1, &ui_indirect_buffer);
+	ui_indirect_commands = NULL;
+	ui_indirect_capacity = 0;
 }
 
 void init_ui() {
@@ -260,6 +269,26 @@ void init_ui() {
 		printf("Failed to initialize UI batches\n");
 		return;
 	}
+}
+
+static bool ensure_ui_indirect_capacity(size_t needed) {
+	if (ui_indirect_capacity >= needed) return true;
+	
+	size_t new_capacity = ui_indirect_capacity == 0 ? 16 : ui_indirect_capacity * 2;
+	while (new_capacity < needed) new_capacity *= 2;
+	
+	DrawElementsIndirectCommand *new_commands = realloc(ui_indirect_commands, 
+													  new_capacity * sizeof(DrawElementsIndirectCommand));
+	if (!new_commands) return false;
+	
+	ui_indirect_commands = new_commands;
+	ui_indirect_capacity = new_capacity;
+	
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, ui_indirect_buffer);
+	glBufferData(GL_DRAW_INDIRECT_BUFFER, 
+				ui_indirect_capacity * sizeof(DrawElementsIndirectCommand),
+				NULL, GL_DYNAMIC_DRAW);
+	return true;
 }
 
 void draw_block_highlight(vec3 pos) {
@@ -327,58 +356,59 @@ void draw_cube_element(const cube_element_t* cube) {
 
 void update_ui_buffer() {
 	if (ui_active_2d_elements == 0) return;
+
+	const float tex_scale = 1.0f / 256.0f;
+	const float position_offset = 0.375f;
 	
+	// Ensure indirect commands buffer capacity
+	if (!ensure_ui_indirect_capacity(ui_active_2d_elements)) {
+		printf("Failed to allocate UI indirect commands buffer\n");
+		return;
+	}
+
 	for (uint8_t i = 0; i < ui_active_2d_elements; i++) {
 		const ui_element_t* element = &ui_elements[i];
-		float tx = element->tex_x / 256.0f;
-		float ty = element->tex_y / 256.0f;
-		float tw = element->tex_width / 256.0f;
-		float th = element->tex_height / 256.0f;
 
-		float x0 = floor(element->x - element->width) + 0.375f;
-		float x1 = floor(element->x + element->width) + 0.375f;
-		float y0 = floor(element->y - element->height) + 0.375f;
-		float y1 = floor(element->y + element->height) + 0.375f;
+		const float tx = element->tex_x * tex_scale;
+		const float ty = element->tex_y * tex_scale;
+		const float tw = element->tex_width * tex_scale;
+		const float th = element->tex_height * tex_scale;
 
-		uint16_t vertex_offset = i * 4;
+		const float x0 = floor(element->x - element->width) + position_offset;
+		const float x1 = floor(element->x + element->width) + position_offset;
+		const float y0 = floor(element->y - element->height) + position_offset;
+		const float y1 = floor(element->y + element->height) + position_offset;
 
+		const uint16_t vertex_offset = i * 4;
 		vertex_buffer[vertex_offset + 0] = (ui_vertex_t){{x0, y1}, {tx, ty}, element->texture_id};
 		vertex_buffer[vertex_offset + 1] = (ui_vertex_t){{x0, y0}, {tx, ty + th}, element->texture_id};
 		vertex_buffer[vertex_offset + 2] = (ui_vertex_t){{x1, y1}, {tx + tw, ty}, element->texture_id};
 		vertex_buffer[vertex_offset + 3] = (ui_vertex_t){{x1, y0}, {tx + tw, ty + th}, element->texture_id};
+
+		ui_indirect_commands[i] = (DrawElementsIndirectCommand){
+			.count = 4,
+			.instanceCount = 1,
+			.firstIndex = vertex_offset,
+			.baseVertex = 0,
+			.baseInstance = 0
+		};
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, ui_vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(ui_vertex_t) * ui_active_2d_elements * 4, 
 				vertex_buffer, GL_DYNAMIC_DRAW);
+	
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, ui_indirect_buffer);
+	glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, 
+				   sizeof(DrawElementsIndirectCommand) * ui_active_2d_elements,
+				   ui_indirect_commands);
 }
 
 void render_ui() {
-	if (ui_active_2d_elements) {
-		glUseProgram(ui_shader);
-		glUniformMatrix4fv(ui_projection_uniform_location, 1, GL_FALSE, ortho);
-		glBindVertexArray(ui_vao);
-		
-		for (uint8_t i = 0; i < ui_batch_count; i++) {
-			const ui_batch_t *batch = &ui_batches[i];
-			glBindTexture(GL_TEXTURE_2D, batch->texture_id);
-			glDrawArrays(GL_TRIANGLE_STRIP, batch->start_index * 4, batch->count * 4);
-			draw_calls++;
-		}
-	}
-
+	// Held block (Has to take priority over 2D elements and other blocks)
 	if (ui_active_3d_elements) {
 		glUseProgram(world_shader);
 		glBindTexture(GL_TEXTURE_2D, block_textures);
-
-		if (ui_active_3d_elements > 1) {
-			glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, cube_projection);
-			glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, cube_view);
-			for (uint8_t i = 0; i < ui_active_3d_elements - 1; i++) {
-				draw_cube_element(&cube_elements[i]);
-				draw_calls++;
-			}
-		}
 
 		if (ui_active_3d_elements > 0) {
 			mat4 perspective_proj;
@@ -394,6 +424,39 @@ void render_ui() {
 			glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, view);
 			draw_cube_element(&cube_elements[ui_active_3d_elements - 1]);
 			draw_calls++;
+		}
+	}
+
+	if (ui_active_2d_elements) {
+		glUseProgram(ui_shader);
+		glUniformMatrix4fv(ui_projection_uniform_location, 1, GL_FALSE, ortho);
+		glBindVertexArray(ui_vao);
+
+		for (uint8_t i = 0; i < ui_batch_count; i++) {
+			const ui_batch_t *batch = &ui_batches[i];
+			glBindTexture(GL_TEXTURE_2D, batch->texture_id);
+
+			glMultiDrawArraysIndirect(
+				GL_TRIANGLE_STRIP,
+				(const void*)(batch->start_index * sizeof(DrawElementsIndirectCommand)),
+				batch->count,
+				sizeof(DrawElementsIndirectCommand)
+			);
+			draw_calls++;
+		}
+	}
+
+	if (ui_active_3d_elements) {
+		glUseProgram(world_shader);
+		glBindTexture(GL_TEXTURE_2D, block_textures);
+
+		if (ui_active_3d_elements > 1) {
+			glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, cube_projection);
+			glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, cube_view);
+			for (uint8_t i = 0; i < ui_active_3d_elements - 1; i++) {
+				draw_cube_element(&cube_elements[i]);
+				draw_calls++;
+			}
 		}
 	}
 }

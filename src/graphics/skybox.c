@@ -1,7 +1,7 @@
 #include "main.h"
 
 unsigned int skyboxTexture;
-unsigned int skyboxVAO, skyboxVBO;
+unsigned int skyboxVAO, skyboxVBO, skyboxIBO;
 GLuint view_loc, proj_loc;
 
 float skyboxVertices[] = {
@@ -36,6 +36,17 @@ float skyboxVertices[] = {
 	 1.0f, -1.0f, -1.0f
 };
 
+unsigned int skyboxIndices[] = {
+	0, 1, 2, 3,
+	4, 5, 6, 7,
+	8, 9, 10, 11,
+	12, 13, 14, 15,
+	16, 17, 18, 19,
+	20, 21, 22, 23
+};
+
+DrawElementsIndirectCommand skyboxDrawCommands[6];
+
 void skybox_init() {
 	glGenVertexArrays(1, &skyboxVAO);
 	glGenBuffers(1, &skyboxVBO);
@@ -44,6 +55,24 @@ void skybox_init() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), skyboxVertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+	glGenBuffers(1, &skyboxIBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, skyboxIBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(skyboxIndices), skyboxIndices, GL_STATIC_DRAW);
+
+	for (uint8_t i = 0; i < 6; i++) {
+		skyboxDrawCommands[i].count = 4;
+		skyboxDrawCommands[i].instanceCount = 1;
+		skyboxDrawCommands[i].firstIndex = i * 4;
+		skyboxDrawCommands[i].baseVertex = 0;
+		skyboxDrawCommands[i].baseInstance = 0;
+	}
+
+	GLuint indirectBuffer;
+	glGenBuffers(1, &indirectBuffer);
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
+	glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(skyboxDrawCommands), skyboxDrawCommands, GL_STATIC_DRAW);
+	
 	view_loc = glGetUniformLocation(skybox_shader, "view");
 	proj_loc = glGetUniformLocation(skybox_shader, "projection");
 
@@ -102,10 +131,10 @@ void skybox_init() {
 		}
 	}
 
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[2]);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[3]);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[0]);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[1]);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[2]);
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[3]);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[4]);
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[5]);
 }
@@ -122,17 +151,22 @@ void skybox_render() {
 
 	glBindVertexArray(skyboxVAO);
 
-	for (uint8_t i = 0; i < 6; i++) {
-		glDrawArrays(GL_TRIANGLE_STRIP, i * 4, 4);
-	}
+	glMultiDrawElementsIndirect(
+		GL_TRIANGLE_STRIP,	// Primitive type
+		GL_UNSIGNED_INT,	// Index type
+		NULL,				// Pointer to indirect commands (already in buffer)
+		6,					// Draw count (6 faces)
+		0					// Stride (0 if commands are tightly packed)
+	);
+	draw_calls++;
 
 	glBindVertexArray(0);
-
 	glDepthFunc(GL_LESS);
 }
 
 void cleanup_skybox() {
 	glDeleteVertexArrays(1, &skyboxVAO);
 	glDeleteBuffers(1, &skyboxVBO);
+	glDeleteBuffers(1, &skyboxIBO);
 	glDeleteProgram(skybox_shader);
 }

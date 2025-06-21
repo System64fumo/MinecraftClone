@@ -18,6 +18,7 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 # Optimizations
 * Render distance (Only keep track of chunks that matter not the whole world)
 * Batch rendering
+* Indirect rendering
 * Greedy meshing
 * DDA raycasting
 * AABB collision

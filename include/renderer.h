@@ -30,6 +30,14 @@ typedef struct {
 	uint16_t index_count;
 } FaceMesh;
 
+typedef struct {
+	GLuint count;
+	GLuint instanceCount;
+	GLuint firstIndex;
+	GLuint baseVertex;
+	GLuint baseInstance;
+} DrawElementsIndirectCommand;
+
 extern unsigned int opaque_VAOs[6];
 extern unsigned int opaque_VBOs[6];
 extern unsigned int opaque_EBOs[6];
