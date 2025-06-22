@@ -1,9 +1,13 @@
 #version 300 es
 precision mediump float;
+
 out vec4 FragColor;
 in vec2 TexCoords;
+
 uniform sampler2D screenTexture;
 uniform sampler2D u_texture_fb_depth;
+uniform sampler2D u_texture_accum;
+uniform sampler2D u_texture_reveal;
 uniform int ui_state; // 0 = running, 1 = paused
 
 uniform float u_near;
@@ -16,10 +20,23 @@ float linearizeDepth(float depth) {
 }
 
 void main() {
-	vec3 color = texture(screenTexture, TexCoords).rgb;
-	float depth = texture(u_texture_fb_depth, TexCoords).r;
+	vec3 opaqueColor = texture(screenTexture, TexCoords).rgb;
+	vec4 accum = texture(u_texture_accum, TexCoords);
+	float reveal = texture(u_texture_reveal, TexCoords).r;
 	
-	// Skip fog calculation for skybox pixels
+	// Avoid division by zero
+	if (reveal == 1.0) {
+		FragColor = vec4(opaqueColor, 1.0);
+	} else {
+		// Blend with opaque color
+		vec3 avgColor = accum.rgb / max(accum.a, 0.00001);
+		float transmittance = reveal;
+		vec3 finalColor = mix(avgColor, opaqueColor, transmittance);
+		FragColor = vec4(finalColor, 1.0);
+	}
+	
+	// Apply fog to the final color
+	float depth = texture(u_texture_fb_depth, TexCoords).r;
 	if (depth < SKYBOX_DEPTH && depth > 0.0) {
 		float fogStart = u_near * 6.0;
 		float fogEnd = 1.0 * u_far;
@@ -27,14 +44,13 @@ void main() {
 		
 		float linearDepth = linearizeDepth(depth) * u_far;
 		
-		// Only apply fog between start and end distances
 		if (linearDepth > fogStart) {
 			float fogFactor = smoothstep(fogStart, fogEnd, linearDepth);
-			fogFactor = pow(fogFactor, 3.0) * fogDensity; // Cubic falloff
+			fogFactor = pow(fogFactor, 3.0) * fogDensity;
 			fogFactor = clamp(fogFactor, 0.0, 1.0);
 			
 			vec3 fogColor = vec3(0.753,0.847, 1.0);
-			color = mix(color, fogColor, fogFactor);
+			FragColor.rgb = mix(FragColor.rgb, fogColor, fogFactor);
 		}
 	}
 
@@ -42,12 +58,10 @@ void main() {
 	vec2 uv = TexCoords * 2.0 - 1.0;
 	float dist = length(uv);
 	float vignette = 1.0 - smoothstep(0.5, 2.0, dist) * 0.15;
-	color *= vignette;
+	FragColor.rgb *= vignette;
 
 	// Pause dimming
 	if (ui_state == 1) {
-		color *= 0.5;
+		FragColor.rgb *= 0.5;
 	}
-
-	FragColor = vec4(color, 1.0);
 }

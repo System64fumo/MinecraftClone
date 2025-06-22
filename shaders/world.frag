@@ -1,10 +1,13 @@
 #version 300 es
 precision mediump float;
-out vec4 FragColor;
+
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 AccumColor;
+layout (location = 2) out float Revealage;
+
 flat in uint faceID;
 flat in uint texID;
 in vec2 size;
-flat in uint lightData[32];
 
 uniform sampler2D textureAtlas;
 
@@ -44,38 +47,36 @@ vec2 getTextureCoords() {
 	return vec2(x + finalUV.x * texSize, y + finalUV.y * texSize);
 }
 
-float lightLevelToBrightness(float lightLevel) {
-	return clamp(lightLevel / 15.0 * 0.8 + 0.2, 0.2, 1.0);
-}
-
-float getLightValueFromData(int x, int y) {
-	int index = y * 16 + x; // 0-255
-	int dataIndex = index / 8; // Which uint (0-31)
-	int component = index % 8; // Which nibble (0-7)
-	return float((lightData[dataIndex] >> (component * 4)) & 0xFu);
-}
-
-float getSharpLightLevel(vec2 uv) {
-	ivec2 pixel = ivec2(mod(uv, 16.0)); // Direct 16x16 grid
-	return getLightValueFromData(pixel.x, pixel.y);
-}
-
 void main() {
 	// Highlight
 	if (texID == 0u) {
 		FragColor = vec4(0, 0, 0, 1.0f);
+		AccumColor = vec4(0.0);
+		Revealage = 1.0;
 		return;
 	}
 
 	vec4 textureColor = texture(textureAtlas, getTextureCoords());
-	vec3 faceShade = faceShades[faceID];
+	if (textureColor.a < 0.01) discard;
 
-	float brightness = lightLevelToBrightness(getSharpLightLevel(size));
-	vec3 litColor = textureColor.rgb * faceShade * brightness;
+	vec3 faceShade = faceShades[faceID];
+	vec3 litColor = textureColor.rgb * faceShade;
 
 	if (texID == 1u || texID == 53u) {
 		litColor *= vec3(0.569, 0.741, 0.349); // Biome tint
 	}
 
-	FragColor = vec4(litColor, textureColor.a);
+	// Opaque - full color with lighting
+	if (textureColor.a == 1.0) {
+		FragColor = vec4(litColor, 1.0);
+		AccumColor = vec4(0.0);
+		Revealage = 1.0;
+	} 
+	// Transparent
+	else {
+		float weight = 1.0;
+		AccumColor = vec4(litColor, 1.0);
+		Revealage = 1.0 - textureColor.a;
+		FragColor = vec4(0.0);
+	}
 }

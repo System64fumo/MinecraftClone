@@ -30,8 +30,8 @@ uint8_t block_data[MAX_BLOCK_TYPES][8] = {
 	[7] =  {0, 0, 18,  18,  18,  18,  18,  18 },	// Bedrock
 	[8] =  {0, 1, 206, 206, 206, 206, 206, 206},	// Flowing water
 	[9] =  {0, 1, 206, 206, 206, 206, 206, 206},	// Stationary water
-	[10] = {0, 0, 236, 236, 236, 236, 236, 236},	// Flowing lava
-	[11] = {0, 0, 236, 236, 236, 236, 236, 236},	// Stationary lava
+	[10] = {0, 0, 238, 238, 238, 238, 238, 238},	// Flowing lava
+	[11] = {0, 0, 238, 238, 238, 238, 238, 238},	// Stationary lava
 	[12] = {0, 0, 19,  19,  19,  19,  19,  19 },	// Sand
 	[13] = {0, 0, 20,  20,  20,  20,  20,  20 },	// Gravel
 	[14] = {0, 0, 33,  33,  33,  33,  33,  33 },	// Gold Ore
@@ -165,7 +165,6 @@ int initialize() {
 	glFrontFace(GL_CCW);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDepthFunc(GL_LESS);
 	//glEnable(GL_MULTISAMPLE);
 
 	// Initialize player
