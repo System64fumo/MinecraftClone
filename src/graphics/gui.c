@@ -354,6 +354,28 @@ void update_ui_buffer() {
 }
 
 void render_ui() {
+	// Held block (Has to take priority over 2D elements and other blocks)
+	if (ui_active_3d_elements) {
+		glUseProgram(world_shader);
+		glBindTexture(GL_TEXTURE_2D, block_textures);
+
+		if (ui_active_3d_elements > 0) {
+			mat4 perspective_proj;
+			float aspect = (float)settings.window_width / (float)settings.window_height;
+			matrix4_identity(perspective_proj);
+			matrix4_perspective(perspective_proj, 45.0f * DEG_TO_RAD, aspect, 0.1f, 100.0f);
+
+			mat4 view;
+			matrix4_identity(view);
+			matrix4_translate(view, 0, 0, -3.5f);
+
+			glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, perspective_proj);
+			glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, view);
+			draw_cube_element(&cube_elements[ui_active_3d_elements - 1]);
+			draw_calls++;
+		}
+	}
+
 	if (ui_active_2d_elements) {
 		glUseProgram(ui_shader);
 		glUniformMatrix4fv(ui_projection_uniform_location, 1, GL_FALSE, ortho);
@@ -378,22 +400,6 @@ void render_ui() {
 				draw_cube_element(&cube_elements[i]);
 				draw_calls++;
 			}
-		}
-
-		if (ui_active_3d_elements > 0) {
-			mat4 perspective_proj;
-			float aspect = (float)settings.window_width / (float)settings.window_height;
-			matrix4_identity(perspective_proj);
-			matrix4_perspective(perspective_proj, 45.0f * DEG_TO_RAD, aspect, 0.1f, 100.0f);
-
-			mat4 view;
-			matrix4_identity(view);
-			matrix4_translate(view, 0, 0, -3.5f);
-
-			glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, perspective_proj);
-			glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, view);
-			draw_cube_element(&cube_elements[ui_active_3d_elements - 1]);
-			draw_calls++;
 		}
 	}
 }
