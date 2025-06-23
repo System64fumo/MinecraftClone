@@ -99,8 +99,8 @@ void render_to_framebuffer() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	const float zero[] = {0.0f, 0.0f, 0.0f, 0.0f};
 	const float one = 1.0f;
-	glClearBufferfv(GL_COLOR, 1, zero); // Clear accumulation buffer
-	glClearBufferfv(GL_COLOR, 2, &one); // Clear revealage buffer to 1.0
+	glClearBufferfv(GL_COLOR, 1, zero);
+	glClearBufferfv(GL_COLOR, 2, &one);
 	
 	glEnable(GL_DEPTH_TEST);
 
@@ -140,19 +140,19 @@ void render_to_screen() {
 	// Bind all textures
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_fb_color);
-	glUniform1i(glGetUniformLocation(post_process_shader, "screenTexture"), 0);
+	glUniform1i(screen_texture_uniform_location, 0);
 	
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, texture_fb_depth);
-	glUniform1i(glGetUniformLocation(post_process_shader, "u_texture_fb_depth"), 1);
+	glUniform1i(texture_fb_depth_uniform_location, 1);
 	
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, accumTexture);
-	glUniform1i(glGetUniformLocation(post_process_shader, "u_texture_accum"), 2);
+	glUniform1i(texture_accum_uniform_location, 2);
 	
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, revealTexture);
-	glUniform1i(glGetUniformLocation(post_process_shader, "u_texture_reveal"), 3);
+	glUniform1i(texture_reveal_uniform_location, 3);
 
 	if (last_ui_state != ui_state) {
 		glUniform1i(ui_state_uniform_location, ui_state);

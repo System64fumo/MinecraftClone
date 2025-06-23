@@ -108,6 +108,16 @@ void matrix4_rotate(float* mat, float angle, float x, float y, float z) {
 	mat[2] = x*z*nc - y*s;	mat[6] = y*z*nc + x*s;	mat[10] = z*z*nc + c;
 }
 
+void matrix4_ortho(mat4 out, float left, float right, float bottom, float top, float near, float far) {
+	matrix4_identity(out);
+	out[0] = 2.0f / (right - left);
+	out[5] = 2.0f / (top - bottom);
+	out[10] = -2.0f / (far - near);
+	out[12] = -(right + left) / (right - left);
+	out[13] = -(top + bottom) / (top - bottom);
+	out[14] = -(far + near) / (far - near);
+}
+
 void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far) {
 	float f = 1.0f / tanf(fovy * 0.5f);
 

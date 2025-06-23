@@ -89,7 +89,7 @@ static bool resize_ui_elements(uint8_t new_capacity) {
 	ui_elements = new_elements;
 	ui_elements_capacity = new_capacity;
 
-	uint16_t vertices_needed = new_capacity * 4;
+	uint16_t vertices_needed = new_capacity * 6;
 	ui_vertex_t *new_vertex_buffer = realloc(vertex_buffer, sizeof(ui_vertex_t) * vertices_needed);
 	if (!new_vertex_buffer) return false;
 	
@@ -161,20 +161,16 @@ void create_batches() {
 }
 
 void update_cube_projection() {
-	float left = 0;
 	float right = settings.window_width;
-	float bottom = 0;
 	float top = settings.window_height;
-	float near = -100.0f;
-	float far = 100.0f;
 	
 	matrix4_identity(cube_projection);
-	cube_projection[0] = 2.0f / (right - left);
-	cube_projection[5] = 2.0f / (top - bottom);
-	cube_projection[10] = -2.0f / (far - near);
-	cube_projection[12] = -(right + left) / (right - left);
-	cube_projection[13] = -(top + bottom) / (top - bottom);
-	cube_projection[14] = -(far + near) / (far - near);
+	cube_projection[0] = 2.0f / right;
+	cube_projection[5] = 2.0f / top;
+	cube_projection[10] = 0;
+	cube_projection[12] = -right / right;
+	cube_projection[13] = -top / top;
+	cube_projection[14] = 0;
 	
 	matrix4_identity(cube_view);
 }
@@ -206,29 +202,12 @@ void init_cube_rendering() {
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
 	glEnableVertexAttribArray(0);
-	glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, face_id));
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
 	glEnableVertexAttribArray(1);
 	glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
 	glEnableVertexAttribArray(3);
-	// glVertexAttribIPointer(4, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level0));
-	// glEnableVertexAttribArray(4);
-	// glVertexAttribIPointer(5, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level1));
-	// glEnableVertexAttribArray(5);
-	// glVertexAttribIPointer(6, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level2));
-	// glEnableVertexAttribArray(6);
-	// glVertexAttribIPointer(7, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level3));
-	// glEnableVertexAttribArray(7);
-	// glVertexAttribIPointer(8, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level4));
-	// glEnableVertexAttribArray(8);
-	// glVertexAttribIPointer(9, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level5));
-	// glEnableVertexAttribArray(9);
-	// glVertexAttribIPointer(10, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level6));
-	// glEnableVertexAttribArray(10);
-	// glVertexAttribIPointer(11, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, ligh_level7));
-	// glEnableVertexAttribArray(11);
-
 	glBindVertexArray(0);
 }
 
@@ -335,22 +314,60 @@ void update_ui_buffer() {
 		float tw = element->tex_width / 256.0f;
 		float th = element->tex_height / 256.0f;
 
-		float x0 = floor(element->x - element->width) + 0.375f;
-		float x1 = floor(element->x + element->width) + 0.375f;
-		float y0 = floor(element->y - element->height) + 0.375f;
-		float y1 = floor(element->y + element->height) + 0.375f;
+		float x0 = element->x;
+		float x1 = element->x + element->width;
+		float y0 = element->y;
+		float y1 = element->y + element->height;
 
-		uint16_t vertex_offset = i * 4;
+		uint16_t vertex_offset = i * 6;
 
-		vertex_buffer[vertex_offset + 0] = (ui_vertex_t){{x0, y1}, {tx, ty}, element->texture_id};
-		vertex_buffer[vertex_offset + 1] = (ui_vertex_t){{x0, y0}, {tx, ty + th}, element->texture_id};
-		vertex_buffer[vertex_offset + 2] = (ui_vertex_t){{x1, y1}, {tx + tw, ty}, element->texture_id};
-		vertex_buffer[vertex_offset + 3] = (ui_vertex_t){{x1, y0}, {tx + tw, ty + th}, element->texture_id};
+		vertex_buffer[vertex_offset + 0] = (ui_vertex_t){{x0, y0}, {tx, ty + th}, element->texture_id};
+		vertex_buffer[vertex_offset + 1] = (ui_vertex_t){{x1, y1}, {tx + tw, ty}, element->texture_id};
+		vertex_buffer[vertex_offset + 2] = (ui_vertex_t){{x0, y1}, {tx, ty}, element->texture_id};
+
+		vertex_buffer[vertex_offset + 3] = (ui_vertex_t){{x0, y0}, {tx, ty + th}, element->texture_id};
+		vertex_buffer[vertex_offset + 4] = (ui_vertex_t){{x1, y0}, {tx + tw, ty + th}, element->texture_id};
+		vertex_buffer[vertex_offset + 5] = (ui_vertex_t){{x1, y1}, {tx + tw, ty}, element->texture_id};
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, ui_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(ui_vertex_t) * ui_active_2d_elements * 4, 
+	glBufferData(GL_ARRAY_BUFFER, sizeof(ui_vertex_t) * ui_active_2d_elements * 6, 
 				vertex_buffer, GL_DYNAMIC_DRAW);
+}
+
+void draw_item(uint8_t id, vec2 pos) {
+	const cube_element_t base_cube = {
+		.width = 10 * UI_SCALING,
+		.height = 10 * UI_SCALING,
+		.depth = 10 * UI_SCALING,
+		.rotation_x = -30 * DEG_TO_RAD,
+		.rotation_y = 45 * DEG_TO_RAD,
+		.id = 0
+	};
+
+	// 2D blocks
+	if (block_data[id][0] == 2) {
+		add_ui_element(&(ui_element_t) {
+			.x = pos.x,
+			.y = pos.y,
+			.width = 16 * UI_SCALING,
+			.height = 16 * UI_SCALING,
+			.tex_x = 240,
+			.tex_y = 0,
+			.tex_width = 16,
+			.tex_height = 16,
+			.texture_id = block_textures
+		});
+	}
+
+	// Anything else
+	else {
+		cube_elements[ui_active_3d_elements] = base_cube;
+		cube_elements[ui_active_3d_elements].id = id;
+		cube_elements[ui_active_3d_elements].pos.x = pos.x + (1 * UI_SCALING);
+		cube_elements[ui_active_3d_elements].pos.y = pos.y + (4 * UI_SCALING) - 1;
+		ui_active_3d_elements++;
+	}
 }
 
 void render_ui() {
@@ -384,7 +401,7 @@ void render_ui() {
 		for (uint8_t i = 0; i < ui_batch_count; i++) {
 			const ui_batch_t *batch = &ui_batches[i];
 			glBindTexture(GL_TEXTURE_2D, batch->texture_id);
-			glDrawArrays(GL_TRIANGLE_STRIP, batch->start_index * 4, batch->count * 4);
+			glDrawArrays(GL_TRIANGLES, batch->start_index * 6, batch->count * 6);
 			draw_calls++;
 		}
 	}
@@ -405,21 +422,19 @@ void render_ui() {
 }
 
 void update_ui() {
-	ui_center_x = settings.window_width / UI_SCALING;
-	ui_center_y = settings.window_height / UI_SCALING;
+	ui_center_x = settings.window_width / 2;
+	ui_center_y = settings.window_height / 2;
 	clear_ui_elements();
 	ui_active_3d_elements = 0;
 	
 	switch (ui_state) {
 		case UI_STATE_RUNNING: {
-			uint16_t hotbar_offset = 80 * UI_SCALING;
-
 			// Crosshair
 			add_ui_element(&(ui_element_t) {
-				.x = ui_center_x,
-				.y = ui_center_y,
-				.width = 16,
-				.height = 16,
+				.x = screen_center_x - (8 * UI_SCALING),
+				.y = screen_center_y - (8 * UI_SCALING),
+				.width = 16 * UI_SCALING,
+				.height = 16 * UI_SCALING,
 				.tex_x = 240,
 				.tex_y = 0,
 				.tex_width = 16,
@@ -429,10 +444,10 @@ void update_ui() {
 
 			// Hotbar
 			add_ui_element(&(ui_element_t) {
-				.x = ui_center_x,
-				.y = 20,
-				.width = 182,
-				.height = 22,
+				.x = screen_center_x - ((182 * UI_SCALING) / 2),
+				.y = 0,
+				.width = 182 * UI_SCALING,
+				.height = 22 * UI_SCALING,
 				.tex_x = 0,
 				.tex_y = 0,
 				.tex_width = 182,
@@ -442,33 +457,25 @@ void update_ui() {
 		
 			// Hotbar slot
 			add_ui_element(&(ui_element_t) {
-				.x = ui_center_x - 182 + 22 + (40 * (hotbar_slot % 9)),
-				.y = 20,
-				.width = 24,
-				.height = 24,
+				.x = screen_center_x - ((182 * UI_SCALING) / 2) - (1 * UI_SCALING) + ((20 * (hotbar_slot % 9)) * UI_SCALING),
+				.y = 0 - (1 * UI_SCALING),
+				.width = 24 * UI_SCALING,
+				.height = 24 * UI_SCALING,
 				.tex_x = 0,
 				.tex_y = 22,
 				.tex_width = 24,
 				.tex_height = 24,
 				.texture_id = ui_textures
 			});
-		
-			// Hotbar blocks
-			const cube_element_t base_cube = {
-				.pos.y = 6 * UI_SCALING,
-				.width = 10.05 * UI_SCALING,
-				.height = 10.05 * UI_SCALING,
-				.depth = 10.05 * UI_SCALING,
-				.rotation_x = -30 * DEG_TO_RAD,
-				.rotation_y = 45 * DEG_TO_RAD,
-				.id = 0
-			};
 
+			// Hotbar blocks
 			for (uint8_t i = 0; i < MAX_CUBE_ELEMENTS - 1; i++) {
-				cube_elements[i] = base_cube;
-				cube_elements[i].id = i + 1 + (floor(hotbar_slot / 9) * 9);
-				cube_elements[i].pos.x = screen_center_x + 1 - hotbar_offset + ((20 * UI_SCALING) * i) - (7 * UI_SCALING);
-				ui_active_3d_elements++;
+				uint8_t block_id = i + 1 + (floor(hotbar_slot / 9) * 9);
+				vec2 pos = {
+					.x = screen_center_x - ((182 * UI_SCALING) / 2) + ( i * 20 * UI_SCALING) + (3 * UI_SCALING),
+					.y = 3 * UI_SCALING,
+				};
+				draw_item(block_id, pos);
 			}
 
 			// Selected block
@@ -489,17 +496,17 @@ void update_ui() {
 
 			char fps_text[23];
 			snprintf(fps_text, sizeof(fps_text), "FPS: %1.2f, %1.3fms", framerate, frametime);
-			draw_text(fps_text, 3, ui_center_y * 2 - 12);
+			draw_text(fps_text, 3, settings.window_height - ((8 + 3) * UI_SCALING));
 			break;
 		}
 
 		case UI_STATE_PAUSED:
 			// Resume button
 			add_ui_element(&(ui_element_t) {
-				.x = ui_center_x,
-				.y = ui_center_y + 25,
-				.width = 200,
-				.height = 20,
+				.x = screen_center_x - ((200 * UI_SCALING) / 2),
+				.y = screen_center_y + (5 * UI_SCALING),
+				.width = 200 * UI_SCALING,
+				.height = 20 * UI_SCALING,
 				.tex_x = 0,
 				.tex_y = 66,
 				.tex_width = 200,
@@ -509,10 +516,10 @@ void update_ui() {
 
 			// Quit button
 			add_ui_element(&(ui_element_t) {
-				.x = ui_center_x,
-				.y = ui_center_y - 25,
-				.width = 200,
-				.height = 20,
+				.x = screen_center_x - ((200 * UI_SCALING) / 2),
+				.y = screen_center_y - ((20 + 5) * UI_SCALING),
+				.width = 200 * UI_SCALING,
+				.height = 20 * UI_SCALING,
 				.tex_x = 0,
 				.tex_y = 66,
 				.tex_width = 200,
@@ -522,11 +529,11 @@ void update_ui() {
 
 			char back_text[13];
 			snprintf(back_text, sizeof(back_text), "Back to Game");
-			draw_text(back_text, ui_center_x - (get_text_length(back_text) / 2), ui_center_y + 25);
+			draw_text(back_text, screen_center_x - (get_text_length(back_text) / 2), screen_center_y + (11 * UI_SCALING));
 
 			char quit_text[23];
 			snprintf(quit_text, sizeof(quit_text), "Save and Quit to Title");
-			draw_text(quit_text, ui_center_x - (get_text_length(quit_text) / 2), ui_center_y - 25);
+			draw_text(quit_text, screen_center_x - (get_text_length(quit_text) / 2), screen_center_y - (19 * UI_SCALING));
 			break;
 	}
 
@@ -534,26 +541,18 @@ void update_ui() {
 	create_batches();
 
 	matrix4_identity(ortho);
-	matrix4_translate(ortho, -1.0f, -1.0f, 0.0f);
-	matrix4_scale(ortho, UI_SCALING / settings.window_width, UI_SCALING / settings.window_height, 1.0f);
+	matrix4_ortho(ortho, 0, settings.window_width, 0, settings.window_height, -1, 1);
 	update_cube_projection();
 }
 
 bool check_hit(uint16_t hit_x, uint16_t hit_y, uint8_t element_id) {
-	if (element_id >= ui_active_2d_elements) return false;
-	
 	hit_y = settings.window_height - hit_y;
-	const ui_element_t *element = &ui_elements[element_id];
+	ui_element_t *element = &ui_elements[element_id];
 
-	uint16_t scaled_half_width = (uint16_t)(element->width * UI_SCALING) / 2;
-	uint16_t scaled_half_height = (uint16_t)(element->height * UI_SCALING) / 2;
-	uint16_t center_x = (uint16_t)(element->x * UI_SCALING) / 2;
-	uint16_t center_y = (uint16_t)(element->y * UI_SCALING) / 2;
+	bool in_range_x = IN_RANGE(hit_x, element->x, element->x + element->width);
+	bool in_range_y = IN_RANGE(hit_y, element->y, element->y + element->height);
 
-	return (hit_x >= center_x - scaled_half_width &&
-			hit_x <= center_x + scaled_half_width &&
-			hit_y >= center_y - scaled_half_height &&
-			hit_y <= center_y + scaled_half_height);
+	return in_range_x && in_range_y;
 }
 
 void cleanup_ui() {

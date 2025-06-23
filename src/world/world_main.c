@@ -206,7 +206,6 @@ void load_around_entity(Entity* entity) {
 	#endif
 
 	int center_cx = floorf(entity->pos.x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
-	int center_cy = floorf(entity->pos.y / CHUNK_SIZE) - (WORLD_HEIGHT / 2);
 	int center_cz = floorf(entity->pos.z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
 
 	int dx = center_cx - last_cx;

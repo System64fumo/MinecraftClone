@@ -3,21 +3,21 @@
 #include <string.h>
 
 static const face_vertex_t cube_faces[6][4] = {
-	{{{1,1,1}, {1,0}}, {{0,1,1}, {0,0}}, {{0,0,1}, {0,1}}, {{1,0,1}, {1,1}}},	// Front (Z+)
-	{{{1,1,0}, {1,0}}, {{1,1,1}, {0,0}}, {{1,0,1}, {0,1}}, {{1,0,0}, {1,1}}},	// Left (X-)
-	{{{0,1,0}, {1,0}}, {{1,1,0}, {0,0}}, {{1,0,0}, {0,1}}, {{0,0,0}, {1,1}}},	// Back (Z-)
-	{{{0,1,1}, {1,0}}, {{0,1,0}, {0,0}}, {{0,0,0}, {0,1}}, {{0,0,1}, {1,1}}},	// Right (X+)
-	{{{0,0,0}, {0,1}}, {{1,0,0}, {1,1}}, {{1,0,1}, {1,0}}, {{0,0,1}, {0,0}}},	// Bottom (Y-)
-	{{{0,1,1}, {0,0}}, {{1,1,1}, {1,0}}, {{1,1,0}, {1,1}}, {{0,1,0}, {0,1}}}	// Top (Y+)
+	{{{1,1,1}, {1,0}}, {{0,1,1}, {0,0}}, {{0,0,1}, {0,1}}, {{1,0,1}, {1,1}}},
+	{{{1,1,0}, {1,0}}, {{1,1,1}, {0,0}}, {{1,0,1}, {0,1}}, {{1,0,0}, {1,1}}},
+	{{{0,1,0}, {1,0}}, {{1,1,0}, {0,0}}, {{1,0,0}, {0,1}}, {{0,0,0}, {1,1}}},
+	{{{0,1,1}, {1,0}}, {{0,1,0}, {0,0}}, {{0,0,0}, {0,1}}, {{0,0,1}, {1,1}}},
+	{{{0,0,0}, {0,1}}, {{1,0,0}, {1,1}}, {{1,0,1}, {1,0}}, {{0,0,1}, {0,0}}},
+	{{{0,1,1}, {0,0}}, {{1,1,1}, {1,0}}, {{1,1,0}, {1,1}}, {{0,1,0}, {0,1}}}
 };
 
 static const face_vertex_t slab_faces[6][4] = {
-	{{{1,0.5,1}, {1,0}}, {{0,0.5,1}, {0,0}}, {{0,0,1}, {0,0.5}}, {{1,0,1}, {1,0.5}}},	// Front
-	{{{1,0.5,0}, {1,0}}, {{1,0.5,1}, {0,0}}, {{1,0,1}, {0,0.5}}, {{1,0,0}, {1,0.5}}},	// Left
-	{{{0,0.5,0}, {1,0}}, {{1,0.5,0}, {0,0}}, {{1,0,0}, {0,0.5}}, {{0,0,0}, {1,0.5}}},	// Back
-	{{{0,0.5,1}, {1,0}}, {{0,0.5,0}, {0,0}}, {{0,0,0}, {0,0.5}}, {{0,0,1}, {1,0.5}}},	// Right
-	{{{0,0,0}, {0,1}}, {{1,0,0}, {1,1}}, {{1,0,1}, {1,0}}, {{0,0,1}, {0,0}}},			// Bottom
-	{{{0,0.5,1}, {0,0}}, {{1,0.5,1}, {1,0}}, {{1,0.5,0}, {1,1}}, {{0,0.5,0}, {0,1}}}	// Top
+	{{{1,0.5,1}, {1,0}}, {{0,0.5,1}, {0,0}}, {{0,0,1}, {0,0.5}}, {{1,0,1}, {1,0.5}}},
+	{{{1,0.5,0}, {1,0}}, {{1,0.5,1}, {0,0}}, {{1,0,1}, {0,0.5}}, {{1,0,0}, {1,0.5}}},
+	{{{0,0.5,0}, {1,0}}, {{1,0.5,0}, {0,0}}, {{1,0,0}, {0,0.5}}, {{0,0,0}, {1,0.5}}},
+	{{{0,0.5,1}, {1,0}}, {{0,0.5,0}, {0,0}}, {{0,0,0}, {0,0.5}}, {{0,0,1}, {1,0.5}}},
+	{{{0,0,0}, {0,1}}, {{1,0,0}, {1,1}}, {{1,0,1}, {1,0}}, {{0,0,1}, {0,0}}},
+	{{{0,0.5,1}, {0,0}}, {{1,0.5,1}, {1,0}}, {{1,0.5,0}, {1,1}}, {{0,0.5,0}, {0,1}}}
 };
 
 static const face_vertex_t cross_faces[4][4] = {
@@ -27,149 +27,33 @@ static const face_vertex_t cross_faces[4][4] = {
 	{{{1,1,0}, {1,0}}, {{0,1,1}, {0,0}}, {{0,0,1}, {0,1}}, {{1,0,0}, {1,1}}}
 };
 
-static const face_vertex_t liquid_faces[6][4] = {
-	{{{1,0.875,1}, {1,0}}, {{0,0.875,1}, {0,0}}, {{0,0,1}, {0,1}}, {{1,0,1}, {1,1}}},			// Front (Z+)
-	{{{1,0.875,0}, {1,0}}, {{1,0.875,1}, {0,0}}, {{1,0,1}, {0,1}}, {{1,0,0}, {1,1}}},			// Left (X-)
-	{{{0,0.875,0}, {1,0}}, {{1,0.875,0}, {0,0}}, {{1,0,0}, {0,1}}, {{0,0,0}, {1,1}}},			// Back (Z-)
-	{{{0,0.875,1}, {1,0}}, {{0,0.875,0}, {0,0}}, {{0,0,0}, {0,1}}, {{0,0,1}, {1,1}}},			// Right (X+)
-	{{{0,0,0}, {0,1}}, {{1,0,0}, {1,1}}, {{1,0,1}, {1,0}}, {{0,0,1}, {0,0}}},					// Bottom (Y-)
-	{{{0,0.875,1}, {0,0}}, {{1,0.875,1}, {1,0}}, {{1,0.875,0}, {1,1}}, {{0,0.875,0}, {0,1}}}	// Top (Y+)
-};
-
 static const uint32_t quad_indices[6] = {0, 1, 2, 0, 2, 3};
 
-uint8_t get_light_level_at(Chunk* chunk, int x, int y, int z) {
-	if (x < 0 || x >= CHUNK_SIZE || y < 0 || y >= CHUNK_SIZE || z < 0 || z >= CHUNK_SIZE) {
-		return 0;
-	}
-	
-	Block* block = &chunk->blocks[x][y][z];
-	if (block == NULL) return 0;
-	
-	return block->light_level;
-}
-
-uint32_t pack_light_values(uint8_t values[8]) {
-	uint32_t packed = 0;
-	for (int i = 0; i < 8; i++) {
-		uint8_t clamped = values[i] & 0xF;
-		packed |= ((uint32_t)clamped) << (i * 4);
-	}
-	return packed;
-}
-
-void sample_face_lighting(Chunk* chunk, uint8_t face, uint8_t start_x, uint8_t start_y, uint8_t start_z,
-						 uint8_t width, uint8_t height, uvec4 light_data[8]) {
-
-	for (int i = 0; i < 8; i++) {
-		light_data[i].x = 0;
-		light_data[i].y = 0;
-		light_data[i].z = 0;
-		light_data[i].w = 0;
-	}
-
-	int face_offsets[6][3] = {
-		{0, 0, 1},	// Front (Z+)
-		{1, 0, 0},	// Left (X-)
-		{0, 0, -1},	// Back (Z-)
-		{-1, 0, 0},	// Right (X+)
-		{0, -1, 0},	// Bottom (Y-)
-		{0, 1, 0}	// Top (Y+)
-	};
-	
-	int dx = face_offsets[face][0];
-	int dy = face_offsets[face][1];
-	int dz = face_offsets[face][2];
-
-	uint8_t light_values[256];
-	
-	for (int v = 0; v < 16; v++) {
-		for (int u = 0; u < 16; u++) {
-			int sample_x, sample_y, sample_z;
-
-			switch (face) {
-				case 0: // Front (Z+)
-					sample_x = start_x + (u * width) / 16;
-					sample_y = start_y + (v * height) / 16;
-					sample_z = start_z;
-					break;
-				case 1: // Left (X-)
-					sample_x = start_x;
-					sample_y = start_y + (v * height) / 16;
-					sample_z = start_z + (u * width) / 16;
-					break;
-				case 2: // Back (Z-)
-					sample_x = start_x + ((15 - u) * width) / 16;
-					sample_y = start_y + (v * height) / 16;
-					sample_z = start_z;
-					break;
-				case 3: // Right (X+)
-					sample_x = start_x;
-					sample_y = start_y + (v * height) / 16;
-					sample_z = start_z + ((15 - u) * width) / 16;
-					break;
-				case 4: // Bottom (Y-)
-					sample_x = start_x + (u * width) / 16;
-					sample_y = start_y;
-					sample_z = start_z + (v * height) / 16;
-					break;
-				case 5: // Top (Y+)
-					sample_x = start_x + (u * width) / 16;
-					sample_y = start_y;
-					sample_z = start_z + ((15 - v) * height) / 16;
-					break;
-				default:
-					sample_x = start_x;
-					sample_y = start_y;
-					sample_z = start_z;
-					break;
-			}
-
-			uint8_t light_level = get_light_level_at(chunk, sample_x + dx, sample_y + dy, sample_z + dz);
-			light_values[v * 16 + u] = light_level;
-		}
-	}
-
-	uint32_t packed_values[32];
-	for (int i = 0; i < 32; i++) {
-		uint8_t values[8];
-		for (int j = 0; j < 8; j++) {
-			int index = i * 8 + j;
-			if (index < 256) {
-				values[j] = light_values[index];
-			} else {
-				values[j] = 0;
-			}
-		}
-		packed_values[i] = pack_light_values(values);
-	}
-
-	for (int i = 0; i < 8; i++) {
-		light_data[i].x = packed_values[i * 4 + 0];
-		light_data[i].y = packed_values[i * 4 + 1];
-		light_data[i].z = packed_values[i * 4 + 2];
-		light_data[i].w = packed_values[i * 4 + 3];
-	}
-}
-
-void add_quad(Chunk* chunk, float x, float y, float z, uint8_t face_id, uint8_t texture_id,
-							const face_vertex_t face_data[4], uint8_t width, uint8_t height,
-							Vertex vertices[], uint32_t indices[],
-							uint32_t* vertex_count, uint32_t* index_count) {
+void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t texture_id,
+						const face_vertex_t face_data[4], uint8_t width, uint8_t height,
+						Vertex vertices[], uint32_t indices[],
+						uint32_t* vertex_count, uint32_t* index_count) {
 	
 	uint32_t base_vertex = *vertex_count;
 
-	float width_blocks = (face_id == 1 || face_id == 3) ? 1.0f : (float)width;
-	float height_blocks = (face_id >= 4) ? 1.0f : (float)height;
-	float depth_blocks = (face_id == 0 || face_id == 2) ? 1.0f : (face_id >= 4 ? (float)height : (float)width);
+	float width_blocks = (normal == 1 || normal == 3) ? 1.0f : (float)width;
+	float height_blocks = (normal >= 4) ? 1.0f : (float)height;
+	float depth_blocks = (normal == 0 || normal == 2) ? 1.0f : (normal >= 4 ? (float)height : (float)width);
 
-	// uvec4 vertex_lights[8];
-	// if (chunk) {
-	// 	uint8_t local_x = (uint8_t)(x - (chunk->x * CHUNK_SIZE));
-	// 	uint8_t local_y = (uint8_t)(y - (chunk->y * CHUNK_SIZE));
-	// 	uint8_t local_z = (uint8_t)(z - (chunk->z * CHUNK_SIZE));
-	// 	sample_face_lighting(chunk, face_id, local_x, local_y, local_z, width, height, vertex_lights);
-	// }
+	uint8_t block_id = 0;
+	if (chunk) {
+		uint8_t local_x = (uint8_t)(x - (chunk->x * CHUNK_SIZE));
+		uint8_t local_y = (uint8_t)(y - (chunk->y * CHUNK_SIZE));
+		uint8_t local_z = (uint8_t)(z - (chunk->z * CHUNK_SIZE));
+		
+		if (local_x < CHUNK_SIZE && local_y < CHUNK_SIZE && local_z < CHUNK_SIZE) {
+			Block* block = &chunk->blocks[local_x][local_y][local_z];
+			block_id = block ? block->id : 0;
+		}
+	}
+
+	bool is_liquid = (block_id >= 8 && block_id <= 11);
+	const float liquid_adjustment = is_liquid ? 0.125f : 0.0f;
 
 	for (uint8_t i = 0; i < 4; i++) {
 		float pos_x = x + face_data[i].pos[0];
@@ -179,7 +63,7 @@ void add_quad(Chunk* chunk, float x, float y, float z, uint8_t face_id, uint8_t 
 		float uv_v = face_data[i].uv[1];
 
 		if (width > 1 || height > 1) {
-			switch (face_id) {
+			switch (normal) {
 				case 0: // Front (Z+)
 					if (face_data[i].pos[0] == 1.0f) pos_x = x + width;
 					if (face_data[i].pos[1] == 1.0f) pos_y = y + height;
@@ -219,20 +103,25 @@ void add_quad(Chunk* chunk, float x, float y, float z, uint8_t face_id, uint8_t 
 			}
 		}
 
+		// Apply liquid adjustment
+		if (is_liquid) {
+			if (normal == 5) {
+				pos_y -= liquid_adjustment;
+			}
+			else if (normal != 4) {
+				bool is_top_vertex = (face_data[i].pos[1] == 1.0f);
+				if (is_top_vertex) {
+					pos_y -= liquid_adjustment;
+				}
+			}
+		}
+
 		vertices[(*vertex_count)++] = (Vertex){
 			pos_x, pos_y, pos_z,
-			face_id,
+			normal,
 			texture_id,
 			uv_u,
 			uv_v,
-			// vertex_lights[0],
-			// vertex_lights[1],
-			// vertex_lights[2],
-			// vertex_lights[3],
-			// vertex_lights[4],
-			// vertex_lights[5],
-			// vertex_lights[6],
-			// vertex_lights[7],
 		};
 	}
 
@@ -271,11 +160,9 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Fac
 	clear_face_data(faces);
 
 	uint8_t block_type = block_data[block_id][0];
-	bool is_liquid = (block_id >= 8 && block_id <= 11);
 
 	if (block_type == 0 || block_type == 1) {
-		const face_vertex_t (*face_data)[4] = (block_type == 0) ? 
-			(is_liquid ? liquid_faces : cube_faces) : slab_faces;
+		const face_vertex_t (*face_data)[4] = (block_type == 0) ? cube_faces : slab_faces;
 		
 		for (uint8_t face = 0; face < 6; face++) {
 			Vertex vertices[4];
@@ -306,7 +193,6 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Fac
 	}
 }
 
-// TODO: Fix water greedy mesh
 void generate_chunk_mesh(Chunk* chunk) {
 	if (chunk == NULL)
 		return;
@@ -320,14 +206,14 @@ void generate_chunk_mesh(Chunk* chunk) {
 
 	bool mask[CHUNK_SIZE][CHUNK_SIZE] = {0};
 
+	static Vertex face_vertices[MAX_VERTICES / 6];
+	static uint32_t face_indices[MAX_VERTICES / 6];
+	static Vertex transparent_face_vertices[MAX_VERTICES / 6];
+	static uint32_t transparent_face_indices[MAX_VERTICES / 6];
+
 	for (uint8_t face = 0; face < 6; face++) {
-		Vertex face_vertices[MAX_VERTICES / 6] = {0};
-		uint32_t face_indices[MAX_VERTICES / 6] = {0};
 		uint32_t face_vertex_count = 0;
 		uint32_t face_index_count = 0;
-
-		Vertex transparent_face_vertices[MAX_VERTICES / 6] = {0};
-		uint32_t transparent_face_indices[MAX_VERTICES / 6] = {0};
 		uint32_t transparent_face_vertex_count = 0;
 		uint32_t transparent_face_index_count = 0;
 
@@ -346,8 +232,11 @@ void generate_chunk_mesh(Chunk* chunk) {
 					}
 
 					Block* block = &chunk->blocks[x][y][z];
-					if (block == NULL || block->id == 0 || block_data[block->id][0] != 0 || !is_face_visible(chunk, x, y, z, face)) 
+					if (block == NULL || block->id == 0 || !is_face_visible(chunk, x, y, z, face)) 
 						continue;
+
+					uint8_t block_type = block_data[block->id][0];
+					if (block_type != 0) continue; // Only handle full blocks in greedy meshing
 
 					uint8_t width = find_width(chunk, face, u, v, x, y, z, mask, block);
 					uint8_t height = find_height(chunk, face, u, v, x, y, z, mask, block, width);
@@ -360,17 +249,15 @@ void generate_chunk_mesh(Chunk* chunk) {
 
 					bool is_transparent = block_data[block->id][1] != 0;
 					uint8_t texture_id = block_data[block->id][2 + face];
-
-					const face_vertex_t (*face_data)[4] = (block->id >= 8 && block->id <= 11) ? liquid_faces : cube_faces;
 					
 					if (is_transparent) {
 						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, 
-								face_data[face], width, height,
+								cube_faces[face], width, height,
 								transparent_face_vertices, transparent_face_indices,
 								&transparent_face_vertex_count, &transparent_face_index_count);
 					} else {
 						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, 
-								face_data[face], width, height,
+								cube_faces[face], width, height,
 								face_vertices, face_indices,
 								&face_vertex_count, &face_index_count);
 					}
@@ -384,6 +271,7 @@ void generate_chunk_mesh(Chunk* chunk) {
 						transparent_face_vertex_count, transparent_face_index_count);
 	}
 
+	// Handle non-full blocks (slabs, crosses, etc.)
 	for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
 		for (uint8_t y = 0; y < CHUNK_SIZE; y++) {
 			for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
@@ -408,14 +296,13 @@ void generate_chunk_mesh(Chunk* chunk) {
 					target_faces[face].indices = realloc(target_faces[face].indices, 
 						(base_index + 6) * sizeof(uint32_t));
 
-					// Use liquid_faces for water blocks if they're non-cube type (though water should be type 0)
 					const face_vertex_t* face_data;
 					if (block_type == 2) {
 						face_data = cross_faces[face];
 					} else if (block_type == 1) {
 						face_data = slab_faces[face];
 					} else {
-						face_data = (block->id >= 8 && block->id <= 11) ? liquid_faces[face] : cube_faces[face];
+						face_data = cube_faces[face];
 					}
 					
 					Vertex temp_vertices[4];
@@ -443,3 +330,4 @@ void generate_chunk_mesh(Chunk* chunk) {
 	
 	chunk->needs_update = false;
 }
+

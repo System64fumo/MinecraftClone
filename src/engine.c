@@ -59,6 +59,10 @@ unsigned int view_uniform_location = -1;
 unsigned int projection_uniform_location = -1;
 unsigned int ui_projection_uniform_location = -1;
 unsigned int ui_state_uniform_location = -1;
+unsigned int screen_texture_uniform_location = -1;
+unsigned int texture_fb_depth_uniform_location = -1;
+unsigned int texture_accum_uniform_location = -1;
+unsigned int texture_reveal_uniform_location = -1;
 GLFWwindow* window = NULL;
 
 int initialize() {
@@ -157,6 +161,10 @@ int initialize() {
 	projection_uniform_location = glGetUniformLocation(world_shader, "projection");
 	ui_projection_uniform_location = glGetUniformLocation(ui_shader, "projection");
 	ui_state_uniform_location = glGetUniformLocation(post_process_shader, "ui_state");
+	screen_texture_uniform_location = glGetUniformLocation(post_process_shader, "screenTexture");
+	texture_fb_depth_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_fb_depth");
+	texture_accum_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_accum");
+	texture_reveal_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_reveal");
 
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 

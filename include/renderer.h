@@ -5,17 +5,9 @@
 
 typedef struct {
 	float x, y, z;
-	uint8_t face_id;
+	uint8_t normal;
 	uint8_t texture_id;
 	float size_u, size_v;
-	// uvec4 ligh_level0;
-	// uvec4 ligh_level1;
-	// uvec4 ligh_level2;
-	// uvec4 ligh_level3;
-	// uvec4 ligh_level4;
-	// uvec4 ligh_level5;
-	// uvec4 ligh_level6;
-	// uvec4 ligh_level7;
 } Vertex;
 
 typedef struct {

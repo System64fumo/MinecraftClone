@@ -15,6 +15,8 @@
 #define M_PI		3.14159265358979323846
 #endif
 
+#define IN_RANGE(num, min, max) ((num) >= (min) && (num) <= (max))
+
 static const float DEG_TO_RAD = M_PI / 180.0f;
 
 typedef struct {
@@ -40,6 +42,7 @@ void matrix4_identity(float* mat);
 void matrix4_translate(float* mat, float x, float y, float z);
 void matrix4_multiply(mat4 result, mat4 mat1, mat4 mat2);
 void matrix4_rotate(float* mat, float angle, float x, float y, float z);
+void matrix4_ortho(mat4 out, float left, float right, float bottom, float top, float near, float far);
 void matrix4_perspective(float* mat, float fovy, float aspect, float near, float far);
 void matrix4_scale(float* mat, float x, float y, float z);
 void matrix4_rotate_x(float* matrix, float angle);

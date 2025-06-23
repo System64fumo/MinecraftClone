@@ -3,9 +3,11 @@
 
 uint8_t font_data[255][2] = {
 	[0 ... 254] = {8, 8},
-	['a' ... 'z'] = {6, 8},
+	['a' ... 'z'] = {6, 6},
 	['A' ... 'Z'] = {6, 8},
 	['0' ... '9'] = {6, 8},
+	['d'] = {6, 8},
+	['k'] = {6, 8},
 	['o'] = {6, 6},
 	['i'] = {2, 8},
 	['l'] = {3, 8},
@@ -25,7 +27,7 @@ uint8_t font_data[255][2] = {
 uint16_t get_text_length(char* ptr) {
 	uint16_t offset = 0;
 	while (*ptr != '\0') {
-		offset += font_data[(unsigned char)*ptr++][0] * 2;
+		offset += font_data[(unsigned char)*ptr++][0] * UI_SCALING;
 	}
 	return offset;
 }
@@ -38,10 +40,10 @@ void draw_char(unsigned char chr, uint16_t x, uint16_t y) {
 	index_y = row * 16;
 
 	ui_element_t char_element = {
-		.x = x - (8 - font_data[chr][0]),
-		.y = y - (8 - font_data[chr][1]),
-		.width = font_data[chr][0],
-		.height = font_data[chr][1],
+		.x = x,
+		.y = y,
+		.width = font_data[chr][0] * UI_SCALING,
+		.height = font_data[chr][1] * UI_SCALING,
 		.tex_x = index_x,
 		.tex_y = index_y + (8 - font_data[chr][1]) * 2,
 		.tex_width = font_data[chr][0] * 2, // 2x because the atlas is 128x128 but we expect 256x256
@@ -56,7 +58,7 @@ void draw_text(char* ptr, uint16_t x, uint16_t y) {
 	uint16_t offset = 9;
 	while (*ptr != '\0') {
 		draw_char(*ptr, x + offset, y);
-		offset += font_data[(unsigned char)*ptr][0] * 2;
+		offset += font_data[(unsigned char)*ptr][0] * UI_SCALING;
 		ptr++;
 		char_index++;
 	}
