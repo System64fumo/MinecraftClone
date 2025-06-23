@@ -20,6 +20,12 @@
 
 // Typedefs
 typedef struct {
+	uint8_t id;
+	uint8_t quantity;
+	uint16_t data;
+} Item;
+
+typedef struct {
 	vec3 pos;
 	float yaw, pitch;
 	float width, height;
@@ -28,7 +34,7 @@ typedef struct {
 	bool is_grounded;
 	float vertical_velocity;
 	uint8_t inventory_size;
-	uint8_t* inventory_data; // TODO: Implement proper inventory struct
+	Item* inventory_data; // TODO: Implement proper inventory struct
 } Entity;
 
 typedef struct {
@@ -80,6 +86,10 @@ extern unsigned int view_uniform_location;
 extern unsigned int projection_uniform_location;
 extern unsigned int ui_projection_uniform_location;
 extern unsigned int ui_state_uniform_location;
+extern unsigned int screen_texture_uniform_location;
+extern unsigned int texture_fb_depth_uniform_location;
+extern unsigned int texture_accum_uniform_location;
+extern unsigned int texture_reveal_uniform_location;
 
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);

@@ -272,7 +272,7 @@ Entity create_entity(uint8_t id) {
 			entity.height = 1.8f;
 			entity.eye_level = 1.625f;
 			entity.speed = 5;
-			entity.inventory_size = 10;
+			entity.inventory_size = 39;
 		break;
 		default:
 			printf("Unknown entity id: %d\n", id);
@@ -280,7 +280,7 @@ Entity create_entity(uint8_t id) {
 	}
 
 	if (entity.inventory_size != 0) {
-		entity.inventory_data = create_array(entity.inventory_size, sizeof(uint8_t));
+		entity.inventory_data = create_array(entity.inventory_size, sizeof(Item));
 	}
 
 	return entity;
