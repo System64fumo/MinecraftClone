@@ -1,6 +1,7 @@
 #include "main.h"
 #include "skybox.h"
 #include "gui.h"
+#include "textures.h"
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
@@ -9,20 +10,19 @@
 unsigned int FBO, RBO;
 unsigned int quadVAO, quadVBO;
 uint8_t last_ui_state = 0;
-unsigned int texture_fb_color, texture_fb_depth, accum_texture, reveal_texture;
+unsigned int texture_fb_color, texture_fb_depth;
 GLuint depth_loc = 0;
 
 void setup_framebuffer(int width, int height) {
 	if (!FBO) glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
-	// Color attachment
 	if (!texture_fb_color || glIsTexture(texture_fb_color) == GL_FALSE) {
 		if (texture_fb_color) glDeleteTextures(1, &texture_fb_color);
 		glGenTextures(1, &texture_fb_color);
 	}
 	glBindTexture(GL_TEXTURE_2D, texture_fb_color);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_fb_color, 0);
@@ -33,40 +33,10 @@ void setup_framebuffer(int width, int height) {
 		glGenTextures(1, &texture_fb_depth);
 	}
 	glBindTexture(GL_TEXTURE_2D, texture_fb_depth);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture_fb_depth, 0);
-
-	// Accumulation texture
-	if (!accum_texture || glIsTexture(accum_texture) == GL_FALSE) {
-		if (accum_texture) glDeleteTextures(1, &accum_texture);
-		glGenTextures(1, &accum_texture);
-	}
-	glBindTexture(GL_TEXTURE_2D, accum_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, accum_texture, 0);
-
-	// Revealage texture
-	if (!reveal_texture || glIsTexture(reveal_texture) == GL_FALSE) {
-		if (reveal_texture) glDeleteTextures(1, &reveal_texture);
-		glGenTextures(1, &reveal_texture);
-	}
-	glBindTexture(GL_TEXTURE_2D, reveal_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, reveal_texture, 0);
-
-	GLint rendererType;
-	glGetIntegerv(GL_RENDERER, &rendererType);
-	bool software_renderer = (strstr((const char*)glGetString(GL_RENDERER), "llvmpipe") != NULL);
-	if (!software_renderer) {
-		GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
-		glDrawBuffers(3, drawBuffers);
-	}
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		printf("Framebuffer not complete!\n");

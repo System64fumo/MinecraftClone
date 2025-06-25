@@ -2,24 +2,40 @@
 #include "world.h"
 #include <stdlib.h>
 
-Chunk*** allocate_chunks(int render_distance, int world_height) {
-	Chunk ***chunks = (Chunk ***)malloc(render_distance * sizeof(Chunk **));
-	for (int i = 0; i < render_distance; i++) {
-		chunks[i] = (Chunk **)malloc(world_height * sizeof(Chunk *));
-		for (int j = 0; j < world_height; j++) {
-			chunks[i][j] = (Chunk *)calloc(render_distance, sizeof(Chunk));
+Chunk*** allocate_chunks() {
+	Chunk ***chunks = (Chunk ***)malloc(RENDER_DISTANCE * sizeof(Chunk **));
+	if (!chunks) return NULL;
+	
+	chunks[0] = (Chunk **)malloc(RENDER_DISTANCE * WORLD_HEIGHT * sizeof(Chunk *));
+	if (!chunks[0]) {
+		free(chunks);
+		return NULL;
+	}
+
+	for (uint8_t i = 1; i < RENDER_DISTANCE; i++) {
+		chunks[i] = chunks[i-1] + WORLD_HEIGHT;
+	}
+
+	Chunk *chunk_block = (Chunk *)calloc(RENDER_DISTANCE * WORLD_HEIGHT * RENDER_DISTANCE, sizeof(Chunk));
+	if (!chunk_block) {
+		free(chunks[0]);
+		free(chunks);
+		return NULL;
+	}
+
+	for (uint8_t i = 0; i < RENDER_DISTANCE; i++) {
+		for (uint8_t j = 0; j < WORLD_HEIGHT; j++) {
+			chunks[i][j] = chunk_block + (i * WORLD_HEIGHT * RENDER_DISTANCE) + (j * RENDER_DISTANCE);
 		}
 	}
+	
 	return chunks;
 }
 
-void free_chunks(Chunk ***chunks, int render_distance, int world_height) {
-	for (int i = 0; i < render_distance; i++) {
-		for (int j = 0; j < world_height; j++) {
-			free(chunks[i][j]);
-		}
-		free(chunks[i]);
-	}
+void free_chunks(Chunk ***chunks) {
+	if (!chunks) return;
+	free(chunks[0][0]);
+	free(chunks[0]);
 	free(chunks);
 }
 

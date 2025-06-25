@@ -4,8 +4,6 @@ precision highp int;
 precision highp sampler2D;
 
 layout (location = 0) out vec4 FragColor;
-layout (location = 1) out vec4 AccumColor;
-layout (location = 2) out float Revealage;
 
 flat in uint packedID; // Packed faceID and texID
 in vec2 size;
@@ -38,35 +36,23 @@ vec2 getTextureCoords(uint texID) {
 }
 
 void main() {
-	// Unpack once at start
-	uint faceID = packedID & 0xFFFFu;
-	uint texID = packedID >> 16;
+    uint faceID = packedID & 0xFFFFu;
+    uint texID = packedID >> 16;
 
-	// Highlight
-	if (texID == 0u) {
-		FragColor = vec4(0, 0, 0, 1.0f);
-		AccumColor = vec4(0.0);
-		Revealage = 1.0;
-		return;
-	}
+    // Highlight
+    if (texID == 0u) {
+        FragColor = vec4(0, 0, 0, 1.0);
+        return;
+    }
 
-	vec4 textureColor = texture(textureAtlas, getTextureCoords(texID));
-	if (textureColor.a == 0.0) discard;
+    vec4 textureColor = texture(textureAtlas, getTextureCoords(texID));
+    if (textureColor.a == 0.0) discard;
 
-	vec3 faceShade = faceShades[faceID];
-	vec3 litColor = textureColor.rgb * faceShade;
+    vec3 faceShade = faceShades[faceID];
+    vec3 litColor = textureColor.rgb * faceShade;
 
-	if (texID == 1u || texID == 53u)
-		litColor *= vec3(0.569, 0.741, 0.349); // Biome tint
+    if (texID == 1u || texID == 53u)
+        litColor *= vec3(0.569, 0.741, 0.349); // Biome tint
 
-	if (textureColor.a == 1.0) {
-		AccumColor = vec4(0.0);
-		Revealage = 1.0;
-		FragColor = vec4(litColor, 1.0);
-	}
-	else {
-		AccumColor = vec4(litColor, 1.0);
-		Revealage = 1.0 - textureColor.a;
-		FragColor = vec4(0.0);
-	}
+    FragColor = vec4(litColor, textureColor.a);
 }

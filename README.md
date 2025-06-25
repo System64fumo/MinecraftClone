@@ -13,7 +13,6 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * FPS Counter & Several profiling utils
 * Vignette effect
 * GUI
-* Lighting (Experimental)
 
 # Optimizations
 * Render distance (Only keep track of chunks that matter not the whole world)

@@ -1,5 +1,6 @@
 #include "main.h"
 #include "gui.h"
+#include "textures.h"
 
 uint8_t font_data[255][2] = {
 	[0 ... 254] = {8, 8},

@@ -3,6 +3,7 @@
 #include "config.h"
 #include "gui.h"
 #include "skybox.h"
+#include "textures.h"
 #include "framebuffer.h"
 #include <unistd.h>
 #include <stdlib.h>
@@ -15,7 +16,6 @@ unsigned short screen_center_y = 360;
 uint8_t hotbar_slot = 0;
 
 mat4 model, view, projection;
-unsigned int block_textures, ui_textures, font_textures;
 
 // Type, Translucent, Face textures
 // t,	t,		   f,f,f,f,f,f
@@ -62,94 +62,14 @@ unsigned int ui_projection_uniform_location = -1;
 unsigned int ui_state_uniform_location = -1;
 unsigned int screen_texture_uniform_location = -1;
 unsigned int texture_fb_depth_uniform_location = -1;
-unsigned int texture_accum_uniform_location = -1;
-unsigned int texture_reveal_uniform_location = -1;
 unsigned int near_uniform_location = -1;
 unsigned int far_uniform_location = -1;
-GLFWwindow* window = NULL;
 
 int initialize() {
 	initialize_config();
-
-	if (!glfwInit()) {
-		printf("Failed to initialize GLFW\n");
+	if (initialize_window() == -1)
 		return -1;
-	}
-
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
-	//glfwWindowHint(GLFW_SAMPLES, 8);
-
-	window = glfwCreateWindow(settings.window_width, settings.window_height, "Minecraft Clone", NULL, NULL);
-	if (!window) {
-		printf("Failed to create GLFW window\n");
-		glfwTerminate();
-		return -1;
-	}
-	glfwMakeContextCurrent(window);
-
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-	glfwSetMouseButtonCallback(window, mouse_button_callback);
-	glfwSetScrollCallback(window, scroll_callback);
-	glfwSetCursorPosCallback(window, cursor_position_callback);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetKeyCallback(window, key_callback);
-
-	glewInit();
-
-	// Debugging
-	#ifdef DEBUG
-	glfwWindowHint(GLFW_CONTEXT_DEBUG, GLFW_TRUE);
-	printf("OpenGL Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
-	printf("OpenGL Renderer: %s\n", (const char*)glGetString(GL_RENDERER));
-	printf("OpenGL Version: %s\n", (const char*)glGetString(GL_VERSION));
-
-	profiler_init();
-	profiler_create("Shaders");
-	profiler_create("Mesh");
-	profiler_create("Merge");
-	profiler_create("Render");
-	profiler_create("GUI");
-	profiler_create("Framebuffer");
-	profiler_create("World");
-	#endif
-
-	// Textures
-	char exec_path[1024];
-	ssize_t len = readlink("/proc/self/exe", exec_path, sizeof(exec_path) - 1);
-	if (len == -1) {
-		perror("readlink failed");
-		exit(EXIT_FAILURE);
-	}
-	exec_path[len] = '\0';
-
-	char* lastSlash = strrchr(exec_path, '/');
-	if (lastSlash)
-		*lastSlash = '\0';
-
-	char font_path[1024];
-	if (snprintf(font_path, sizeof(font_path), "%s/%s", exec_path, "assets/font.webp") >= sizeof(font_path)) {
-		fprintf(stderr, "font_path truncated\n");
-		exit(EXIT_FAILURE);
-	}
-	font_textures = load_texture(font_path);
-
-	char atlas_path[1024];
-	if (snprintf(atlas_path, sizeof(atlas_path), "%s/%s", exec_path, "assets/atlas.webp") >= sizeof(atlas_path)) {
-		fprintf(stderr, "atlas_path truncated\n");
-		exit(EXIT_FAILURE);
-	}
-	block_textures = load_texture(atlas_path);
-
-	char gui_path[1024];
-	if (snprintf(gui_path, sizeof(gui_path), "%s/%s", exec_path, "assets/gui.webp") >= sizeof(gui_path)) {
-		fprintf(stderr, "gui_path truncated\n");
-		exit(EXIT_FAILURE);
-	}
-	ui_textures = load_texture(gui_path);
-
-	// Initialization
+	load_textures();
 	load_shaders();
 	setup_framebuffer(settings.window_width, settings.window_height);
 	init_fullscreen_quad();
@@ -157,22 +77,9 @@ int initialize() {
 	init_gl_buffers();
 	skybox_init();
 	start_world_gen_thread();
+	cache_uniform_locations();
 
-	// Cache uniform locations
-	model_uniform_location = glGetUniformLocation(world_shader, "model");
-	atlas_uniform_location = glGetUniformLocation(world_shader, "textureAtlas");
-	view_uniform_location = glGetUniformLocation(world_shader, "view");
-	projection_uniform_location = glGetUniformLocation(world_shader, "projection");
-	ui_projection_uniform_location = glGetUniformLocation(ui_shader, "projection");
-	ui_state_uniform_location = glGetUniformLocation(post_process_shader, "ui_state");
-	screen_texture_uniform_location = glGetUniformLocation(post_process_shader, "screenTexture");
-	texture_fb_depth_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_fb_depth");
-	texture_accum_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_accum");
-	texture_reveal_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_reveal");
-	near_uniform_location = glGetUniformLocation(post_process_shader, "u_near");
-	far_uniform_location = glGetUniformLocation(post_process_shader, "u_far");
-
-	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
+	chunks = allocate_chunks();
 
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -224,7 +131,7 @@ void shutdown() {
 	}
 	pthread_mutex_unlock(&chunks_mutex);
 
-	free_chunks(chunks, RENDER_DISTANCE, WORLD_HEIGHT);
+	free_chunks(chunks);
 	glDeleteProgram(world_shader);
 	glfwDestroyWindow(window);
 	glfwTerminate();
