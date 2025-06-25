@@ -82,8 +82,8 @@ static void ini_load_file(IniFile* ini) {
 }
 
 void initialize_config() {
-	settings.window_width = 1280;
-	settings.window_height = 720;
+	settings.window_width = 845;
+	settings.window_height = 480;
 	settings.fov = 70.0f;
 
 	char config_path[1024];

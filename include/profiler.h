@@ -12,7 +12,8 @@
 #define PROFILER_ID_MERGE 2
 #define PROFILER_ID_RENDER 3
 #define PROFILER_ID_UI 4
-#define PROFILER_ID_WORLD_GEN 5
+#define PROFILER_ID_FRAMEBUFFER 5
+#define PROFILER_ID_WORLD_GEN 6
 
 typedef struct {
 	char name[MAX_NAME_LENGTH];

@@ -1,4 +1,6 @@
 #include "main.h"
+#include "framebuffer.h"
+#include "gui.h"
 #include <stdio.h>
 
 unsigned int world_shader, post_process_shader, ui_shader, skybox_shader;
@@ -41,7 +43,31 @@ void load_shaders() {
 	post_process_shader = load_shader("../shaders/postprocess.vert", "../shaders/postprocess.frag");
 	ui_shader = load_shader("../shaders/ui.vert", "../shaders/ui.frag");
 	skybox_shader = load_shader("../shaders/skybox.vert", "../shaders/skybox.frag");
+	load_shader_constants();
 	#ifdef DEBUG
 	profiler_stop(PROFILER_ID_SHADER, false);
 	#endif
+}
+
+void load_shader_constants() {
+	glUseProgram(post_process_shader);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture_fb_color);
+	glUniform1i(screen_texture_uniform_location, 0);
+	
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, texture_fb_depth);
+	glUniform1i(texture_fb_depth_uniform_location, 1);
+	
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, accum_texture);
+	glUniform1i(texture_accum_uniform_location, 2);
+	
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, reveal_texture);
+	glUniform1i(texture_reveal_uniform_location, 3);
+
+	glUniform1f(near_uniform_location, near);
+	glUniform1f(far_uniform_location, far);
+	glUniform1i(ui_state_uniform_location, ui_state);
 }

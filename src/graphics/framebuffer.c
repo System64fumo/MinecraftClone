@@ -3,28 +3,24 @@
 #include "gui.h"
 #include "config.h"
 #include <stdio.h>
+#include <string.h>
 
 // Framebuffer objects
 unsigned int FBO, RBO;
 unsigned int quadVAO, quadVBO;
 uint8_t last_ui_state = 0;
-unsigned int texture_fb_color, texture_fb_depth, accumTexture, revealTexture;
+unsigned int texture_fb_color, texture_fb_depth, accum_texture, reveal_texture;
 GLuint depth_loc = 0;
 
 void setup_framebuffer(int width, int height) {
-	// Delete existing resources if they exist
-	if (texture_fb_color) glDeleteTextures(1, &texture_fb_color);
-	if (RBO) glDeleteRenderbuffers(1, &RBO);
-	if (texture_fb_depth) glDeleteTextures(1, &texture_fb_depth);
-	if (accumTexture) glDeleteTextures(1, &accumTexture);
-	if (revealTexture) glDeleteTextures(1, &revealTexture);
-
-	// Create or recreate framebuffer
 	if (!FBO) glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
 	// Color attachment
-	glGenTextures(1, &texture_fb_color);
+	if (!texture_fb_color || glIsTexture(texture_fb_color) == GL_FALSE) {
+		if (texture_fb_color) glDeleteTextures(1, &texture_fb_color);
+		glGenTextures(1, &texture_fb_color);
+	}
 	glBindTexture(GL_TEXTURE_2D, texture_fb_color);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -32,39 +28,51 @@ void setup_framebuffer(int width, int height) {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_fb_color, 0);
 
 	// Depth texture
-	glGenTextures(1, &texture_fb_depth);
+	if (!texture_fb_depth || glIsTexture(texture_fb_depth) == GL_FALSE) {
+		if (texture_fb_depth) glDeleteTextures(1, &texture_fb_depth);
+		glGenTextures(1, &texture_fb_depth);
+	}
 	glBindTexture(GL_TEXTURE_2D, texture_fb_depth);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture_fb_depth, 0);
 
-	// Accumulation texture (RGBA16F)
-	glGenTextures(1, &accumTexture);
-	glBindTexture(GL_TEXTURE_2D, accumTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+	// Accumulation texture
+	if (!accum_texture || glIsTexture(accum_texture) == GL_FALSE) {
+		if (accum_texture) glDeleteTextures(1, &accum_texture);
+		glGenTextures(1, &accum_texture);
+	}
+	glBindTexture(GL_TEXTURE_2D, accum_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, accumTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, accum_texture, 0);
 
-	// Revealage texture (R8)
-	glGenTextures(1, &revealTexture);
-	glBindTexture(GL_TEXTURE_2D, revealTexture);
+	// Revealage texture
+	if (!reveal_texture || glIsTexture(reveal_texture) == GL_FALSE) {
+		if (reveal_texture) glDeleteTextures(1, &reveal_texture);
+		glGenTextures(1, &reveal_texture);
+	}
+	glBindTexture(GL_TEXTURE_2D, reveal_texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, revealTexture, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, reveal_texture, 0);
 
-	// Set draw buffers
-	GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
-	glDrawBuffers(3, drawBuffers);
+	GLint rendererType;
+	glGetIntegerv(GL_RENDERER, &rendererType);
+	bool software_renderer = (strstr((const char*)glGetString(GL_RENDERER), "llvmpipe") != NULL);
+	if (!software_renderer) {
+		GLenum drawBuffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+		glDrawBuffers(3, drawBuffers);
+	}
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		printf("Framebuffer not complete!\n");
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	skybox_init();
 }
 
 void init_fullscreen_quad() {
@@ -92,6 +100,9 @@ void init_fullscreen_quad() {
 }
 
 void render_to_framebuffer() {
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_FRAMEBUFFER, true);
+	#endif
 	draw_calls = 0;
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	
@@ -101,8 +112,9 @@ void render_to_framebuffer() {
 	const float one = 1.0f;
 	glClearBufferfv(GL_COLOR, 1, zero);
 	glClearBufferfv(GL_COLOR, 2, &one);
-	
-	glEnable(GL_DEPTH_TEST);
+
+	// Draw skybox
+	skybox_render();
 
 	glUseProgram(world_shader);
 	glActiveTexture(GL_TEXTURE0);
@@ -110,15 +122,21 @@ void render_to_framebuffer() {
 	glUniform1i(atlas_uniform_location, 0);
 
 	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_FRAMEBUFFER, true);
+	#endif
+
+	#ifdef DEBUG
 	profiler_start(PROFILER_ID_RENDER, true);
 	#endif
 
 	setup_matrices();
+	matrix4_identity(model);
+	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, model);
 	glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, view);
 	glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, projection);
 
 	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
-	skybox_render();
+	glEnable(GL_DEPTH_TEST);
 	render_chunks();
 
 	char block_face = 'N';
@@ -140,19 +158,6 @@ void render_to_screen() {
 	// Bind all textures
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_fb_color);
-	glUniform1i(screen_texture_uniform_location, 0);
-	
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture_fb_depth);
-	glUniform1i(texture_fb_depth_uniform_location, 1);
-	
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, accumTexture);
-	glUniform1i(texture_accum_uniform_location, 2);
-	
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, revealTexture);
-	glUniform1i(texture_reveal_uniform_location, 3);
 
 	if (last_ui_state != ui_state) {
 		glUniform1i(ui_state_uniform_location, ui_state);

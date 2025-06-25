@@ -22,12 +22,12 @@ typedef struct {
 	uint16_t index_count;
 } FaceMesh;
 
-extern unsigned int opaque_VAOs[6];
-extern unsigned int opaque_VBOs[6];
-extern unsigned int opaque_EBOs[6];
-extern unsigned int transparent_VAOs[6];
-extern unsigned int transparent_VBOs[6];
-extern unsigned int transparent_EBOs[6];
+extern unsigned int opaque_VAO;
+extern unsigned int opaque_VBO;
+extern unsigned int opaque_EBO;
+extern unsigned int transparent_VAO;
+extern unsigned int transparent_VBO;
+extern unsigned int transparent_EBO;
 
 extern bool mesh_mode;
 extern bool frustum_changed;

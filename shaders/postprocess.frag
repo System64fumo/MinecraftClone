@@ -1,5 +1,7 @@
 #version 300 es
-precision mediump float;
+precision highp float;
+precision highp int;
+precision highp sampler2D;
 
 out vec4 FragColor;
 in vec2 TexCoords;
@@ -21,17 +23,14 @@ float linearizeDepth(float depth) {
 
 void main() {
 	vec3 opaqueColor = texture(screenTexture, TexCoords).rgb;
-	vec4 accum = texture(u_texture_accum, TexCoords);
+	vec3 accum = texture(u_texture_accum, TexCoords).rgb;
 	float reveal = texture(u_texture_reveal, TexCoords).r;
-	
-	// Avoid division by zero
+
 	if (reveal == 1.0) {
 		FragColor = vec4(opaqueColor, 1.0);
-	} else {
-		// Blend with opaque color
-		vec3 avgColor = accum.rgb / max(accum.a, 0.00001);
-		float transmittance = reveal;
-		vec3 finalColor = mix(avgColor, opaqueColor, transmittance);
+	}
+	else {
+		vec3 finalColor = mix(accum, opaqueColor, 0.5);
 		FragColor = vec4(finalColor, 1.0);
 	}
 	
@@ -40,7 +39,7 @@ void main() {
 	if (depth < SKYBOX_DEPTH && depth > 0.0) {
 		float fogStart = u_near * 6.0;
 		float fogEnd = 1.0 * u_far;
-		float fogDensity = 4.0;
+		const float fogDensity = 4.0;
 		
 		float linearDepth = linearizeDepth(depth) * u_far;
 		

@@ -22,10 +22,5 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	setup_framebuffer(width, height);
 	update_ui();
 
-	// TODO: Move this to a settings area for changing the render distance
-	glUseProgram(post_process_shader);
-	GLuint near_loc = glGetUniformLocation(post_process_shader, "u_near");
-	GLuint far_loc = glGetUniformLocation(post_process_shader, "u_far");
-	glUniform1f(near_loc, near);
-	glUniform1f(far_loc, far);
+	load_shader_constants();
 }
