@@ -2,6 +2,7 @@
 #include "gui.h"
 #include <math.h>
 #include "config.h"
+#include "textures.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -224,7 +224,7 @@ void load_around_entity(Entity* entity) {
 		return;
 	}
 
-	Chunk*** temp_chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
+	Chunk*** temp_chunks = allocate_chunks();
 	if (!temp_chunks) {
 		#ifdef DEBUG
 		profiler_stop(PROFILER_ID_WORLD_GEN, false);
@@ -374,7 +374,7 @@ void load_around_entity(Entity* entity) {
 	}
 	pthread_mutex_unlock(&world_gen_tracker.mutex);
 	
-	free_chunks(temp_chunks, RENDER_DISTANCE, WORLD_HEIGHT);
+	free_chunks(temp_chunks);
 }
 
 void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz) {

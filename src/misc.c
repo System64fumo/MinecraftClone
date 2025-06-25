@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <webp/decode.h>
 #include <math.h>
 
 double lastFrame = 0.0f;
@@ -170,61 +169,6 @@ const char* load_file(const char* filename) {
 
 	fclose(file);
 	return buffer;
-}
-
-unsigned int load_texture(const char* path) {
-	unsigned int textureID;
-	glGenTextures(1, &textureID);
-
-	// Read the entire file into memory
-	FILE* file = fopen(path, "rb");
-	if (!file) {
-		printf("Failed to open file: %s\n", path);
-		return 0;
-	}
-
-	fseek(file, 0, SEEK_END);
-	size_t file_size = ftell(file);
-	fseek(file, 0, SEEK_SET);
-		
-	uint8_t* file_data = (uint8_t*)malloc(file_size);
-	if (!file_data) {
-		printf("Failed to allocate memory for file data\n");
-		fclose(file);
-		return 0;
-	}
-		
-	if (fread(file_data, 1, file_size, file) != file_size) {
-		printf("Failed to read file data\n");
-		free(file_data);
-		fclose(file);
-		return 0;
-	}
-	fclose(file);
-
-	// Decode WebP
-	int width, height;
-	uint8_t* image_data = WebPDecodeRGBA(file_data, file_size, &width, &height);
-	free(file_data);
-		
-	if (!image_data) {
-		printf("Failed to decode WebP image: %s\n", path);
-		return 0;
-	}
-
-	// Upload to OpenGL
-	glBindTexture(GL_TEXTURE_2D, textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_data);
-
-	// Set texture parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	WebPFree(image_data);
-
-	return textureID;
 }
 
 // Write binary data to a file

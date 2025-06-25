@@ -76,9 +76,9 @@ extern mat4 model, view, projection;
 extern float near;
 extern float far;
 extern float aspect;
+extern GLFWwindow* window;
 
 extern unsigned int world_shader, post_process_shader, ui_shader, skybox_shader;
-extern unsigned int block_textures, ui_textures, font_textures;
 
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
 extern Chunk*** chunks;
@@ -92,12 +92,11 @@ extern unsigned int ui_projection_uniform_location;
 extern unsigned int ui_state_uniform_location;
 extern unsigned int screen_texture_uniform_location;
 extern unsigned int texture_fb_depth_uniform_location;
-extern unsigned int texture_accum_uniform_location;
-extern unsigned int texture_reveal_uniform_location;
 extern unsigned int near_uniform_location;
 extern unsigned int far_uniform_location;
 
 // Function prototypes
+int initialize_window();
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
@@ -123,6 +122,7 @@ bool aabb_intersect(AABB a, AABB b);
 void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, FaceMesh faces[6]);
 void load_shaders();
 void load_shader_constants();
+void cache_uniform_locations();
 
 void process_chunks();
 
@@ -134,7 +134,7 @@ uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x,
 void generate_chunk_mesh(Chunk* chunk);
 void set_chunk_lighting(Chunk* chunk);
 
-Chunk*** allocate_chunks(int render_distance, int world_height);
-void free_chunks(Chunk ***chunks, int render_distance, int world_height);
+Chunk*** allocate_chunks();
+void free_chunks(Chunk*** chunks);
 
 #endif

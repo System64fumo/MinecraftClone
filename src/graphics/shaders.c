@@ -58,16 +58,21 @@ void load_shader_constants() {
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, texture_fb_depth);
 	glUniform1i(texture_fb_depth_uniform_location, 1);
-	
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, accum_texture);
-	glUniform1i(texture_accum_uniform_location, 2);
-	
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, reveal_texture);
-	glUniform1i(texture_reveal_uniform_location, 3);
 
 	glUniform1f(near_uniform_location, near);
 	glUniform1f(far_uniform_location, far);
 	glUniform1i(ui_state_uniform_location, ui_state);
+}
+
+void cache_uniform_locations() {
+	model_uniform_location = glGetUniformLocation(world_shader, "model");
+	atlas_uniform_location = glGetUniformLocation(world_shader, "textureAtlas");
+	view_uniform_location = glGetUniformLocation(world_shader, "view");
+	projection_uniform_location = glGetUniformLocation(world_shader, "projection");
+	ui_projection_uniform_location = glGetUniformLocation(ui_shader, "projection");
+	ui_state_uniform_location = glGetUniformLocation(post_process_shader, "ui_state");
+	screen_texture_uniform_location = glGetUniformLocation(post_process_shader, "screenTexture");
+	texture_fb_depth_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_fb_depth");
+	near_uniform_location = glGetUniformLocation(post_process_shader, "u_near");
+	far_uniform_location = glGetUniformLocation(post_process_shader, "u_far");
 }
