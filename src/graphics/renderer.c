@@ -5,86 +5,81 @@
 #include <string.h>
 #include <math.h>
 
-// Face-based VAOs/VBOs
-unsigned int opaque_VAOs[6] = {0};
-unsigned int opaque_VBOs[6] = {0};
-unsigned int opaque_EBOs[6] = {0};
-uint32_t opaque_index_counts[6] = {0};
+// Single VAO/VBO per mesh type
+unsigned int opaque_VAO = 0;
+unsigned int opaque_VBO = 0;
+unsigned int opaque_EBO = 0;
+uint32_t opaque_index_count = 0;
 
-unsigned int transparent_VAOs[6] = {0};
-unsigned int transparent_VBOs[6] = {0};
-unsigned int transparent_EBOs[6] = {0};
-uint32_t transparent_index_counts[6] = {0};
+unsigned int transparent_VAO = 0;
+unsigned int transparent_VBO = 0;
+unsigned int transparent_EBO = 0;
+uint32_t transparent_index_count = 0;
 
 bool mesh_mode = false;
 uint16_t draw_calls = 0;
 bool mesh_needs_rebuild = false;
 
 void init_gl_buffers() {
-	glGenVertexArrays(6, opaque_VAOs);
-	glGenBuffers(6, opaque_VBOs);
-	glGenBuffers(6, opaque_EBOs);
+	glGenVertexArrays(1, &opaque_VAO);
+	glGenBuffers(1, &opaque_VBO);
+	glGenBuffers(1, &opaque_EBO);
 
-	glGenVertexArrays(6, transparent_VAOs);
-	glGenBuffers(6, transparent_VBOs);
-	glGenBuffers(6, transparent_EBOs);
+	glGenVertexArrays(1, &transparent_VAO);
+	glGenBuffers(1, &transparent_VBO);
+	glGenBuffers(1, &transparent_EBO);
 
-	for (uint8_t face = 0; face < 6; face++) {
-		for (uint8_t i = 0; i < 2; i++) {
-			if (i == 0) {
-				glBindVertexArray(opaque_VAOs[face]);
-				glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaque_EBOs[face]);
-			}
-			else {
-				glBindVertexArray(transparent_VAOs[face]);
-				glBindBuffer(GL_ARRAY_BUFFER, transparent_VBOs[face]);
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBOs[face]);
-			}
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
-			glEnableVertexAttribArray(0);
+	glBindVertexArray(opaque_VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, opaque_VBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaque_EBO);
+	
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
+	glEnableVertexAttribArray(0);
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	glEnableVertexAttribArray(1);
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
+	glEnableVertexAttribArray(3);
 
-			glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
-			glEnableVertexAttribArray(1);
-
-			glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
-			glEnableVertexAttribArray(2);
-
-			glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
-			glEnableVertexAttribArray(3);
-		}
-	}
+	glBindVertexArray(transparent_VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, transparent_VBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBO);
+	
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
+	glEnableVertexAttribArray(0);
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	glEnableVertexAttribArray(1);
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
+	glEnableVertexAttribArray(3);
 
 	glBindVertexArray(0);
 }
 
 void rebuild_combined_visible_mesh() {
-	// Reset all face counts
+	opaque_index_count = 0;
+	transparent_index_count = 0;
+
+	glBindVertexArray(opaque_VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, opaque_VBO);
+	glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaque_EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+
+	glBindVertexArray(transparent_VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, transparent_VBO);
+	glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+
+	uint32_t total_opaque_vertices = 0;
+	uint32_t total_opaque_indices = 0;
+	uint32_t total_transparent_vertices = 0;
+	uint32_t total_transparent_indices = 0;
+
 	for (uint8_t face = 0; face < 6; face++) {
-		opaque_index_counts[face] = 0;
-		transparent_index_counts[face] = 0;
-		
-		glBindVertexArray(opaque_VAOs[face]);
-		glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
-		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaque_EBOs[face]);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
-
-		glBindVertexArray(transparent_VAOs[face]);
-		glBindBuffer(GL_ARRAY_BUFFER, transparent_VBOs[face]);
-		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBOs[face]);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
-	}
-
-	// For each face, collect all visible chunks' face data
-	for (uint8_t face = 0; face < 6; face++) {
-		uint32_t total_opaque_vertices = 0;
-		uint32_t total_opaque_indices = 0;
-		uint32_t total_transparent_vertices = 0;
-		uint32_t total_transparent_indices = 0;
-
-		// First pass: count vertices and indices for this face
 		for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 			for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 				for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
@@ -98,27 +93,31 @@ void rebuild_combined_visible_mesh() {
 				}
 			}
 		}
+	}
 
-		// Skip if nothing to render for this face
-		if (total_opaque_vertices == 0 && total_transparent_vertices == 0) continue;
+	if (total_opaque_vertices == 0 && total_transparent_vertices == 0) {
+		mesh_needs_rebuild = false;
+		return;
+	}
 
-		if (total_opaque_vertices > 0) {
-			opaque_index_counts[face] = total_opaque_indices;
-			glBindVertexArray(opaque_VAOs[face]);
+	if (total_opaque_vertices > 0) {
+		opaque_index_count = total_opaque_indices;
+		glBindVertexArray(opaque_VAO);
 
-			glBindBuffer(GL_ARRAY_BUFFER, opaque_VBOs[face]);
-			glBufferData(GL_ARRAY_BUFFER, total_opaque_vertices * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
-			Vertex* vbo_ptr = (Vertex*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		glBindBuffer(GL_ARRAY_BUFFER, opaque_VBO);
+		glBufferData(GL_ARRAY_BUFFER, total_opaque_vertices * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
+		Vertex* vbo_ptr = (Vertex*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
 
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaque_EBOs[face]);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, total_opaque_indices * sizeof(uint32_t), NULL, GL_DYNAMIC_DRAW);
-			uint32_t* ebo_ptr = (uint32_t*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaque_EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, total_opaque_indices * sizeof(uint32_t), NULL, GL_DYNAMIC_DRAW);
+		uint32_t* ebo_ptr = (uint32_t*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 
-			if (vbo_ptr && ebo_ptr) {
-				uint32_t vertex_offset = 0;
-				uint32_t index_offset = 0;
-				uint32_t base_vertex = 0;
+		if (vbo_ptr && ebo_ptr) {
+			uint32_t vertex_offset = 0;
+			uint32_t index_offset = 0;
+			uint32_t base_vertex = 0;
 
+			for (uint8_t face = 0; face < 6; face++) {
 				for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 					for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 						for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
@@ -141,28 +140,30 @@ void rebuild_combined_visible_mesh() {
 					}
 				}
 			}
-
-			if (vbo_ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
-			if (ebo_ptr) glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 		}
 
-		if (total_transparent_vertices > 0) {
-			transparent_index_counts[face] = total_transparent_indices;
-			glBindVertexArray(transparent_VAOs[face]);
-			
-			glBindBuffer(GL_ARRAY_BUFFER, transparent_VBOs[face]);
-			glBufferData(GL_ARRAY_BUFFER, total_transparent_vertices * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
-			Vertex* vbo_ptr = (Vertex*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-			
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBOs[face]);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, total_transparent_indices * sizeof(uint32_t), NULL, GL_DYNAMIC_DRAW);
-			uint32_t* ebo_ptr = (uint32_t*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+		if (vbo_ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
+		if (ebo_ptr) glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+	}
 
-			if (vbo_ptr && ebo_ptr) {
-				uint32_t vertex_offset = 0;
-				uint32_t index_offset = 0;
-				uint32_t base_vertex = 0;
+	if (total_transparent_vertices > 0) {
+		transparent_index_count = total_transparent_indices;
+		glBindVertexArray(transparent_VAO);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, transparent_VBO);
+		glBufferData(GL_ARRAY_BUFFER, total_transparent_vertices * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
+		Vertex* vbo_ptr = (Vertex*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBO);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, total_transparent_indices * sizeof(uint32_t), NULL, GL_DYNAMIC_DRAW);
+		uint32_t* ebo_ptr = (uint32_t*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
 
+		if (vbo_ptr && ebo_ptr) {
+			uint32_t vertex_offset = 0;
+			uint32_t index_offset = 0;
+			uint32_t base_vertex = 0;
+
+			for (uint8_t face = 0; face < 6; face++) {
 				for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 					for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 						for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
@@ -185,10 +186,10 @@ void rebuild_combined_visible_mesh() {
 					}
 				}
 			}
-
-			if (vbo_ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
-			if (ebo_ptr) glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 		}
+
+		if (vbo_ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
+		if (ebo_ptr) glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 	}
 
 	glBindVertexArray(0);
@@ -198,42 +199,32 @@ void rebuild_combined_visible_mesh() {
 void render_chunks() {
 	if (mesh_needs_rebuild)
 		rebuild_combined_visible_mesh();
-	
-	glUseProgram(world_shader);
-	matrix4_identity(model);
-	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, model);
 
-	for (uint8_t face = 0; face < 6; face++) {
-		if (opaque_index_counts[face] > 0) {
-			glBindVertexArray(opaque_VAOs[face]);
-			if (mesh_mode)
-				glDrawElements(GL_LINES, opaque_index_counts[face], GL_UNSIGNED_INT, 0);
-			else
-				glDrawElements(GL_TRIANGLES, opaque_index_counts[face], GL_UNSIGNED_INT, 0);
-			draw_calls++;
-		}
+	if (mesh_mode)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	if (opaque_index_count > 0) {
+		glBindVertexArray(opaque_VAO);
+		glDrawElements(GL_TRIANGLES, opaque_index_count, GL_UNSIGNED_INT, 0);
+		draw_calls++;
 	}
 
-	for (uint8_t face = 0; face < 6; face++) {
-		if (transparent_index_counts[face] > 0) {
-			glBindVertexArray(transparent_VAOs[face]);
-			if (mesh_mode)
-				glDrawElements(GL_LINES, transparent_index_counts[face], GL_UNSIGNED_INT, 0);
-			else
-				glDrawElements(GL_TRIANGLES, transparent_index_counts[face], GL_UNSIGNED_INT, 0);
-			draw_calls++;
-		}
+	if (transparent_index_count > 0) {
+		glBindVertexArray(transparent_VAO);
+		glDrawElements(GL_TRIANGLES, transparent_index_count, GL_UNSIGNED_INT, 0);
+		draw_calls++;
 	}
+
+	if (mesh_mode)
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void cleanup_renderer() {
-	for (uint8_t i = 0; i < 6; i++) {
-		glDeleteVertexArrays(1, &opaque_VAOs[i]);
-		glDeleteBuffers(1, &opaque_VBOs[i]);
-		glDeleteBuffers(1, &opaque_EBOs[i]);
+	glDeleteVertexArrays(1, &opaque_VAO);
+	glDeleteBuffers(1, &opaque_VBO);
+	glDeleteBuffers(1, &opaque_EBO);
 
-		glDeleteVertexArrays(1, &transparent_VAOs[i]);
-		glDeleteBuffers(1, &transparent_VBOs[i]);
-		glDeleteBuffers(1, &transparent_EBOs[i]);
-	}
+	glDeleteVertexArrays(1, &transparent_VAO);
+	glDeleteBuffers(1, &transparent_VBO);
+	glDeleteBuffers(1, &transparent_EBO);
 }

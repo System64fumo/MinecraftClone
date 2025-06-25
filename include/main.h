@@ -73,6 +73,10 @@ extern float framerate;
 extern float frametime;
 extern mat4 model, view, projection;
 
+extern float near;
+extern float far;
+extern float aspect;
+
 extern unsigned int world_shader, post_process_shader, ui_shader, skybox_shader;
 extern unsigned int block_textures, ui_textures, font_textures;
 
@@ -90,6 +94,8 @@ extern unsigned int screen_texture_uniform_location;
 extern unsigned int texture_fb_depth_uniform_location;
 extern unsigned int texture_accum_uniform_location;
 extern unsigned int texture_reveal_uniform_location;
+extern unsigned int near_uniform_location;
+extern unsigned int far_uniform_location;
 
 // Function prototypes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -116,6 +122,7 @@ AABB get_entity_aabb(float x, float y, float z, float width, float height);
 bool aabb_intersect(AABB a, AABB b);
 void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, FaceMesh faces[6]);
 void load_shaders();
+void load_shader_constants();
 
 void process_chunks();
 

@@ -2,6 +2,7 @@
 #include "world.h"
 #include "config.h"
 #include "gui.h"
+#include "skybox.h"
 #include "framebuffer.h"
 #include <unistd.h>
 #include <stdlib.h>
@@ -63,6 +64,8 @@ unsigned int screen_texture_uniform_location = -1;
 unsigned int texture_fb_depth_uniform_location = -1;
 unsigned int texture_accum_uniform_location = -1;
 unsigned int texture_reveal_uniform_location = -1;
+unsigned int near_uniform_location = -1;
+unsigned int far_uniform_location = -1;
 GLFWwindow* window = NULL;
 
 int initialize() {
@@ -94,7 +97,6 @@ int initialize() {
 	glfwSetKeyCallback(window, key_callback);
 
 	glewInit();
-	framebuffer_size_callback(window, settings.window_width, settings.window_height);
 
 	// Debugging
 	#ifdef DEBUG
@@ -109,6 +111,7 @@ int initialize() {
 	profiler_create("Merge");
 	profiler_create("Render");
 	profiler_create("GUI");
+	profiler_create("Framebuffer");
 	profiler_create("World");
 	#endif
 
@@ -152,6 +155,7 @@ int initialize() {
 	init_fullscreen_quad();
 	init_ui();
 	init_gl_buffers();
+	skybox_init();
 	start_world_gen_thread();
 
 	// Cache uniform locations
@@ -165,6 +169,8 @@ int initialize() {
 	texture_fb_depth_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_fb_depth");
 	texture_accum_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_accum");
 	texture_reveal_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_reveal");
+	near_uniform_location = glGetUniformLocation(post_process_shader, "u_near");
+	far_uniform_location = glGetUniformLocation(post_process_shader, "u_far");
 
 	chunks = allocate_chunks(RENDER_DISTANCE, WORLD_HEIGHT);
 
@@ -180,6 +186,7 @@ int initialize() {
 	global_entities[0].pos.y = 73;
 	global_entities[0].yaw = 90;
 
+	framebuffer_size_callback(window, settings.window_width, settings.window_height);
 	return 0;
 }
 
