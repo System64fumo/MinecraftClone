@@ -152,6 +152,53 @@ bool check_entity_collision(float x, float y, float z, float width, float height
 	return true; // No collision
 }
 
+void move_entity_with_collision(Entity* entity, float dx, float dy, float dz) {
+	float intended_speed = sqrtf(dx*dx + dz*dz);
+	float actual_speed = 0.0f;
+	
+	float new_x = entity->pos.x + dx;
+	float new_y = entity->pos.y + dy;
+	float new_z = entity->pos.z + dz;
+
+	if (check_entity_collision(new_x, new_y, new_z, entity->width, entity->height)) {
+		entity->pos.x = new_x;
+		entity->pos.y = new_y;
+		entity->pos.z = new_z;
+		actual_speed = intended_speed;
+	} else {
+		bool xz_moved = false;
+		bool x_moved = false;
+		bool z_moved = false;
+		
+		if (check_entity_collision(new_x, entity->pos.y, new_z, entity->width, entity->height)) {
+			entity->pos.x = new_x;
+			entity->pos.z = new_z;
+			xz_moved = true;
+			actual_speed = intended_speed;
+		} else {
+			if (check_entity_collision(new_x, entity->pos.y, entity->pos.z, entity->width, entity->height)) {
+				entity->pos.x = new_x;
+				x_moved = true;
+			}
+			if (check_entity_collision(entity->pos.x, entity->pos.y, new_z, entity->width, entity->height)) {
+				entity->pos.z = new_z;
+				z_moved = true;
+			}
+			
+			if (x_moved || z_moved) {
+				float actual_dx = entity->pos.x - (new_x - dx);
+				float actual_dz = entity->pos.z - (new_z - dz);
+				actual_speed = sqrtf(actual_dx*actual_dx + actual_dz*actual_dz);
+			}
+		}
+		
+		// Cancel sprinting if movement is significantly hindered
+		if (actual_speed < intended_speed * 0.5f && entity->sprinting) {
+			entity->sprinting = false;
+		}
+	}
+}
+
 void update_entity_physics(Entity* entity, float delta_time) {
 	if (!entity->is_grounded) {
 		entity->vertical_velocity -= GRAVITY * delta_time;

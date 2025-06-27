@@ -76,3 +76,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 
 	load_shader_constants();
 }
+
+void set_fov(float fov) {
+	matrix4_perspective(projection, fov * DEG_TO_RAD, aspect, near, far);
+}

@@ -52,8 +52,7 @@ void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t t
 		}
 	}
 
-	bool is_liquid = (block_id >= 8 && block_id <= 11);
-	const float liquid_adjustment = is_liquid ? 0.125f : 0.0f;
+	const float liquid_adjustment = block_id == 3 ? 0.125f : 0.0f;
 
 	for (uint8_t i = 0; i < 4; i++) {
 		float pos_x = x + face_data[i].pos[0];
@@ -104,7 +103,7 @@ void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t t
 		}
 
 		// Apply liquid adjustment
-		if (is_liquid) {
+		if (block_id == 3) {
 			if (normal == 5) {
 				pos_y -= liquid_adjustment;
 			}
@@ -161,8 +160,8 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Fac
 
 	uint8_t block_type = block_data[block_id][0];
 
-	if (block_type == 0 || block_type == 1) {
-		const face_vertex_t (*face_data)[4] = (block_type == 0) ? cube_faces : slab_faces;
+	if (block_type == 0 || block_type == 1 || block_type == 3) {
+		const face_vertex_t (*face_data)[4] = (block_type == 0 || block_type == 3) ? cube_faces : slab_faces;
 		
 		for (uint8_t face = 0; face < 6; face++) {
 			Vertex vertices[4];
@@ -236,7 +235,7 @@ void generate_chunk_mesh(Chunk* chunk) {
 						continue;
 
 					uint8_t block_type = block_data[block->id][0];
-					if (block_type != 0) continue; // Only handle full blocks in greedy meshing
+					if (!(block_type == 0 || block_type == 3)) continue; // Only handle full blocks in greedy meshing
 
 					uint8_t width = find_width(chunk, face, u, v, x, y, z, mask, block);
 					uint8_t height = find_height(chunk, face, u, v, x, y, z, mask, block, width);
@@ -279,7 +278,7 @@ void generate_chunk_mesh(Chunk* chunk) {
 				if (block == NULL || block->id == 0) continue;
 
 				uint8_t block_type = block_data[block->id][0];
-				if (block_type == 0) continue; // Skip full blocks (already handled above)
+				if (block_type == 0 || block_type == 3) continue; // Skip full blocks (already handled above)
 
 				bool is_transparent = block_data[block->id][1] != 0;
 				FaceMesh* target_faces = is_transparent ? chunk->transparent_faces : chunk->faces;

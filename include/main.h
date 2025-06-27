@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include "renderer.h"
 #include "misc.h"
+#include "world.h"
 
 #ifdef DEBUG
 #include "profiler.h"
@@ -17,49 +18,6 @@
 #else
 	#define USE_ARM_OPTIMIZED_CODE 0
 #endif
-
-// Typedefs
-typedef struct {
-	uint8_t id;
-	uint8_t quantity;
-	uint16_t data;
-} Item;
-
-typedef struct {
-	vec3 pos;
-	float yaw, pitch;
-	float width, height;
-	float eye_level;
-	uint8_t speed;
-	bool is_grounded;
-	float vertical_velocity;
-	uint8_t inventory_size;
-	Item* inventory_data; // TODO: Implement proper inventory struct
-} Entity;
-
-typedef struct {
-	uint8_t id;
-	uint8_t light_level;
-} Block;
-
-typedef struct {
-	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
-	int32_t x, y, z;
-	uint8_t ci_x, ci_y, ci_z;
-	bool needs_update;
-	bool is_loaded;
-	bool is_visible;
-	bool lighting_changed;
-
-	FaceMesh faces[6]; // 0:Front, 1:Left, 2:Back, 3:Right, 4:Bottom, 5:Top
-	FaceMesh transparent_faces[6];
-} Chunk;
-
-typedef struct {
-	float min_x, max_x;
-	float min_y, max_y;
-	float min_z, max_z;
-} AABB;
 
 // Externs
 extern unsigned short screen_center_x;
@@ -82,7 +40,6 @@ extern unsigned int world_shader, post_process_shader, ui_shader, skybox_shader;
 
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
 extern Chunk*** chunks;
-extern Entity global_entities[MAX_ENTITIES_PER_CHUNK];
 
 extern unsigned int model_uniform_location;
 extern unsigned int atlas_uniform_location;
@@ -105,20 +62,14 @@ void set_hotbar_slot(uint8_t slot);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void process_input(GLFWwindow* window);
 void setup_matrices();
+void set_fov(float fov);
 
-vec3 get_direction(float pitch, float yaw);
-void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_out, char* out_face);
 Block* get_block_at(int world_block_x, int world_block_y, int world_block_z);
 void draw_block_highlight(vec3 pos);
 bool is_block_solid(int world_block_x, int world_block_y, int world_block_z);
 void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord);
 bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);
 void update_adjacent_chunks(uint8_t render_x, uint8_t render_y, uint8_t render_z, int block_x, int block_y, int block_z);
-bool check_entity_collision(float x, float y, float z, float width, float height);
-void update_entity_physics(Entity* player, float delta_time);
-Entity create_entity(uint8_t id);
-AABB get_entity_aabb(float x, float y, float z, float width, float height);
-bool aabb_intersect(AABB a, AABB b);
 void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, FaceMesh faces[6]);
 void load_shaders();
 void load_shader_constants();

@@ -26,6 +26,7 @@ typedef struct {
 
 typedef struct {
 	float fov;
+	float fov_desired;
 	float sky_brightness;
 	unsigned short window_width;
 	unsigned short window_height;

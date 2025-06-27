@@ -359,7 +359,18 @@ void load_around_entity(Entity* entity) {
 					float dz = world_chunk_z - entity_chunk_z;
 					float dist_sq = dx*dx + dy*dy + dz*dz;
 
-					enqueue_chunk_load(x, y, z, x + center_cx, y, z + center_cz, dist_sq);
+					// Adjust priority based on visibility
+					float priority = dist_sq;
+					if (visibility_map[x][y][z]) {
+						// Visible chunks get higher priority (lower value)
+						priority *= 0.01f;
+					}
+					else {
+						// Hidden chunks get lower priority (higher value)
+						priority *= 10.0f;
+					}
+
+					enqueue_chunk_load(x, y, z, x + center_cx, y, z + center_cz, priority);
 					track_chunk_queued();
 				}
 			}

@@ -1,6 +1,7 @@
 #include "main.h"
 #include "framebuffer.h"
 #include "gui.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +15,7 @@ double time_previous = 0.0f;
 int time_counter = 0;
 float framerate = 0.0f;
 float frametime = 0.0f;
+float last_fov = false;
 
 void do_time_stuff() {
 	time_current = glfwGetTime();
@@ -29,6 +31,11 @@ void do_time_stuff() {
 		time_previous = time_current;
 		time_counter = 0;
 
+		if (last_fov != settings.fov) {
+			set_fov(settings.fov);
+			last_fov = settings.fov;
+		}
+		
 		process_chunks();
 		if (frustum_changed) {
 			update_frustum();
@@ -57,9 +64,9 @@ void do_time_stuff() {
 				for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
 					Chunk* chunk = &chunks[x][y][z];
 					if (chunk->is_loaded) loaded_chunks++;
-					if (chunk->is_visible) visible_chunks++;
+					if (visibility_map[x][y][z]) visible_chunks++;
 					
-					if (!chunk->is_visible) continue;
+					if (!visibility_map[x][y][z]) continue;
 					
 					for (uint8_t face = 0; face < 6; face++) {
 						total_opaque_vertices += chunk->faces[face].vertex_count;

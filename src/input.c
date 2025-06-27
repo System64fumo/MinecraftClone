@@ -1,6 +1,7 @@
 #include "main.h"
 #include "world.h"
 #include "gui.h"
+#include "config.h"
 #include <math.h>
 
 float lastX = 0;
@@ -122,6 +123,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 				break;
 			case GLFW_KEY_F2:
 				mesh_mode = !mesh_mode;
+				break;
+			case GLFW_KEY_LEFT_CONTROL:
+				global_entities[0].sprinting = true;
 				break;
 			case GLFW_KEY_L:
 				load_shaders();
@@ -290,7 +294,16 @@ void process_input(GLFWwindow* window) {
 		}
 	}
 
-	float move_speed = global_entities[0].speed * delta_time;
+	float move_speed = global_entities[0].speed;
+	if (global_entities[0].sprinting == true) {
+		move_speed *= 1.3;
+		settings.fov = settings.fov_desired * 1.1;
+	}
+	else {
+		settings.fov = settings.fov_desired;
+	}
+	move_speed *= delta_time;
+
 	float yaw = global_entities[0].yaw * DEG_TO_RAD;
 	float dx = 0.0f, dy = 0.0f, dz = 0.0f;
 
@@ -298,6 +311,9 @@ void process_input(GLFWwindow* window) {
 		dx += cosf(yaw) * move_speed;
 		dz += sinf(yaw) * move_speed;
 		frustum_changed = true;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE) {
+		global_entities[0].sprinting = false;
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 		dx -= cosf(yaw) * move_speed;
@@ -324,27 +340,6 @@ void process_input(GLFWwindow* window) {
 		frustum_changed = true;
 	}
 
-	float new_x = global_entities[0].pos.x + dx;
-	float new_y = global_entities[0].pos.y + dy;
-	float new_z = global_entities[0].pos.z + dz;
-
-	if (check_entity_collision(new_x, new_y, new_z, global_entities[0].width, global_entities[0].height)) {
-		global_entities[0].pos.x = new_x;
-		global_entities[0].pos.y = new_y;
-		global_entities[0].pos.z = new_z;
-	} else {
-		if (check_entity_collision(new_x, global_entities[0].pos.y, new_z, global_entities[0].width, global_entities[0].height)) {
-			global_entities[0].pos.x = new_x;
-			global_entities[0].pos.z = new_z;
-		} else {
-			if (check_entity_collision(new_x, global_entities[0].pos.y, global_entities[0].pos.z, global_entities[0].width, global_entities[0].height)) {
-				global_entities[0].pos.x = new_x;
-			}
-			if (check_entity_collision(global_entities[0].pos.x, global_entities[0].pos.y, new_z, global_entities[0].width, global_entities[0].height)) {
-				global_entities[0].pos.z = new_z;
-			}
-		}
-	}
-
+	move_entity_with_collision(&global_entities[0], dx, dy, dz);
 	update_entity_physics(&global_entities[0], delta_time);
 }
