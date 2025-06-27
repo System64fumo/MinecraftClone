@@ -60,11 +60,11 @@ void combine_meshes() {
 						for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
 							Chunk* chunk = &chunks[x][y][z];
 							if (chunk->faces[face].vertex_count == 0) {
-								chunks[x][y][z].is_visible = false;
+								visibility_map[x][y][z] = false;
 								continue;
 							}
 
-							chunks[x][y][z].is_visible = true;
+							visibility_map[x][y][z] = true;
 
 							memcpy(vbo_ptr + vertex_offset, chunk->faces[face].vertices,
 									chunk->faces[face].vertex_count * sizeof(Vertex));

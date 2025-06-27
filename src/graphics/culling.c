@@ -2,6 +2,8 @@
 #include "world.h"
 #include "config.h"
 #include <math.h>
+#include <string.h>
+#include <stdio.h>
 
 bool frustum_culling_enabled = true;
 bool occlusion_culling_enabled = false;
@@ -243,7 +245,7 @@ void update_frustum() {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
 				Chunk* chunk = &chunks[x][y][z];
-				bool was_visible = chunk->is_visible;
+				bool was_visible = visibility_map[x][y][z];
 				bool is_visible = true;
 
 				if (frustum_culling_enabled) {
@@ -258,7 +260,7 @@ void update_frustum() {
 				}
 
 				if (was_visible != is_visible) {
-					chunk->is_visible = is_visible;
+					visibility_map[x][y][z] = is_visible;
 					frustum_changed = true;
 				}
 			}

@@ -19,6 +19,7 @@ uint32_t transparent_index_count = 0;
 bool mesh_mode = false;
 uint16_t draw_calls = 0;
 bool mesh_needs_rebuild = false;
+bool visibility_map[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
 
 void init_gl_buffers() {
 	glGenVertexArrays(1, &opaque_VAO);
@@ -84,7 +85,7 @@ void rebuild_combined_visible_mesh() {
 			for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 				for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
 					Chunk* chunk = &chunks[x][y][z];
-					if (!chunk->is_visible || !chunk->is_loaded) continue;
+					if (!visibility_map[x][y][z] || !chunk->is_loaded) continue;
 					
 					total_opaque_vertices += chunk->faces[face].vertex_count;
 					total_opaque_indices += chunk->faces[face].index_count;
@@ -121,7 +122,7 @@ void rebuild_combined_visible_mesh() {
 				for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 					for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 						for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
-							if (!chunks[x][y][z].is_visible) continue;
+							if (!visibility_map[x][y][z]) continue;
 							
 							Chunk* chunk = &chunks[x][y][z];
 							if (chunk->faces[face].vertex_count == 0) continue;
@@ -167,7 +168,7 @@ void rebuild_combined_visible_mesh() {
 				for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
 					for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
 						for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
-							if (!chunks[x][y][z].is_visible) continue;
+							if (!visibility_map[x][y][z]) continue;
 							
 							Chunk* chunk = &chunks[x][y][z];
 							if (chunk->transparent_faces[face].vertex_count == 0) continue;

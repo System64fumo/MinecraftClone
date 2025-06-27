@@ -26,7 +26,7 @@ void parse_config(IniFile* ini) {
 
 	const char* fov = ini_get(ini, "main", "fov");
 	if (fov)
-		settings.fov = atof(fov);
+		settings.fov_desired = atof(fov);
 
 	settings.sky_brightness = 1.0;
 
@@ -84,7 +84,8 @@ static void ini_load_file(IniFile* ini) {
 void initialize_config() {
 	settings.window_width = 845;
 	settings.window_height = 480;
-	settings.fov = 70.0f;
+	settings.fov_desired = 70.0f;
+	settings.fov = settings.fov_desired;
 
 	char config_path[1024];
 	const char* home_path = getenv("HOME");

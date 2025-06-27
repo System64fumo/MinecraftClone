@@ -34,6 +34,8 @@ extern bool frustum_changed;
 extern bool mesh_needs_rebuild;
 extern uint16_t draw_calls;
 
+extern bool visibility_map[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
+
 void init_gl_buffers();
 void update_frustum();
 void rebuild_combined_visible_mesh();
