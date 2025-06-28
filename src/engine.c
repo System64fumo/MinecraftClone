@@ -1,5 +1,6 @@
 #include "main.h"
 #include "world.h"
+#include "shaders.h"
 #include "config.h"
 #include "gui.h"
 #include "skybox.h"
@@ -29,10 +30,10 @@ uint8_t block_data[MAX_BLOCK_TYPES][8] = {
 	[5] =  {0, 0, 5,   5,   5,   5,   5,   5  },	// Planks
 	[6] =  {2, 1, 16,  16,  16,  16,  16,  16 },	// Sapling
 	[7] =  {0, 0, 18,  18,  18,  18,  18,  18 },	// Bedrock
-	[8] =  {3, 1, 206, 206, 206, 206, 206, 206},	// Flowing water
-	[9] =  {3, 1, 206, 206, 206, 206, 206, 206},	// Stationary water
-	[10] = {3, 0, 238, 238, 238, 238, 238, 238},	// Flowing lava
-	[11] = {3, 0, 238, 238, 238, 238, 238, 238},	// Stationary lava
+	[8] =  {0, 1, 206, 206, 206, 206, 206, 206},	// Flowing water
+	[9] =  {0, 1, 206, 206, 206, 206, 206, 206},	// Stationary water
+	[10] = {0, 0, 238, 238, 238, 238, 238, 238},	// Flowing lava
+	[11] = {0, 0, 238, 238, 238, 238, 238, 238},	// Stationary lava
 	[12] = {0, 0, 19,  19,  19,  19,  19,  19 },	// Sand
 	[13] = {0, 0, 20,  20,  20,  20,  20,  20 },	// Gravel
 	[14] = {0, 0, 33,  33,  33,  33,  33,  33 },	// Gold Ore
@@ -103,7 +104,7 @@ void run() {
 
 	while (!glfwWindowShouldClose(window)) {
 		do_time_stuff();
-		process_input(window);
+		process_input(window, chunks);
 
 		render_to_framebuffer();
 		render_to_screen();

@@ -1,8 +1,9 @@
 #include "main.h"
 #include "gui.h"
-#include <math.h>
+#include "shaders.h"
 #include "config.h"
 #include "textures.h"
+#include <math.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -288,21 +289,53 @@ void draw_cube_element(const cube_element_t* cube) {
 	generate_single_block_mesh(0, 0, 0, cube->id, faces);
 
 	glBindVertexArray(cube_vao);
+	glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_ebo);
 
+	size_t total_vertices = 0;
+	size_t total_indices = 0;
+	
+	// First calculate total sizes needed
 	for (uint8_t face = 0; face < 6; face++) {
 		if (faces[face].vertex_count == 0) continue;
+		total_vertices += faces[face].vertex_count;
+		total_indices += faces[face].index_count;
+	}
 
-		glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
-		glBufferData(GL_ARRAY_BUFFER, faces[face].vertex_count * sizeof(Vertex), faces[face].vertices, GL_DYNAMIC_DRAW);
-
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_ebo);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, faces[face].index_count * sizeof(uint32_t), faces[face].indices, GL_DYNAMIC_DRAW);
-
-		glDrawElements(GL_TRIANGLES, faces[face].index_count, GL_UNSIGNED_INT, 0);
+	// Allocate single buffers
+	Vertex* all_vertices = malloc(total_vertices * sizeof(Vertex));
+	uint32_t* all_indices = malloc(total_indices * sizeof(uint32_t));
+	
+	// Combine all face data
+	size_t vertex_offset = 0;
+	size_t index_offset = 0;
+	uint32_t base_index = 0;
+	
+	for (uint8_t face = 0; face < 6; face++) {
+		if (faces[face].vertex_count == 0) continue;
+		
+		memcpy(all_vertices + vertex_offset, faces[face].vertices, faces[face].vertex_count * sizeof(Vertex));
+		
+		// Adjust indices for the offset
+		for (size_t i = 0; i < faces[face].index_count; i++) {
+			all_indices[index_offset + i] = faces[face].indices[i] + base_index;
+		}
+		
+		vertex_offset += faces[face].vertex_count;
+		index_offset += faces[face].index_count;
+		base_index += faces[face].vertex_count;
 
 		free(faces[face].vertices);
 		free(faces[face].indices);
 	}
+
+	// Single buffer upload and draw call
+	glBufferData(GL_ARRAY_BUFFER, total_vertices * sizeof(Vertex), all_vertices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, total_indices * sizeof(uint32_t), all_indices, GL_DYNAMIC_DRAW);
+	glDrawElements(GL_TRIANGLES, total_indices, GL_UNSIGNED_INT, 0);
+
+	free(all_vertices);
+	free(all_indices);
 }
 
 void update_ui_buffer() {

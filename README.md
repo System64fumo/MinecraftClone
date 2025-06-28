@@ -21,8 +21,8 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * DDA raycasting
 * AABB collision
 * Basic back face culling
-* 3D Frustum culling
-* Occlusion culling (Currently disabled)
+* Frustum culling
+* Breadth First Search culling (Occlusion culling)
 * Data packing
 
 # Notes

@@ -1,4 +1,5 @@
 #include "main.h"
+#include "shaders.h"
 #include "skybox.h"
 #include "gui.h"
 #include "textures.h"

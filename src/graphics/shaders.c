@@ -1,4 +1,5 @@
 #include "main.h"
+#include "shaders.h"
 #include "framebuffer.h"
 #include "gui.h"
 #include <stdio.h>
