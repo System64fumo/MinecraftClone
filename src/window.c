@@ -1,5 +1,6 @@
 #include "main.h"
 #include "framebuffer.h"
+#include "shaders.h"
 #include "config.h"
 #include "gui.h"
 #include <stdio.h>
@@ -19,7 +20,9 @@ int initialize_window() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
 	glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_EGL_CONTEXT_API);
+	#ifndef DEBUG
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+	#endif
 	//glfwWindowHint(GLFW_SAMPLES, 8);
 
 	window = glfwCreateWindow(settings.window_width, settings.window_height, "Minecraft Clone", NULL, NULL);
@@ -41,7 +44,6 @@ int initialize_window() {
 
 	// Debugging
 	#ifdef DEBUG
-	glfwWindowHint(GLFW_CONTEXT_DEBUG, GLFW_TRUE);
 	printf("OpenGL Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
 	printf("OpenGL Renderer: %s\n", (const char*)glGetString(GL_RENDERER));
 	printf("OpenGL Version: %s\n", (const char*)glGetString(GL_VERSION));
@@ -52,6 +54,7 @@ int initialize_window() {
 	profiler_create("Merge");
 	profiler_create("Render");
 	profiler_create("GUI");
+	profiler_create("Culling");
 	profiler_create("Framebuffer");
 	profiler_create("World");
 	#endif

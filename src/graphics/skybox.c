@@ -1,4 +1,5 @@
 #include "main.h"
+#include "shaders.h"
 
 unsigned int skyboxTexture;
 unsigned int skyboxVAO, skyboxVBO;
@@ -120,11 +121,7 @@ void skybox_render() {
 	glUniform1i(glGetUniformLocation(skybox_shader, "skybox"), 0);
 
 	glBindVertexArray(skyboxVAO);
-
-	for (uint8_t i = 0; i < 6; i++) {
-		glDrawArrays(GL_TRIANGLE_STRIP, i * 4, 4);
-	}
-
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 24);
 	glBindVertexArray(0);
 }
 

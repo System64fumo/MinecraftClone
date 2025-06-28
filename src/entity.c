@@ -80,7 +80,7 @@ void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_ou
 		// Skip if out of bounds
 		if (block_y < 0 || block_y >= WORLD_HEIGHT * CHUNK_SIZE) continue;
 
-		Block* block = get_block_at(block_x, block_y, block_z);
+		Block* block = get_block_at(chunks, block_x, block_y, block_z);
 		if (block == NULL) continue;
 		uint8_t intersecting_block_id = block->id;
 
@@ -131,7 +131,7 @@ bool check_entity_collision(float x, float y, float z, float width, float height
 	for (int bx = min_x; bx <= max_x; bx++) {
 		for (int by = min_y; by <= max_y; by++) {
 			for (int bz = min_z; bz <= max_z; bz++) {				
-				if (is_block_solid(bx, by, bz)) {
+				if (is_block_solid(chunks, bx, by, bz)) {
 					AABB block_aabb = {
 						.min_x = bx,
 						.max_x = bx + 1.0f,
@@ -166,14 +166,12 @@ void move_entity_with_collision(Entity* entity, float dx, float dy, float dz) {
 		entity->pos.z = new_z;
 		actual_speed = intended_speed;
 	} else {
-		bool xz_moved = false;
 		bool x_moved = false;
 		bool z_moved = false;
 		
 		if (check_entity_collision(new_x, entity->pos.y, new_z, entity->width, entity->height)) {
 			entity->pos.x = new_x;
 			entity->pos.z = new_z;
-			xz_moved = true;
 			actual_speed = intended_speed;
 		} else {
 			if (check_entity_collision(new_x, entity->pos.y, entity->pos.z, entity->width, entity->height)) {
@@ -239,6 +237,7 @@ void update_entity_physics(Entity* entity, float delta_time) {
 			for (int i = 0; i < collision_points_count; i++) {
 				float test_y = entity->pos.y + step_y;
 				int ground_collision = is_block_solid(
+					chunks,
 					(int)floorf(ground_check_points[i][0]), 
 					(int)floorf(test_y), 
 					(int)floorf(ground_check_points[i][1])
@@ -281,6 +280,7 @@ void update_entity_physics(Entity* entity, float delta_time) {
 			for (int i = 0; i < collision_points_count; i++) {
 				float test_y = entity->pos.y + entity->height + step_y;
 				int ceiling_collision = is_block_solid(
+					chunks,
 					(int)floorf(ceiling_check_points[i][0]), 
 					(int)floorf(test_y), 
 					(int)floorf(ceiling_check_points[i][1])

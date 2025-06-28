@@ -1,8 +1,10 @@
 #include "main.h"
 #include "world.h"
 #include "gui.h"
+#include "shaders.h"
 #include "config.h"
 #include <math.h>
+#include <stdio.h>
 
 float lastX = 0;
 float lastY = 0;
@@ -106,7 +108,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 				
 			if (face == 'N') return;
 				
-			Block* block = get_block_at(block_pos.x, block_pos.y, block_pos.z);
+			Block* block = get_block_at(chunks, block_pos.x, block_pos.y, block_pos.z);
 		}
 	}
 }
@@ -130,8 +132,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			case GLFW_KEY_L:
 				load_shaders();
 				break;
+			case GLFW_KEY_T:
+				int tex_width, tex_height, tex_depth;
+				
+				// Generate the 3D light texture with only the relevant portion
+				unsigned char* light_texture = generateLightTexture3D(&tex_width, &tex_height, &tex_depth);
+
+				printf("Generated texture dimensions: %dx%dx%d\n", tex_width, tex_height, tex_depth);
+
+				if (!saveTextureSliceAsPNG(light_texture, 5, "/tmp/slice.png")) {
+					fprintf(stderr, "Failed to save PNG slice\n");
+				}
+				break;
 			case GLFW_KEY_ESCAPE:
-				glfwSetCursorPos(window, screen_center_x, screen_center_y); // This doesn't seem to work?
 				if (ui_state == UI_STATE_RUNNING) {
 					ui_state = UI_STATE_PAUSED;
 					glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -166,7 +179,7 @@ bool is_valid_block_position(float x, float y, float z) {
 			render_z >= 0 && render_z < RENDER_DISTANCE);
 }
 
-void process_input(GLFWwindow* window) {
+void process_input(GLFWwindow* window, Chunk*** chunks) {
 	if (ui_state != UI_STATE_RUNNING)
 		return;
 
@@ -182,7 +195,7 @@ void process_input(GLFWwindow* window) {
 			get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &face);
 			
 			if (face != 'N' && is_valid_block_position(block_pos.x, block_pos.y, block_pos.z)) {
-				Block* block = get_block_at(block_pos.x, block_pos.y, block_pos.z);
+				Block* block = get_block_at(chunks, block_pos.x, block_pos.y, block_pos.z);
 				
 				int chunk_x, chunk_z, block_x, block_z;
 				calculate_chunk_and_block(block_pos.x, &chunk_x, &block_x);
@@ -198,7 +211,7 @@ void process_input(GLFWwindow* window) {
 					Chunk* chunk = &chunks[render_x][chunk_y][render_z];
 					block->id = 0;
 					chunk->needs_update = true;
-					update_adjacent_chunks(render_x, chunk_y, render_z, block_x, block_y, block_z);
+					update_adjacent_chunks(chunks, render_x, chunk_y, render_z, block_x, block_y, block_z);
 				}
 			}
 			last_break_time = current_time;
@@ -245,7 +258,7 @@ void process_input(GLFWwindow* window) {
 					);
 					
 					if (!aabb_intersect(block_aabb, player_aabb)) {
-						Block* block = get_block_at(block_pos.x, block_pos.y, block_pos.z);
+						Block* block = get_block_at(chunks, block_pos.x, block_pos.y, block_pos.z);
 				
 						int chunk_x, chunk_z, block_x, block_z;
 						calculate_chunk_and_block(block_pos.x, &chunk_x, &block_x);
@@ -262,7 +275,7 @@ void process_input(GLFWwindow* window) {
 							block->id = hotbar_slot + 1;
 							block->light_level = 0;
 							chunk->needs_update = true;
-							update_adjacent_chunks(render_x, chunk_y, render_z, block_x, block_y, block_z);
+							update_adjacent_chunks(chunks, render_x, chunk_y, render_z, block_x, block_y, block_z);
 						}
 					}
 				}

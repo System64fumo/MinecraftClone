@@ -36,21 +36,8 @@ extern float far;
 extern float aspect;
 extern GLFWwindow* window;
 
-extern unsigned int world_shader, post_process_shader, ui_shader, skybox_shader;
-
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
 extern Chunk*** chunks;
-
-extern unsigned int model_uniform_location;
-extern unsigned int atlas_uniform_location;
-extern unsigned int view_uniform_location;
-extern unsigned int projection_uniform_location;
-extern unsigned int ui_projection_uniform_location;
-extern unsigned int ui_state_uniform_location;
-extern unsigned int screen_texture_uniform_location;
-extern unsigned int texture_fb_depth_uniform_location;
-extern unsigned int near_uniform_location;
-extern unsigned int far_uniform_location;
 
 // Function prototypes
 int initialize_window();
@@ -60,22 +47,22 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void set_hotbar_slot(uint8_t slot);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-void process_input(GLFWwindow* window);
+void process_input(GLFWwindow* window, Chunk*** chunks);
 void setup_matrices();
 void set_fov(float fov);
 
-Block* get_block_at(int world_block_x, int world_block_y, int world_block_z);
+Block* get_block_at(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z);
 void draw_block_highlight(vec3 pos);
-bool is_block_solid(int world_block_x, int world_block_y, int world_block_z);
+bool is_block_solid(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z);
 void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord);
 bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);
-void update_adjacent_chunks(uint8_t render_x, uint8_t render_y, uint8_t render_z, int block_x, int block_y, int block_z);
+void update_adjacent_chunks(Chunk*** chunks, uint8_t render_x, uint8_t render_y, uint8_t render_z, int block_x, int block_y, int block_z);
 void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, FaceMesh faces[6]);
-void load_shaders();
-void load_shader_constants();
-void cache_uniform_locations();
+void clear_face_data(FaceMesh faces[6]);
 
 void process_chunks();
+unsigned char* generateLightTexture3D(int* out_width, int* out_height, int* out_depth);
+bool saveTextureSliceAsPNG(const unsigned char* texture_data, int y_slice, const char* filename);
 
 bool are_all_neighbors_loaded(uint8_t x, uint8_t y, uint8_t z);
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);

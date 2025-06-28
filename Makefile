@@ -3,11 +3,12 @@ SRC_DIRS := src src/graphics src/mesh src/world
 BUILDDIR := build
 INCLUDE_DIR := include
 
-CFLAGS := -I$(INCLUDE_DIR)
-LDFLAGS := -lGL -lGLEW -lglfw -lm -lwebp
+CFLAGS := -I$(INCLUDE_DIR) -MMD -MP
+LDFLAGS := -lGL -lGLEW -lglfw -lm -lwebp -lpng
 
 SRCS := $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))
 OBJS := $(patsubst %.c, $(BUILDDIR)/%.o, $(SRCS))
+DEPS := $(OBJS:.o=.d)
 
 $(shell mkdir -p $(BUILDDIR))
 $(foreach dir, $(SRC_DIRS), $(shell mkdir -p $(BUILDDIR)/$(dir)))
@@ -51,3 +52,5 @@ resources:
 $(BUILDDIR)/%.o: %.c
 	$(call progress, Compiling $@)
 	@$(CC) -c $< -o $@ $(CFLAGS)
+
+-include $(DEPS)
