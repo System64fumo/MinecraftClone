@@ -87,6 +87,7 @@ int initialize() {
 	glFrontFace(GL_CCW);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glLineWidth(2.0f);
 	//glEnable(GL_MULTISAMPLE);
 
 	// Initialize player

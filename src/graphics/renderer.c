@@ -60,6 +60,9 @@ void init_gl_buffers() {
 }
 
 void rebuild_combined_visible_mesh() {
+	#ifdef DEBUG
+	profiler_start(PROFILER_ID_MERGE, false);
+	#endif
 	opaque_index_count = 0;
 	transparent_index_count = 0;
 
@@ -195,6 +198,9 @@ void rebuild_combined_visible_mesh() {
 
 	glBindVertexArray(0);
 	mesh_needs_rebuild = false;
+	#ifdef DEBUG
+	profiler_stop(PROFILER_ID_MERGE, false);
+	#endif
 }
 
 void render_chunks() {

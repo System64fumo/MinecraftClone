@@ -1,4 +1,4 @@
-extern unsigned int world_shader, post_process_shader, ui_shader, skybox_shader;
+extern unsigned int world_shader, post_process_shader, ui_shader, skybox_shader, clouds_shader;
 
 extern unsigned int model_uniform_location;
 extern unsigned int atlas_uniform_location;
