@@ -89,8 +89,10 @@ Block* get_block_at(Chunk*** chunks, int world_block_x, int world_block_y, int w
 	return NULL;
 }
 
-bool is_block_solid(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z) {
+int is_block_solid(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z) {
 	Block* block = get_block_at(chunks, world_block_x, world_block_y, world_block_z);
-	bool is_solid = block && !(block->id == 0 || block->id == 6 || block->id == 8 || block->id == 9 || block->id == 10 || block->id == 11);
-	return is_solid;
+	if (block == NULL)
+		return -1;
+	else
+		return !(block->id == 0 || block->id == 6 || block->id == 8 || block->id == 9 || block->id == 10 || block->id == 11);
 }

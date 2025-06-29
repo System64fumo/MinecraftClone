@@ -78,11 +78,7 @@ void render_to_framebuffer() {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	
 	// Clear all buffers
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	const float zero[] = {0.0f, 0.0f, 0.0f, 0.0f};
-	const float one = 1.0f;
-	glClearBufferfv(GL_COLOR, 1, zero);
-	glClearBufferfv(GL_COLOR, 2, &one);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// Draw skybox
 	skybox_render();
@@ -90,7 +86,6 @@ void render_to_framebuffer() {
 	glUseProgram(world_shader);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, block_textures);
-	glUniform1i(atlas_uniform_location, 0);
 
 	#ifdef DEBUG
 	profiler_stop(PROFILER_ID_FRAMEBUFFER, true);

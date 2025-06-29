@@ -1,5 +1,6 @@
 #include "main.h"
 #include "framebuffer.h"
+#include "skybox.h"
 #include "gui.h"
 #include "config.h"
 #include <stdio.h>
@@ -35,7 +36,7 @@ void do_time_stuff() {
 			set_fov(settings.fov);
 			last_fov = settings.fov;
 		}
-		
+		update_clouds();
 		process_chunks();
 		if (frustum_changed) {
 			update_frustum();

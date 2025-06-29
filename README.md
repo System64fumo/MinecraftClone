@@ -13,6 +13,7 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * FPS Counter & Several profiling utils
 * Vignette effect
 * GUI
+* 2D Clouds
 
 # Optimizations
 * Render distance (Only keep track of chunks that matter not the whole world)
@@ -22,7 +23,6 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * AABB collision
 * Basic back face culling
 * Frustum culling
-* Breadth First Search culling (Occlusion culling)
 * Data packing
 
 # Notes
@@ -39,5 +39,5 @@ This project is not affiliated with Mojang or Microsoft in any way.<br>
 
 # Credits
 Thanks to [Sean Barrett](https://github.com/nothings/stb/blob/master/stb_perlin.h) for the perlin noise generator.<br>
-Thanks to [SourceGraph](https://sourcegraph.com/) for cody.<br>
+Thanks to [DeepSeek](https://www.deepseek.com/en) for assisting with development.<br>
 And obviously many thanks to [Notch](https://x.com/notch) for creating this childhood classic.<br>

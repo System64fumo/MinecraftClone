@@ -251,7 +251,6 @@ void draw_block_highlight(vec3 pos) {
 	glUseProgram(world_shader);
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, highlight_matrix);
 
-	glLineWidth(2.0f);
 	glBindVertexArray(highlight_vao);
 	glDrawElements(GL_LINE_STRIP, sizeof(highlight_indices), GL_UNSIGNED_BYTE, (void*)0);
 	draw_calls++;

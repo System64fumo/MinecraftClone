@@ -53,7 +53,7 @@ void set_fov(float fov);
 
 Block* get_block_at(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z);
 void draw_block_highlight(vec3 pos);
-bool is_block_solid(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z);
+int is_block_solid(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z);
 void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord);
 bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);
 void update_adjacent_chunks(Chunk*** chunks, uint8_t render_x, uint8_t render_y, uint8_t render_z, int block_x, int block_y, int block_z);

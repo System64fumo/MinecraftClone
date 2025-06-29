@@ -3,143 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-void combine_meshes() {
-	#ifdef DEBUG
-	profiler_start(PROFILER_ID_MESH, false);
-	#endif
-
-	uint32_t total_opaque_vertices = 0;
-	uint32_t total_opaque_indices = 0;
-	uint32_t total_transparent_vertices = 0;
-	uint32_t total_transparent_indices = 0;
-
-	// First pass: count all vertices and indices
-	for (uint8_t face = 0; face < 6; face++) {
-		for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
-			for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-				for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
-					Chunk* chunk = &chunks[x][y][z];
-					total_opaque_vertices += chunk->faces[face].vertex_count;
-					total_opaque_indices += chunk->faces[face].index_count;
-					total_transparent_vertices += chunk->transparent_faces[face].vertex_count;
-					total_transparent_indices += chunk->transparent_faces[face].index_count;
-				}
-			}
-		}
-	}
-
-	// Skip if nothing to render
-	if (total_opaque_vertices == 0 && total_transparent_vertices == 0) {
-		#ifdef DEBUG
-		profiler_stop(PROFILER_ID_MESH, false);
-		#endif
-		return;
-	}
-
-	// Opaque mesh data
-	if (total_opaque_vertices > 0) {
-		glBindVertexArray(opaque_VAO);
-		
-		// Resize buffers
-		glBindBuffer(GL_ARRAY_BUFFER, opaque_VBO);
-		glBufferData(GL_ARRAY_BUFFER, total_opaque_vertices * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
-		Vertex* vbo_ptr = (Vertex*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-		
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, opaque_EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, total_opaque_indices * sizeof(uint32_t), NULL, GL_DYNAMIC_DRAW);
-		uint32_t* ebo_ptr = (uint32_t*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-
-		if (vbo_ptr && ebo_ptr) {
-			uint32_t vertex_offset = 0;
-			uint32_t index_offset = 0;
-			uint32_t base_vertex = 0;
-
-			for (uint8_t face = 0; face < 6; face++) {
-				for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-					for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
-						for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
-							Chunk* chunk = &chunks[x][y][z];
-							if (chunk->faces[face].vertex_count == 0) {
-								visibility_map[x][y][z] = false;
-								continue;
-							}
-
-							visibility_map[x][y][z] = true;
-
-							memcpy(vbo_ptr + vertex_offset, chunk->faces[face].vertices,
-									chunk->faces[face].vertex_count * sizeof(Vertex));
-
-							for (uint32_t i = 0; i < chunk->faces[face].index_count; i++) {
-								ebo_ptr[index_offset + i] = chunk->faces[face].indices[i] + base_vertex;
-							}
-
-							vertex_offset += chunk->faces[face].vertex_count;
-							index_offset += chunk->faces[face].index_count;
-							base_vertex += chunk->faces[face].vertex_count;
-						}
-					}
-				}
-			}
-		}
-
-		if (vbo_ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
-		if (ebo_ptr) glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-	}
-
-	// Transparent mesh data
-	if (total_transparent_vertices > 0) {
-		glBindVertexArray(transparent_VAO);
-		
-		glBindBuffer(GL_ARRAY_BUFFER, transparent_VBO);
-		glBufferData(GL_ARRAY_BUFFER, total_transparent_vertices * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW);
-		Vertex* vbo_ptr = (Vertex*)glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-		
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, transparent_EBO);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, total_transparent_indices * sizeof(uint32_t), NULL, GL_DYNAMIC_DRAW);
-		uint32_t* ebo_ptr = (uint32_t*)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-
-		if (vbo_ptr && ebo_ptr) {
-			uint32_t vertex_offset = 0;
-			uint32_t index_offset = 0;
-			uint32_t base_vertex = 0;
-
-			for (uint8_t face = 0; face < 6; face++) {
-				for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-					for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
-						for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
-							Chunk* chunk = &chunks[x][y][z];
-							if (chunk->transparent_faces[face].vertex_count == 0) continue;
-
-							memcpy(vbo_ptr + vertex_offset, chunk->transparent_faces[face].vertices,
-									chunk->transparent_faces[face].vertex_count * sizeof(Vertex));
-
-							for (uint32_t i = 0; i < chunk->transparent_faces[face].index_count; i++) {
-								ebo_ptr[index_offset + i] = chunk->transparent_faces[face].indices[i] + base_vertex;
-							}
-
-							vertex_offset += chunk->transparent_faces[face].vertex_count;
-							index_offset += chunk->transparent_faces[face].index_count;
-							base_vertex += chunk->transparent_faces[face].vertex_count;
-						}
-					}
-				}
-			}
-		}
-
-		if (vbo_ptr) glUnmapBuffer(GL_ARRAY_BUFFER);
-		if (ebo_ptr) glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-	}
-
-	glBindVertexArray(0);
-	
-	#ifdef DEBUG
-	profiler_stop(PROFILER_ID_MESH, false);
-	#endif
-}
-
-void process_chunks() {
-	bool chunks_updated = false;
-	
+void process_chunks() {	
 	pthread_mutex_lock(&chunks_mutex);
 	// Process all chunks directly
 	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
@@ -153,22 +17,11 @@ void process_chunks() {
 						set_chunk_lighting(chunk);
 						generate_chunk_mesh(chunk);
 						chunk->needs_update = false;
-						chunks_updated = true;
+						mesh_needs_rebuild = true;
 					}
 				}
 			}
 		}
 	}
 	pthread_mutex_unlock(&chunks_mutex);
-
-	if (chunks_updated) {
-		#ifdef DEBUG
-		profiler_start(PROFILER_ID_MERGE, false);
-		#endif
-		combine_meshes();
-		update_frustum();
-		#ifdef DEBUG
-		profiler_stop(PROFILER_ID_MERGE, false);
-		#endif
-	}
 }
