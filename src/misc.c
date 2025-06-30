@@ -36,7 +36,10 @@ void do_time_stuff() {
 			set_fov(settings.fov);
 			last_fov = settings.fov;
 		}
-		update_clouds();
+
+		if (ui_state == UI_STATE_RUNNING)
+			update_clouds();
+
 		process_chunks();
 		if (frustum_changed) {
 			update_frustum();
@@ -60,9 +63,9 @@ void do_time_stuff() {
 		uint32_t loaded_chunks = 0;
 		uint32_t visible_chunks = 0;
 
-		for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+		for (uint8_t x = 0; x < settings.render_distance; x++) {
 			for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-				for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
+				for (uint8_t z = 0; z < settings.render_distance; z++) {
 					Chunk* chunk = &chunks[x][y][z];
 					if (chunk->is_loaded) loaded_chunks++;
 					if (visibility_map[x][y][z]) visible_chunks++;

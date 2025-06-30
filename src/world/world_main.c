@@ -1,5 +1,6 @@
 #include "main.h"
 #include "world.h"
+#include "config.h"
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
@@ -161,7 +162,7 @@ void* world_gen_thread_func(void* arg) {
 				if (chunks[req.ci_x-1][req.ci_y][req.ci_z].faces[face].vertices)
 					chunks[req.ci_x-1][req.ci_y][req.ci_z].needs_update = true;
 			}
-			if (req.ci_x < RENDER_DISTANCE-1) {
+			if (req.ci_x < settings.render_distance-1) {
 				if (chunks[req.ci_x+1][req.ci_y][req.ci_z].faces[face].vertices)
 					chunks[req.ci_x+1][req.ci_y][req.ci_z].needs_update = true;
 			}
@@ -169,7 +170,7 @@ void* world_gen_thread_func(void* arg) {
 				if (chunks[req.ci_x][req.ci_y][req.ci_z-1].faces[face].vertices)
 					chunks[req.ci_x][req.ci_y][req.ci_z-1].needs_update = true;
 			}
-			if (req.ci_z < RENDER_DISTANCE-1) {
+			if (req.ci_z < settings.render_distance-1) {
 				if (chunks[req.ci_x][req.ci_y][req.ci_z+1].faces[face].vertices)
 					chunks[req.ci_x][req.ci_y][req.ci_z+1].needs_update = true;
 			}
@@ -205,8 +206,8 @@ void load_around_entity(Entity* entity) {
 	start_world_gen_tracking();
 	#endif
 
-	int center_cx = floorf(entity->pos.x / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
-	int center_cz = floorf(entity->pos.z / CHUNK_SIZE) - (RENDER_DISTANCE / 2);
+	int center_cx = floorf(entity->pos.x / CHUNK_SIZE) - (settings.render_distance / 2);
+	int center_cz = floorf(entity->pos.z / CHUNK_SIZE) - (settings.render_distance / 2);
 
 	int dx = center_cx - last_cx;
 	int dz = center_cz - last_cz;
@@ -233,21 +234,21 @@ void load_around_entity(Entity* entity) {
 	}
 
 	pthread_mutex_lock(&chunks_mutex);
-	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+	for (uint8_t x = 0; x < settings.render_distance; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-			memcpy(temp_chunks[x][y], chunks[x][y], RENDER_DISTANCE * sizeof(Chunk));
+			memcpy(temp_chunks[x][y], chunks[x][y], settings.render_distance * sizeof(Chunk));
 		}
 	}
 	pthread_mutex_unlock(&chunks_mutex);
 
 	// Process old chunks (east/west movement)
 	if (dx != 0) {
-		int start_x = (dx > 0) ? 0 : RENDER_DISTANCE + dx;
-		int end_x = (dx > 0) ? dx : RENDER_DISTANCE;
+		int start_x = (dx > 0) ? 0 : settings.render_distance + dx;
+		int end_x = (dx > 0) ? dx : settings.render_distance;
 		
 		for (uint8_t x = start_x; x < end_x; x++) {
 			for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-				for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
+				for (uint8_t z = 0; z < settings.render_distance; z++) {
 					bool has_data = false;
 					for (uint8_t face = 0; face < 6; face++) {
 						if (temp_chunks[x][y][z].faces[face].vertices) {
@@ -257,8 +258,8 @@ void load_around_entity(Entity* entity) {
 					}
 					
 					if (has_data) {
-						if ((dx > 0 && x == dx - 1 && x + 1 < RENDER_DISTANCE) ||
-							(dx < 0 && x == RENDER_DISTANCE + dx && x - 1 >= 0)) {
+						if ((dx > 0 && x == dx - 1 && x + 1 < settings.render_distance) ||
+							(dx < 0 && x == settings.render_distance + dx && x - 1 >= 0)) {
 							temp_chunks[x + (dx > 0 ? 1 : -1)][y][z].needs_update = true;
 						}
 						unload_chunk(&temp_chunks[x][y][z]);
@@ -270,10 +271,10 @@ void load_around_entity(Entity* entity) {
 
 	// Process old chunks (north/south movement)
 	if (dz != 0) {
-		int start_z = (dz > 0) ? 0 : RENDER_DISTANCE + dz;
-		int end_z = (dz > 0) ? dz : RENDER_DISTANCE;
+		int start_z = (dz > 0) ? 0 : settings.render_distance + dz;
+		int end_z = (dz > 0) ? dz : settings.render_distance;
 		
-		for (int x = 0; x < RENDER_DISTANCE; x++) {
+		for (int x = 0; x < settings.render_distance; x++) {
 			for (int y = 0; y < WORLD_HEIGHT; y++) {
 				for (int z = start_z; z < end_z; z++) {
 					bool has_data = false;
@@ -285,8 +286,8 @@ void load_around_entity(Entity* entity) {
 					}
 					
 					if (has_data) {
-						if ((dz > 0 && z == dz - 1 && z + 1 < RENDER_DISTANCE) ||
-							(dz < 0 && z == RENDER_DISTANCE + dz && z - 1 >= 0)) {
+						if ((dz > 0 && z == dz - 1 && z + 1 < settings.render_distance) ||
+							(dz < 0 && z == settings.render_distance + dz && z - 1 >= 0)) {
 							temp_chunks[x][y][z + (dz > 0 ? 1 : -1)].needs_update = true;
 						}
 						unload_chunk(&temp_chunks[x][y][z]);
@@ -297,21 +298,21 @@ void load_around_entity(Entity* entity) {
 	}
 
 	pthread_mutex_lock(&chunks_mutex);
-	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+	for (uint8_t x = 0; x < settings.render_distance; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-			memset(chunks[x][y], 0, RENDER_DISTANCE * sizeof(Chunk));
+			memset(chunks[x][y], 0, settings.render_distance * sizeof(Chunk));
 		}
 	}
 
 	// Move surviving chunks
-	for (int x = 0; x < RENDER_DISTANCE; x++) {
+	for (int x = 0; x < settings.render_distance; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
-			for (int z = 0; z < RENDER_DISTANCE; z++) {
+			for (int z = 0; z < settings.render_distance; z++) {
 				int old_x = x + dx;
 				int old_z = z + dz;
 				
-				if (old_x >= 0 && old_x < RENDER_DISTANCE && 
-					old_z >= 0 && old_z < RENDER_DISTANCE) {
+				if (old_x >= 0 && old_x < settings.render_distance && 
+					old_z >= 0 && old_z < settings.render_distance) {
 					bool has_data = false;
 					for (int face = 0; face < 6; face++) {
 						if (temp_chunks[old_x][y][old_z].faces[face].vertices) {
@@ -336,9 +337,9 @@ void load_around_entity(Entity* entity) {
 	float entity_chunk_z = entity->pos.z / CHUNK_SIZE;
 	
 	// Enqueue chunks that need to be loaded
-	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+	for (uint8_t x = 0; x < settings.render_distance; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
+			for (uint8_t z = 0; z < settings.render_distance; z++) {
 				pthread_mutex_lock(&chunks_mutex);
 				bool needs_load = true;
 				for (uint8_t face = 0; face < 6; face++) {
@@ -359,16 +360,7 @@ void load_around_entity(Entity* entity) {
 					float dz = world_chunk_z - entity_chunk_z;
 					float dist_sq = dx*dx + dy*dy + dz*dz;
 
-					// Adjust priority based on visibility
 					float priority = dist_sq;
-					if (visibility_map[x][y][z]) {
-						// Visible chunks get higher priority (lower value)
-						priority *= 0.01f;
-					}
-					else {
-						// Hidden chunks get lower priority (higher value)
-						priority *= 10.0f;
-					}
 
 					enqueue_chunk_load(x, y, z, x + center_cx, y, z + center_cz, priority);
 					track_chunk_queued();

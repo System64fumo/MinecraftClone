@@ -123,9 +123,9 @@ void shutdown() {
 	stop_world_gen_thread();
 
 	pthread_mutex_lock(&chunks_mutex);
-	for(uint8_t cx = 0; cx < RENDER_DISTANCE; cx++) {
+	for(uint8_t cx = 0; cx < settings.render_distance; cx++) {
 		for(uint8_t cy = 0; cy < WORLD_HEIGHT; cy++) {
-			for(uint8_t cz = 0; cz < RENDER_DISTANCE; cz++) {
+			for(uint8_t cz = 0; cz < settings.render_distance; cz++) {
 				Chunk* chunk = &chunks[cx][cy][cz];
 				unload_chunk(chunk);
 			}

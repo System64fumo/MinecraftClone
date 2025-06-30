@@ -22,19 +22,20 @@ typedef struct {
 	uint16_t index_count;
 } FaceMesh;
 
-extern unsigned int opaque_VAO;
-extern unsigned int opaque_VBO;
-extern unsigned int opaque_EBO;
-extern unsigned int transparent_VAO;
-extern unsigned int transparent_VBO;
-extern unsigned int transparent_EBO;
-
 extern bool mesh_mode;
 extern bool frustum_changed;
 extern bool mesh_needs_rebuild;
 extern uint16_t draw_calls;
 
-extern bool visibility_map[RENDER_DISTANCE][WORLD_HEIGHT][RENDER_DISTANCE];
+#define FACE_BACK   (1 << 0)
+#define FACE_LEFT   (1 << 1)
+#define FACE_FRONT  (1 << 2)
+#define FACE_RIGHT  (1 << 3)
+#define FACE_BOTTOM (1 << 5)
+#define FACE_TOP	(1 << 4)
+#define ALL_FACES   (0x3F)
+
+extern uint8_t*** visibility_map;
 
 void init_gl_buffers();
 void update_frustum();

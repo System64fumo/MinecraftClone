@@ -1,14 +1,15 @@
 #include "main.h"
 #include "world.h"
+#include "config.h"
 #include <stdlib.h>
 #include <string.h>
 
 void process_chunks() {	
 	pthread_mutex_lock(&chunks_mutex);
 	// Process all chunks directly
-	for (uint8_t x = 0; x < RENDER_DISTANCE; x++) {
+	for (uint8_t x = 0; x < settings.render_distance; x++) {
 		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-			for (uint8_t z = 0; z < RENDER_DISTANCE; z++) {
+			for (uint8_t z = 0; z < settings.render_distance; z++) {
 				Chunk* chunk = &chunks[x][y][z];
 				
 				if (chunk->needs_update) {

@@ -30,6 +30,8 @@ typedef struct {
 	float sky_brightness;
 	unsigned short window_width;
 	unsigned short window_height;
+	uint8_t render_distance;
+	bool frustum_culling;
 } config;
 
 extern IniFile ini;
