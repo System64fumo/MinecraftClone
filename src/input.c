@@ -175,8 +175,8 @@ bool is_valid_block_position(float x, float y, float z) {
 	int render_x = chunk_x - world_offset_x;
 	int render_z = chunk_z - world_offset_z;
 	
-	return (render_x >= 0 && render_x < RENDER_DISTANCE && 
-			render_z >= 0 && render_z < RENDER_DISTANCE);
+	return (render_x >= 0 && render_x < settings.render_distance && 
+			render_z >= 0 && render_z < settings.render_distance);
 }
 
 void process_input(GLFWwindow* window, Chunk*** chunks) {
@@ -196,7 +196,10 @@ void process_input(GLFWwindow* window, Chunk*** chunks) {
 			
 			if (face != 'N' && is_valid_block_position(block_pos.x, block_pos.y, block_pos.z)) {
 				Block* block = get_block_at(chunks, block_pos.x, block_pos.y, block_pos.z);
-				
+				// TODO: Add error handling
+				if (block == -1)
+					return;
+
 				int chunk_x, chunk_z, block_x, block_z;
 				calculate_chunk_and_block(block_pos.x, &chunk_x, &block_x);
 				calculate_chunk_and_block(block_pos.z, &chunk_z, &block_z);
@@ -259,6 +262,11 @@ void process_input(GLFWwindow* window, Chunk*** chunks) {
 					
 					if (!aabb_intersect(block_aabb, player_aabb)) {
 						Block* block = get_block_at(chunks, block_pos.x, block_pos.y, block_pos.z);
+
+						// TODO: Add error handling
+						if (block == -1)
+							return;
+
 				
 						int chunk_x, chunk_z, block_x, block_z;
 						calculate_chunk_and_block(block_pos.x, &chunk_x, &block_x);
@@ -288,15 +296,15 @@ void process_input(GLFWwindow* window, Chunk*** chunks) {
 	int player_cy = (int)(global_entities[0].pos.y / CHUNK_SIZE);
 	int player_cz = (int)(global_entities[0].pos.z / CHUNK_SIZE);
 
-	int center_cx = world_offset_x + (RENDER_DISTANCE / 2);
-	int center_cz = world_offset_z + (RENDER_DISTANCE / 2);
+	int center_cx = world_offset_x + (settings.render_distance / 2);
+	int center_cz = world_offset_z + (settings.render_distance / 2);
 
-	int relative_cx = player_cx - (center_cx - (RENDER_DISTANCE / 2));
-	int relative_cz = player_cz - (center_cz - (RENDER_DISTANCE / 2));
+	int relative_cx = player_cx - (center_cx - (settings.render_distance / 2));
+	int relative_cz = player_cz - (center_cz - (settings.render_distance / 2));
 
 	bool within_height = player_cy > 0 && player_cy < WORLD_HEIGHT;
 	if (within_height) {
-		if (relative_cx < 0 || relative_cx >= RENDER_DISTANCE || relative_cz < 0 || relative_cz >= RENDER_DISTANCE) {
+		if (relative_cx < 0 || relative_cx >= settings.render_distance || relative_cz < 0 || relative_cz >= settings.render_distance) {
 			return;
 		}
 

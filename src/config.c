@@ -28,6 +28,16 @@ void parse_config(IniFile* ini) {
 	if (fov)
 		settings.fov_desired = atof(fov);
 
+	const char* distance = ini_get(ini, "render", "distance");
+	if (distance) {
+		settings.render_distance = atoi(distance) * 2;
+		far = (settings.render_distance * 2) * CHUNK_SIZE;
+	}
+
+	const char* culling = ini_get(ini, "render", "culling");
+	if (culling)
+		settings.frustum_culling = culling[0] == 't' || culling[0] == 'T';
+
 	settings.sky_brightness = 1.0;
 
 	printf("Config loaded: %dx%d, fov=%.1f\n", 
@@ -86,6 +96,8 @@ void initialize_config() {
 	settings.window_height = 480;
 	settings.fov_desired = 70.0f;
 	settings.fov = settings.fov_desired;
+	settings.render_distance = 16;
+	settings.frustum_culling = true;
 
 	char config_path[1024];
 	const char* home_path = getenv("HOME");
@@ -111,6 +123,9 @@ void initialize_config() {
 		fprintf(config_file, "window_width = %d\n", settings.window_width);
 		fprintf(config_file, "window_height = %d\n", settings.window_height);
 		fprintf(config_file, "fov = %.1f\n", settings.fov);
+		fprintf(config_file, "\n[render]\n");
+		fprintf(config_file, "distance = %d\n", settings.render_distance / 2);
+		fprintf(config_file, "culling = %d\n", settings.frustum_culling);
 		fclose(config_file);
 	}
 	ini.filename = config_path;

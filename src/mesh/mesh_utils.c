@@ -1,12 +1,13 @@
 #include "main.h"
+#include "config.h"
 
 bool are_all_neighbors_loaded(uint8_t x, uint8_t y, uint8_t z) {
 	if (x > 0 && !chunks[x-1][y][z].is_loaded) return false;
-	if (x < RENDER_DISTANCE-1 && !chunks[x+1][y][z].is_loaded) return false;
+	if (x < settings.render_distance-1 && !chunks[x+1][y][z].is_loaded) return false;
 	if (y > 0 && !chunks[x][y-1][z].is_loaded) return false;
 	if (y < WORLD_HEIGHT-1 && !chunks[x][y+1][z].is_loaded) return false;
 	if (z > 0 && !chunks[x][y][z-1].is_loaded) return false;
-	if (z < RENDER_DISTANCE-1 && !chunks[x][y][z+1].is_loaded) return false;
+	if (z < settings.render_distance-1 && !chunks[x][y][z+1].is_loaded) return false;
 	return true;
 }
 
@@ -44,9 +45,9 @@ bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
 						  check_bounds(ny, &ciy, &ny) ||
 						  check_bounds(nz, &ciz, &nz);
 
-	if (bounds_changed && (cix < 0 || cix >= RENDER_DISTANCE || 
+	if (bounds_changed && (cix < 0 || cix >= settings.render_distance || 
 							ciy < 0 || ciy >= WORLD_HEIGHT || 
-							ciz < 0 || ciz >= RENDER_DISTANCE)) {
+							ciz < 0 || ciz >= settings.render_distance)) {
 		return true;
 	}
 

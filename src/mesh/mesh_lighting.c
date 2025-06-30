@@ -22,8 +22,8 @@ void set_chunk_lighting(Chunk* chunk) {
 	}
 }
 
-#define WORLD_WIDTH (RENDER_DISTANCE * CHUNK_SIZE)
-#define WORLD_DEPTH (RENDER_DISTANCE * CHUNK_SIZE)
+#define WORLD_WIDTH (settings.render_distance * CHUNK_SIZE)
+#define WORLD_DEPTH (settings.render_distance * CHUNK_SIZE)
 #define WORLD_HEIGHT_BLOCKS (WORLD_HEIGHT * CHUNK_SIZE)
 
 unsigned char* generateLightTexture3D(int* out_width, int* out_height, int* out_depth) {
@@ -40,9 +40,9 @@ unsigned char* generateLightTexture3D(int* out_width, int* out_height, int* out_
 	
 	memset(texture_data, 0, texture_size);
 	
-	for (int cx = 0; cx < RENDER_DISTANCE; cx++) {
+	for (int cx = 0; cx < settings.render_distance; cx++) {
 		for (int cy = 0; cy < WORLD_HEIGHT; cy++) {
-			for (int cz = 0; cz < RENDER_DISTANCE; cz++) {
+			for (int cz = 0; cz < settings.render_distance; cz++) {
 				Chunk* chunk = &chunks[cx][cy][cz];
 				if (!chunk->is_loaded) continue;
 				

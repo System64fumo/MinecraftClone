@@ -25,7 +25,7 @@ void main() {
 	// Apply fog to the final color
 	if (depth < SKYBOX_DEPTH && depth > 0.0) {
 		float fogStart = u_near * 6.0;
-		float fogEnd = 1.0 * u_far;
+		float fogEnd = u_far / 1.5f;
 		float fogDensity = 4.0;
 		
 		float linearDepth = linearizeDepth(depth) * u_far;

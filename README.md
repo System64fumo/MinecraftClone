@@ -23,6 +23,7 @@ I mainly want to focus on optimizations here, So gameplay is not a priority.<br>
 * AABB collision
 * Basic back face culling
 * Frustum culling
+* Directional culling
 * Data packing
 
 # Notes
