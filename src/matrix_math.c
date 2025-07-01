@@ -43,17 +43,23 @@ void setup_matrices() {
 
 	#else // Non ARM platforms
 
-	float f[3];
-	f[0] = cosf(yaw) * cosf(pitch);
-	f[1] = sinf(pitch);
-	f[2] = sinf(yaw) * cosf(pitch);
+	float cos_pitch = cosf(pitch);
+	float sin_pitch = sinf(pitch);
+	float cos_yaw = cosf(yaw);
+	float sin_yaw = sinf(yaw);
+
+	float f[3] = {
+		cos_yaw * cos_pitch,
+		sin_pitch,
+		sin_yaw * cos_pitch
+	};
 	float len = sqrtf(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]);
 	f[0] /= len; f[1] /= len; f[2] /= len;
 
 	float s[3] = {
-		f[1] * 0 - f[2] * 1,
-		f[2] * 0 - f[0] * 0,
-		f[0] * 1 - f[1] * 0
+		-f[2],
+		0.0f,
+		f[0]
 	};
 	len = sqrtf(s[0] * s[0] + s[1] * s[1] + s[2] * s[2]);
 	s[0] /= len; s[1] /= len; s[2] /= len;
@@ -67,9 +73,11 @@ void setup_matrices() {
 	view[0] = s[0]; view[4] = s[1]; view[8] = s[2];
 	view[1] = u[0]; view[5] = u[1]; view[9] = u[2];
 	view[2] = -f[0]; view[6] = -f[1]; view[10] = -f[2];
-	view[12] = -(s[0] * global_entities[0].pos.x + s[1] * global_entities[0].pos.y + global_entities[0].eye_level + s[2] * global_entities[0].pos.z);
-	view[13] = -(u[0] * global_entities[0].pos.x + u[1] * global_entities[0].pos.y + global_entities[0].eye_level + u[2] * global_entities[0].pos.z);
-	view[14] = (f[0] * global_entities[0].pos.x + f[1] * global_entities[0].pos.y + global_entities[0].eye_level + f[2] * global_entities[0].pos.z);
+
+	float eye_y = global_entities[0].pos.y + global_entities[0].eye_level;
+	view[12] = -(s[0] * global_entities[0].pos.x + s[1] * eye_y + s[2] * global_entities[0].pos.z);
+	view[13] = -(u[0] * global_entities[0].pos.x + u[1] * eye_y + u[2] * global_entities[0].pos.z);
+	view[14] = (f[0] * global_entities[0].pos.x + f[1] * eye_y + f[2] * global_entities[0].pos.z);
 	#endif
 }
 

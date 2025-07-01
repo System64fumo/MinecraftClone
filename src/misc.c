@@ -49,6 +49,9 @@ void do_time_stuff() {
 
 	// 1 TPS
 	if (fmod(time_current, 1.0f) < delta_time) {
+
+		load_around_entity(&global_entities[0]);
+
 		if (ui_state == UI_STATE_RUNNING)
 			update_ui();
 

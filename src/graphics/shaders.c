@@ -6,6 +6,18 @@
 
 unsigned int world_shader, post_process_shader, ui_shader, skybox_shader, clouds_shader;
 
+unsigned int model_uniform_location = -1;
+unsigned int atlas_uniform_location = -1;
+unsigned int view_uniform_location = -1;
+unsigned int projection_uniform_location = -1;
+unsigned int ui_projection_uniform_location = -1;
+unsigned int ui_state_uniform_location = -1;
+unsigned int screen_texture_uniform_location = -1;
+unsigned int texture_fb_depth_uniform_location = -1;
+unsigned int near_uniform_location = -1;
+unsigned int far_uniform_location = -1;
+unsigned int clouds_offset_uniform_location = -1;
+
 unsigned int compile_shader(const char* shader_source, int type) {
 	int success;
 	char infoLog[512];
@@ -77,4 +89,5 @@ void cache_uniform_locations() {
 	texture_fb_depth_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_fb_depth");
 	near_uniform_location = glGetUniformLocation(post_process_shader, "u_near");
 	far_uniform_location = glGetUniformLocation(post_process_shader, "u_far");
+	clouds_offset_uniform_location = glGetUniformLocation(clouds_shader, "texOffset");
 }

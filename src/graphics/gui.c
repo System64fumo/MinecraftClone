@@ -332,6 +332,7 @@ void draw_cube_element(const cube_element_t* cube) {
 	glBufferData(GL_ARRAY_BUFFER, total_vertices * sizeof(Vertex), all_vertices, GL_DYNAMIC_DRAW);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, total_indices * sizeof(uint32_t), all_indices, GL_DYNAMIC_DRAW);
 	glDrawElements(GL_TRIANGLES, total_indices, GL_UNSIGNED_INT, 0);
+	draw_calls++;
 
 	free(all_vertices);
 	free(all_indices);
@@ -379,14 +380,18 @@ void draw_item(uint8_t id, vec2 pos) {
 	};
 
 	// 2D blocks
-	if (block_data[id][0] == 2) {
+	if (block_data[id][0] == BTYPE_CROSS) {
+		uint8_t textureIndex = block_data[id][2] - 1u;
+		uint8_t xOffset = textureIndex % 16;
+		uint8_t yOffset = textureIndex / 16;
+
 		add_ui_element(&(ui_element_t) {
 			.x = pos.x,
 			.y = pos.y,
 			.width = 16 * UI_SCALING,
 			.height = 16 * UI_SCALING,
-			.tex_x = 240,
-			.tex_y = 0,
+			.tex_x = xOffset * 16,
+			.tex_y = yOffset * 16,
 			.tex_width = 16,
 			.tex_height = 16,
 			.texture_id = block_textures
@@ -420,7 +425,6 @@ void render_ui() {
 		glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, perspective_proj);
 		glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, view);
 		draw_cube_element(&cube_elements[ui_active_3d_elements - 1]);
-		draw_calls++;
 	}
 
 	if (ui_active_2d_elements) {
@@ -444,7 +448,6 @@ void render_ui() {
 		glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, cube_view);
 		for (uint8_t i = 0; i < ui_active_3d_elements - 1; i++) {
 			draw_cube_element(&cube_elements[i]);
-			draw_calls++;
 		}
 	}
 }

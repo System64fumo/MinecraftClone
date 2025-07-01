@@ -16,7 +16,7 @@ static inline bool check_bounds(int8_t val, int8_t* ci, int8_t* coord) {
 		*ci -= 1;
 		*coord = CHUNK_SIZE - 1;
 		return true;
-	} 
+	}
 	if (val >= CHUNK_SIZE) {
 		*ci += 1;
 		*coord = 0;
@@ -39,8 +39,6 @@ bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
 		default: return false;  // Invalid face
 	}
 
-	// Check if neighbor is out of chunk bounds
-	// Check bounds
 	bool bounds_changed = check_bounds(nx, &cix, &nx) ||
 						  check_bounds(ny, &ciy, &ny) ||
 						  check_bounds(nz, &ciz, &nz);
@@ -55,8 +53,20 @@ bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face) {
 	Block currentBlock = chunk->blocks[x][y][z];
 	Block neighborBlock = neighborChunk->blocks[nx][ny][nz];
 
+	uint8_t current_type = block_data[currentBlock.id][0];
 	bool isCurrentTranslucent = block_data[currentBlock.id][1] == 1;
 	bool isNeighborTranslucent = block_data[neighborBlock.id][1] == 1;
+
+	if (current_type == BTYPE_LEAF) {
+		if (settings.fancy_graphics) {
+			return true;
+		} else {
+			if (neighborBlock.id == 0) return true;
+			if (!isCurrentTranslucent && !isNeighborTranslucent) return false;
+			if (isCurrentTranslucent && isNeighborTranslucent) return currentBlock.id != neighborBlock.id;
+			return !isCurrentTranslucent;
+		}
+	}
 
 	if (neighborBlock.id == 0) return true;
 	if (!isCurrentTranslucent && !isNeighborTranslucent) return false;
@@ -77,18 +87,17 @@ void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, 
 
 uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block) {
 	uint8_t width = 1;
-	
+	uint8_t block_type = block_data[block->id][0];
+	bool greedy_leaves = (block_type == 4 && !settings.fancy_graphics);
 	for (uint8_t du = 1; u + du < CHUNK_SIZE; du++) {
 		if (mask[v][u + du]) break;
-		
 		uint8_t nx, ny, nz;
 		map_coordinates(face, u + du, v, (face == 0 || face == 2) ? z : (face == 1 || face == 3) ? x : y, &nx, &ny, &nz);
-		
 		if (nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) break;
-		
 		Block* neighbor = &chunk->blocks[nx][ny][nz];
+		uint8_t neighbor_type = block_data[neighbor->id][0];
 		if (neighbor->id != block->id || 
-			block_data[neighbor->id][0] != 0 || 
+			((block_type != 0 && block_type != 3 && !greedy_leaves) || (neighbor_type != block_type)) ||
 			!is_face_visible(chunk, nx, ny, nz, face)) {
 			break;
 		}
@@ -99,33 +108,30 @@ uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, 
 
 uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block, uint8_t width) {
 	uint8_t height = 1;
-	
+	uint8_t block_type = block_data[block->id][0];
+	bool greedy_leaves = (block_type == 4 && !settings.fancy_graphics);
 	for (uint8_t dv = 1; v + dv < CHUNK_SIZE; dv++) {
 		bool can_extend = true;
-		
 		for (uint8_t du = 0; du < width; du++) {
 			if (mask[v + dv][u + du]) {
 				can_extend = false;
 				break;
 			}
-			
 			uint8_t nx, ny, nz;
 			map_coordinates(face, u + du, v + dv, (face == 0 || face == 2) ? z : (face == 1 || face == 3) ? x : y, &nx, &ny, &nz);
-			
 			if (nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) {
 				can_extend = false;
 				break;
 			}
-			
 			Block* neighbor = &chunk->blocks[nx][ny][nz];
+			uint8_t neighbor_type = block_data[neighbor->id][0];
 			if (neighbor->id != block->id || 
-				block_data[neighbor->id][0] != 0 || 
+				((block_type != 0 && block_type != 3 && !greedy_leaves) || (neighbor_type != block_type)) ||
 				!is_face_visible(chunk, nx, ny, nz, face)) {
-					can_extend = false;
+				can_extend = false;
 				break;
 			}
 		}
-
 		if (!can_extend) break;
 		height++;
 	}

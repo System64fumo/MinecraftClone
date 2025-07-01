@@ -10,6 +10,7 @@ extern unsigned int screen_texture_uniform_location;
 extern unsigned int texture_fb_depth_uniform_location;
 extern unsigned int near_uniform_location;
 extern unsigned int far_uniform_location;
+extern unsigned int clouds_offset_uniform_location;
 
 void load_shaders();
 void load_shader_constants();

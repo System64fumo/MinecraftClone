@@ -243,7 +243,7 @@ void update_entity_physics(Entity* entity, float delta_time) {
 					(int)floorf(ground_check_points[i][1])
 				);
 				if (ground_collision == -1) {
-					continue;
+					return;
 				}
 
 				if (ground_collision) {
@@ -289,7 +289,7 @@ void update_entity_physics(Entity* entity, float delta_time) {
 					(int)floorf(ceiling_check_points[i][1])
 				);
 				if (ceiling_collision == -1) {
-					continue;
+					return;
 				}
 
 				if (ceiling_collision) {

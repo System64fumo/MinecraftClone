@@ -90,7 +90,7 @@ uint8_t get_visible_faces(vec3 pos, vec3 dir, int chunk_x, int chunk_y, int chun
 	float chunk_min_z = chunk_z * CHUNK_SIZE;
 	float chunk_max_z = chunk_min_z + CHUNK_SIZE;
 
-	float threshold = 0.1f;
+	float threshold = 0.25f;
 
 	// X-axis faces
 	if (pos.x > chunk_max_x + threshold) {
@@ -123,7 +123,7 @@ uint8_t get_visible_faces(vec3 pos, vec3 dir, int chunk_x, int chunk_y, int chun
 		normalized_dir.y /= dir_length;
 		normalized_dir.z /= dir_length;
 
-		float dir_threshold = 0.7f;
+		float dir_threshold = 0.85f;
 
 		if (normalized_dir.x > dir_threshold) visible_faces &= ~FACE_LEFT;
 		if (normalized_dir.x < -dir_threshold) visible_faces &= ~FACE_RIGHT;

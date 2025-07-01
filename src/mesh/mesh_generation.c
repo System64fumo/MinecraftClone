@@ -1,4 +1,5 @@
 #include "main.h"
+#include "config.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,7 +53,8 @@ void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t t
 		}
 	}
 
-	bool is_liquid = (block_id >= 8 && block_id <= 11);
+	uint8_t block_type = block_data[block_id][0];
+	bool is_liquid = (block_type == 3);
 	const float liquid_adjustment = is_liquid ? 0.125f : 0.0f;
 
 	for (uint8_t i = 0; i < 4; i++) {
@@ -131,9 +133,13 @@ void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t t
 }
 
 void clear_face_data(FaceMesh faces[6]) {
-	for (int face = 0; face < 6; face++) {
-		free(faces[face].vertices);
-		free(faces[face].indices);
+	for (uint8_t face = 0; face < 6; face++) {
+		if(faces[face].vertices != NULL)
+			free(faces[face].vertices);
+
+		if(faces[face].indices != NULL)
+			free(faces[face].indices);
+
 		faces[face].vertices = NULL;
 		faces[face].indices = NULL;
 		faces[face].vertex_count = 0;
@@ -161,8 +167,8 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Fac
 
 	uint8_t block_type = block_data[block_id][0];
 
-	if (block_type == 0 || block_type == 1) {
-		const face_vertex_t (*face_data)[4] = (block_type == 0) ? cube_faces : slab_faces;
+	if (block_type == BTYPE_REGULAR || block_type == BTYPE_SLAB || block_type == BTYPE_LIQUID || block_type == BTYPE_LEAF) {
+		const face_vertex_t (*face_data)[4] = (block_type == BTYPE_REGULAR || block_type == BTYPE_LIQUID || block_type == BTYPE_LEAF) ? cube_faces : slab_faces;
 		
 		for (uint8_t face = 0; face < 6; face++) {
 			Vertex vertices[4];
@@ -177,7 +183,7 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Fac
 			store_face_data(&faces[face], vertices, indices, vertex_count, index_count);
 		}
 	}
-	else if (block_type == 2) {
+	else if (block_type == BTYPE_CROSS) {
 		for (uint8_t face = 0; face < 4; face++) {
 			Vertex vertices[4];
 			uint32_t indices[6];
@@ -236,7 +242,8 @@ void generate_chunk_mesh(Chunk* chunk) {
 						continue;
 
 					uint8_t block_type = block_data[block->id][0];
-					if (block_type != 0) continue; // Only handle full blocks in greedy meshing
+					// Greedy mesh full blocks, liquids, and leaves (if fancy_graphics is false)
+					if (block_type != 0 && block_type != 3 && !(block_type == 4 && !settings.fancy_graphics)) continue;
 
 					uint8_t width = find_width(chunk, face, u, v, x, y, z, mask, block);
 					uint8_t height = find_height(chunk, face, u, v, x, y, z, mask, block, width);
@@ -249,17 +256,16 @@ void generate_chunk_mesh(Chunk* chunk) {
 
 					bool is_transparent = block_data[block->id][1] != 0;
 					uint8_t texture_id = block_data[block->id][2 + face];
-					
 					if (is_transparent) {
 						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, 
-								cube_faces[face], width, height,
-								transparent_face_vertices, transparent_face_indices,
-								&transparent_face_vertex_count, &transparent_face_index_count);
+							cube_faces[face], width, height,
+							transparent_face_vertices, transparent_face_indices,
+							&transparent_face_vertex_count, &transparent_face_index_count);
 					} else {
 						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, 
-								cube_faces[face], width, height,
-								face_vertices, face_indices,
-								&face_vertex_count, &face_index_count);
+							cube_faces[face], width, height,
+							face_vertices, face_indices,
+							&face_vertex_count, &face_index_count);
 					}
 				}
 			}
@@ -271,7 +277,7 @@ void generate_chunk_mesh(Chunk* chunk) {
 						transparent_face_vertex_count, transparent_face_index_count);
 	}
 
-	// Handle non-full blocks (slabs, crosses, etc.)
+	// Handle non-full blocks (slabs, crosses, leaves, etc.)
 	for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
 		for (uint8_t y = 0; y < CHUNK_SIZE; y++) {
 			for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
@@ -279,23 +285,42 @@ void generate_chunk_mesh(Chunk* chunk) {
 				if (block == NULL || block->id == 0) continue;
 
 				uint8_t block_type = block_data[block->id][0];
-				if (block_type == 0) continue; // Skip full blocks (already handled above)
+				// Only handle non-full, non-liquid, non-greedy-meshed leaves here
+				if (block_type == BTYPE_REGULAR || block_type == BTYPE_LIQUID || (block_type == BTYPE_LEAF && !settings.fancy_graphics)) continue;
 
 				bool is_transparent = block_data[block->id][1] != 0;
 				FaceMesh* target_faces = is_transparent ? chunk->transparent_faces : chunk->faces;
 
+				if (block_type == 4 && settings.fancy_graphics) {
+					// Fancy leaves: render all faces, do not greedy mesh or hide inner faces
+					for (int face = 0; face < 6; face++) {
+						uint8_t texture_id = block_data[block->id][2 + face];
+						uint32_t base_vertex = target_faces[face].vertex_count;
+						uint32_t base_index = target_faces[face].index_count;
+						target_faces[face].vertices = realloc(target_faces[face].vertices, (base_vertex + 4) * sizeof(Vertex));
+						target_faces[face].indices = realloc(target_faces[face].indices, (base_index + 6) * sizeof(uint32_t));
+						Vertex temp_vertices[4];
+						uint32_t temp_indices[6];
+						uint32_t temp_vertex_count = 0;
+						uint32_t temp_index_count = 0;
+						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, cube_faces[face], 1, 1, temp_vertices, temp_indices, &temp_vertex_count, &temp_index_count);
+						memcpy(&target_faces[face].vertices[base_vertex], temp_vertices, temp_vertex_count * sizeof(Vertex));
+						for (uint8_t i = 0; i < temp_index_count; i++) {
+							target_faces[face].indices[base_index + i] = temp_indices[i] + base_vertex;
+						}
+						target_faces[face].vertex_count += temp_vertex_count;
+						target_faces[face].index_count += temp_index_count;
+					}
+					continue;
+				}
+
 				int face_count = (block_type == 2) ? 4 : 6;
 				for (int face = 0; face < face_count; face++) {
 					uint8_t texture_id = block_data[block->id][2 + face];
-
 					uint32_t base_vertex = target_faces[face].vertex_count;
 					uint32_t base_index = target_faces[face].index_count;
-
-					target_faces[face].vertices = realloc(target_faces[face].vertices, 
-						(base_vertex + 4) * sizeof(Vertex));
-					target_faces[face].indices = realloc(target_faces[face].indices, 
-						(base_index + 6) * sizeof(uint32_t));
-
+					target_faces[face].vertices = realloc(target_faces[face].vertices, (base_vertex + 4) * sizeof(Vertex));
+					target_faces[face].indices = realloc(target_faces[face].indices, (base_index + 6) * sizeof(uint32_t));
 					const face_vertex_t* face_data;
 					if (block_type == 2) {
 						face_data = cross_faces[face];
@@ -304,29 +329,20 @@ void generate_chunk_mesh(Chunk* chunk) {
 					} else {
 						face_data = cube_faces[face];
 					}
-					
 					Vertex temp_vertices[4];
 					uint32_t temp_indices[6];
 					uint32_t temp_vertex_count = 0;
 					uint32_t temp_index_count = 0;
-					
-					add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, 
-							face_data, 1, 1, temp_vertices, temp_indices, 
-							&temp_vertex_count, &temp_index_count);
-
-					memcpy(&target_faces[face].vertices[base_vertex], temp_vertices, 
-							temp_vertex_count * sizeof(Vertex));
-					
+					add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, face_data, 1, 1, temp_vertices, temp_indices, &temp_vertex_count, &temp_index_count);
+					memcpy(&target_faces[face].vertices[base_vertex], temp_vertices, temp_vertex_count * sizeof(Vertex));
 					for (uint8_t i = 0; i < temp_index_count; i++) {
 						target_faces[face].indices[base_index + i] = temp_indices[i] + base_vertex;
 					}
-
 					target_faces[face].vertex_count += temp_vertex_count;
 					target_faces[face].index_count += temp_index_count;
 				}
 			}
 		}
 	}
-	
 	chunk->needs_update = false;
 }

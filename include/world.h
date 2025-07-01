@@ -7,6 +7,12 @@
 #include <stdatomic.h>
 #include <stdint.h>
 
+#define BTYPE_REGULAR 0
+#define BTYPE_SLAB 1
+#define BTYPE_CROSS 2
+#define BTYPE_LIQUID 3
+#define BTYPE_LEAF 4
+
 typedef struct {
 	int x;
 	int y;
@@ -41,6 +47,9 @@ typedef struct {
 	FaceMesh faces[6]; // 0:Front, 1:Left, 2:Back, 3:Right, 4:Bottom, 5:Top
 	FaceMesh transparent_faces[6];
 } Chunk;
+
+extern uint8_t block_data[MAX_BLOCK_TYPES][8];
+extern Chunk*** chunks;
 
 extern structure_block_t tree_blocks[];
 extern structure_t tree_structure;
