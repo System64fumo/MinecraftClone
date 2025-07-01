@@ -120,7 +120,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 		switch (key) {
-			case GLFW_KEY_R:
+			case GLFW_KEY_L:
 				load_around_entity(&global_entities[0]);
 				break;
 			case GLFW_KEY_F2:
@@ -129,7 +129,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			case GLFW_KEY_LEFT_CONTROL:
 				global_entities[0].sprinting = true;
 				break;
-			case GLFW_KEY_L:
+			case GLFW_KEY_R:
 				load_shaders();
 				break;
 			case GLFW_KEY_T:
@@ -197,7 +197,7 @@ void process_input(GLFWwindow* window, Chunk*** chunks) {
 			if (face != 'N' && is_valid_block_position(block_pos.x, block_pos.y, block_pos.z)) {
 				Block* block = get_block_at(chunks, block_pos.x, block_pos.y, block_pos.z);
 				// TODO: Add error handling
-				if (block == -1)
+				if (block == NULL)
 					return;
 
 				int chunk_x, chunk_z, block_x, block_z;
@@ -264,10 +264,9 @@ void process_input(GLFWwindow* window, Chunk*** chunks) {
 						Block* block = get_block_at(chunks, block_pos.x, block_pos.y, block_pos.z);
 
 						// TODO: Add error handling
-						if (block == -1)
+						if (block == NULL)
 							return;
 
-				
 						int chunk_x, chunk_z, block_x, block_z;
 						calculate_chunk_and_block(block_pos.x, &chunk_x, &block_x);
 						calculate_chunk_and_block(block_pos.z, &chunk_z, &block_z);

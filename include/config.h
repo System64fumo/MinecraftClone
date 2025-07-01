@@ -32,6 +32,7 @@ typedef struct {
 	unsigned short window_height;
 	uint8_t render_distance;
 	bool frustum_culling;
+	bool fancy_graphics;
 } config;
 
 extern IniFile ini;

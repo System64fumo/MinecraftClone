@@ -95,5 +95,5 @@ int is_block_solid(Chunk*** chunks, int world_block_x, int world_block_y, int wo
 	if (block == NULL)
 		return -1;
 	else
-		return !(block->id == 0 || block->id == 6 || block->id == 8 || block->id == 9 || block->id == 10 || block->id == 11);
+		return !(block->id == 0 || block->id == 6 || block->id == 37 || block->id == 38 || block->id == 39 || block->id == 40 || block->id == 8 || block->id == 9 || block->id == 10 || block->id == 11);
 }

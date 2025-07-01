@@ -36,9 +36,6 @@ extern float far;
 extern float aspect;
 extern GLFWwindow* window;
 
-extern uint8_t block_data[MAX_BLOCK_TYPES][8];
-extern Chunk*** chunks;
-
 // Function prototypes
 int initialize_window();
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);

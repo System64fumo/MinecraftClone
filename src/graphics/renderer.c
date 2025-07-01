@@ -260,12 +260,4 @@ void cleanup_renderer() {
 	glDeleteVertexArrays(1, &transparent_VAO);
 	glDeleteBuffers(1, &transparent_VBO);
 	glDeleteBuffers(1, &transparent_EBO);
-
-	for (int x = 0; x < settings.render_distance; x++) {
-		for (int y = 0; y < WORLD_HEIGHT; y++) {
-			free(visibility_map[x][y]);
-		}
-		free(visibility_map[x]);
-	}
-	free(visibility_map);
 }

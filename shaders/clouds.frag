@@ -15,5 +15,5 @@ void main() {
 	if (color.a == 0.0) {
 		discard;
 	}
-	FragColor = vec4(1.0, 1.0, 1.0, 0.75);
+	FragColor = vec4(1.0, 1.0, 1.0, 0.5);
 }

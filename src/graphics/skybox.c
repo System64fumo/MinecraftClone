@@ -5,9 +5,8 @@
 #include <string.h>
 
 // Skybox variables
-unsigned int skyboxTexture;
 unsigned int skyboxVAO, skyboxVBO;
-GLuint view_loc, proj_loc;
+GLuint view_loc, proj_loc, time_loc;
 
 // Clouds variables
 unsigned int cloudsTexture;
@@ -15,9 +14,11 @@ unsigned int cloudsVAO, cloudsVBO;
 GLuint clouds_view_loc, clouds_proj_loc, clouds_model_loc;
 float cloudsTexOffsetX = 0.0f;
 float cloudsTexOffsetZ = 0.0f;
+float dayNightTime = 0.25f;
 const float CLOUDS_HEIGHT = 192.0f;
 const float CLOUDS_SPEED = 0.1f;
 const float CLOUDS_QUAD_SIZE = 500.0f;
+const float DAY_CYCLE_SPEED = 0.05f;
 
 float skyboxVertices[] = {
 	-1.0f, -1.0f, -1.0f,
@@ -92,7 +93,6 @@ void generate_clouds_texture() {
 		}
 	}
 
-
 	glGenTextures(1, &cloudsTexture);
 	glBindTexture(GL_TEXTURE_2D, cloudsTexture);
 	
@@ -117,68 +117,9 @@ void skybox_init() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	view_loc = glGetUniformLocation(skybox_shader, "view");
 	proj_loc = glGetUniformLocation(skybox_shader, "projection");
+	time_loc = glGetUniformLocation(skybox_shader, "time");
 
-	glGenTextures(1, &skyboxTexture);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
-
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	uint8_t size = 16;
-	uint8_t skybox_data[6][size][size][3];
-
-	for (uint8_t y = 0; y < size; y++) {
-		float vertical_progress;
-		uint8_t transition_width = 2;
-		
-		if (y < size/2 - transition_width/2) {
-			vertical_progress = 0.0f;
-		} else if (y > size/2 + transition_width/2) {
-			vertical_progress = 1.0f;
-		} else {
-			vertical_progress = (float)(y - (size/2 - transition_width/2)) / (float)transition_width;
-		}
-		
-		for (uint8_t x = 0; x < size; x++) {
-			unsigned char r, g, b;			
-
-			unsigned char top_r = 128;
-			unsigned char top_g = 168;
-			unsigned char top_b = 255;
-
-			unsigned char bottom_r = 192;
-			unsigned char bottom_g = 216;
-			unsigned char bottom_b = 255;
-	
-			r = top_r + (unsigned char)((bottom_r - top_r) * vertical_progress);
-			g = top_g + (unsigned char)((bottom_g - top_g) * vertical_progress);
-			b = top_b + (unsigned char)((bottom_b - top_b) * vertical_progress);
-	
-			skybox_data[0][y][x][0] = top_r;
-			skybox_data[0][y][x][1] = top_g;
-			skybox_data[0][y][x][2] = top_b;
-	
-			skybox_data[1][y][x][0] = bottom_r;
-			skybox_data[1][y][x][1] = bottom_g;
-			skybox_data[1][y][x][2] = bottom_b;
-	
-			for (uint8_t face = 2; face < 6; face++) {
-				skybox_data[face][y][x][0] = r;
-				skybox_data[face][y][x][1] = g;
-				skybox_data[face][y][x][2] = b;
-			}
-		}
-	}
-
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[0]);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[1]);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[2]);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[3]);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[4]);
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, size, size, 0, GL_RGB, GL_UNSIGNED_BYTE, skybox_data[5]);
+	// No need to create skybox texture or upload data - shader will generate it procedurally
 
 	// Initialize clouds
 	glGenVertexArrays(1, &cloudsVAO);
@@ -198,14 +139,17 @@ void skybox_init() {
 	
 	generate_clouds_texture();
 }
-
-
+#include <stdio.h>
 void update_clouds() {
 	cloudsTexOffsetX += CLOUDS_SPEED * 0.001f;
 	cloudsTexOffsetZ += CLOUDS_SPEED * 0.0005f;
 
 	cloudsTexOffsetX = fmodf(cloudsTexOffsetX, 1.0f);
 	cloudsTexOffsetZ = fmodf(cloudsTexOffsetZ, 1.0f);
+
+	// TODO: Implement day/night cycles
+	// dayNightTime += DAY_CYCLE_SPEED * 0.001f;
+	// dayNightTime = fmodf(dayNightTime, 1.0f);
 }
 
 void skybox_render() {
@@ -213,13 +157,11 @@ void skybox_render() {
 	glUseProgram(skybox_shader);
 	glUniformMatrix4fv(view_loc, 1, GL_FALSE, view);
 	glUniformMatrix4fv(proj_loc, 1, GL_FALSE, projection);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
-	glUniform1i(glGetUniformLocation(skybox_shader, "skybox"), 0);
+	//glUniform1f(time_loc, dayNightTime);
 
 	glBindVertexArray(skyboxVAO);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 24);
+	draw_calls++;
 	glBindVertexArray(0);
 
 	// Render clouds
@@ -241,8 +183,7 @@ void skybox_render() {
 	glUniformMatrix4fv(clouds_proj_loc, 1, GL_FALSE, projection);
 	glUniformMatrix4fv(clouds_model_loc, 1, GL_FALSE, model);
 
-	GLuint texOffsetLoc = glGetUniformLocation(clouds_shader, "texOffset");
-	glUniform2f(texOffsetLoc, cloudsTexOffsetX, cloudsTexOffsetZ);
+	glUniform2f(clouds_offset_uniform_location, cloudsTexOffsetX, cloudsTexOffsetZ);
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, cloudsTexture);
@@ -250,6 +191,7 @@ void skybox_render() {
 	
 	glBindVertexArray(cloudsVAO);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	draw_calls++;
 	glBindVertexArray(0);
 }
 

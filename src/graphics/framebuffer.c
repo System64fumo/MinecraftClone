@@ -79,6 +79,7 @@ void render_to_framebuffer() {
 	
 	// Clear all buffers
 	glClear(GL_DEPTH_BUFFER_BIT);
+	setup_matrices();
 
 	// Draw skybox
 	skybox_render();
@@ -95,18 +96,17 @@ void render_to_framebuffer() {
 	profiler_start(PROFILER_ID_RENDER, true);
 	#endif
 
-	setup_matrices();
 	matrix4_identity(model);
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, model);
 	glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, view);
 	glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, projection);
 
-	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
 	glEnable(GL_DEPTH_TEST);
 	render_chunks();
 
 	char block_face = 'N';
 	vec3 block_pos = {0};
+	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
 	get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &block_face);
 	if (block_face != 'N')
 		draw_block_highlight(block_pos);
@@ -133,6 +133,7 @@ void render_to_screen() {
 	glBindVertexArray(quadVAO);
 	glActiveTexture(GL_TEXTURE0);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	draw_calls++;
 
 	#ifdef DEBUG
 	profiler_start(PROFILER_ID_UI, true);
