@@ -1,10 +1,10 @@
 EXECUTABLE = game
-SRC_DIRS := src src/graphics src/mesh src/world
+SRC_DIRS := src src/graphics src/graphics/views src/mesh src/world
 BUILDDIR := build
 INCLUDE_DIR := include
 
 CFLAGS := -I$(INCLUDE_DIR) -MMD -MP
-LDFLAGS := -lGL -lGLEW -lglfw -lm -lwebp -lpng
+LDFLAGS := -lGL -lGLEW -lglfw -lm -lwebp
 
 SRCS := $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))
 OBJS := $(patsubst %.c, $(BUILDDIR)/%.o, $(SRCS))

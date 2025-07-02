@@ -238,12 +238,17 @@ void generate_chunk_mesh(Chunk* chunk) {
 					}
 
 					Block* block = &chunk->blocks[x][y][z];
-					if (block == NULL || block->id == 0 || !is_face_visible(chunk, x, y, z, face)) 
+					if (block == NULL || block->id == 0) 
 						continue;
 
 					uint8_t block_type = block_data[block->id][0];
-					// Greedy mesh full blocks, liquids, and leaves (if fancy_graphics is false)
-					if (block_type != 0 && block_type != 3 && !(block_type == 4 && !settings.fancy_graphics)) continue;
+
+					if (block_type != BTYPE_REGULAR && block_type != BTYPE_LIQUID && block_type != BTYPE_LEAF) continue;
+
+					if (!(block_type == BTYPE_LEAF && settings.fancy_graphics)) {
+						if (!is_face_visible(chunk, x, y, z, face)) 
+							continue;
+					}
 
 					uint8_t width = find_width(chunk, face, u, v, x, y, z, mask, block);
 					uint8_t height = find_height(chunk, face, u, v, x, y, z, mask, block, width);
@@ -277,7 +282,7 @@ void generate_chunk_mesh(Chunk* chunk) {
 						transparent_face_vertex_count, transparent_face_index_count);
 	}
 
-	// Handle non-full blocks (slabs, crosses, leaves, etc.)
+	// Handle non-full blocks (slabs and crosses)
 	for (uint8_t x = 0; x < CHUNK_SIZE; x++) {
 		for (uint8_t y = 0; y < CHUNK_SIZE; y++) {
 			for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
@@ -285,36 +290,12 @@ void generate_chunk_mesh(Chunk* chunk) {
 				if (block == NULL || block->id == 0) continue;
 
 				uint8_t block_type = block_data[block->id][0];
-				// Only handle non-full, non-liquid, non-greedy-meshed leaves here
-				if (block_type == BTYPE_REGULAR || block_type == BTYPE_LIQUID || (block_type == BTYPE_LEAF && !settings.fancy_graphics)) continue;
+				if (block_type != BTYPE_SLAB && block_type != BTYPE_CROSS) continue;
 
 				bool is_transparent = block_data[block->id][1] != 0;
 				FaceMesh* target_faces = is_transparent ? chunk->transparent_faces : chunk->faces;
 
-				if (block_type == 4 && settings.fancy_graphics) {
-					// Fancy leaves: render all faces, do not greedy mesh or hide inner faces
-					for (int face = 0; face < 6; face++) {
-						uint8_t texture_id = block_data[block->id][2 + face];
-						uint32_t base_vertex = target_faces[face].vertex_count;
-						uint32_t base_index = target_faces[face].index_count;
-						target_faces[face].vertices = realloc(target_faces[face].vertices, (base_vertex + 4) * sizeof(Vertex));
-						target_faces[face].indices = realloc(target_faces[face].indices, (base_index + 6) * sizeof(uint32_t));
-						Vertex temp_vertices[4];
-						uint32_t temp_indices[6];
-						uint32_t temp_vertex_count = 0;
-						uint32_t temp_index_count = 0;
-						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, cube_faces[face], 1, 1, temp_vertices, temp_indices, &temp_vertex_count, &temp_index_count);
-						memcpy(&target_faces[face].vertices[base_vertex], temp_vertices, temp_vertex_count * sizeof(Vertex));
-						for (uint8_t i = 0; i < temp_index_count; i++) {
-							target_faces[face].indices[base_index + i] = temp_indices[i] + base_vertex;
-						}
-						target_faces[face].vertex_count += temp_vertex_count;
-						target_faces[face].index_count += temp_index_count;
-					}
-					continue;
-				}
-
-				int face_count = (block_type == 2) ? 4 : 6;
+				int face_count = (block_type == BTYPE_CROSS) ? 4 : 6;
 				for (int face = 0; face < face_count; face++) {
 					uint8_t texture_id = block_data[block->id][2 + face];
 					uint32_t base_vertex = target_faces[face].vertex_count;
@@ -322,9 +303,9 @@ void generate_chunk_mesh(Chunk* chunk) {
 					target_faces[face].vertices = realloc(target_faces[face].vertices, (base_vertex + 4) * sizeof(Vertex));
 					target_faces[face].indices = realloc(target_faces[face].indices, (base_index + 6) * sizeof(uint32_t));
 					const face_vertex_t* face_data;
-					if (block_type == 2) {
+					if (block_type == BTYPE_CROSS) {
 						face_data = cross_faces[face];
-					} else if (block_type == 1) {
+					} else if (block_type == BTYPE_SLAB) {
 						face_data = slab_faces[face];
 					} else {
 						face_data = cube_faces[face];

@@ -88,7 +88,8 @@ void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, 
 uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block) {
 	uint8_t width = 1;
 	uint8_t block_type = block_data[block->id][0];
-	bool greedy_leaves = (block_type == 4 && !settings.fancy_graphics);
+	bool fancy_leaves = (block_type == BTYPE_LEAF && settings.fancy_graphics);
+	
 	for (uint8_t du = 1; u + du < CHUNK_SIZE; du++) {
 		if (mask[v][u + du]) break;
 		uint8_t nx, ny, nz;
@@ -96,11 +97,14 @@ uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, 
 		if (nx >= CHUNK_SIZE || ny >= CHUNK_SIZE || nz >= CHUNK_SIZE) break;
 		Block* neighbor = &chunk->blocks[nx][ny][nz];
 		uint8_t neighbor_type = block_data[neighbor->id][0];
-		if (neighbor->id != block->id || 
-			((block_type != 0 && block_type != 3 && !greedy_leaves) || (neighbor_type != block_type)) ||
-			!is_face_visible(chunk, nx, ny, nz, face)) {
-			break;
-		}
+	
+		if (neighbor->id != block->id) break;
+
+		if (block_type != BTYPE_REGULAR && block_type != BTYPE_LIQUID && block_type != BTYPE_LEAF) break;
+		if (neighbor_type != block_type) break;
+
+		if (!fancy_leaves && !is_face_visible(chunk, nx, ny, nz, face)) break;
+		
 		width++;
 	}
 	return width;
@@ -109,7 +113,8 @@ uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, 
 uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block, uint8_t width) {
 	uint8_t height = 1;
 	uint8_t block_type = block_data[block->id][0];
-	bool greedy_leaves = (block_type == 4 && !settings.fancy_graphics);
+	bool fancy_leaves = (block_type == BTYPE_LEAF && settings.fancy_graphics);
+	
 	for (uint8_t dv = 1; v + dv < CHUNK_SIZE; dv++) {
 		bool can_extend = true;
 		for (uint8_t du = 0; du < width; du++) {
@@ -125,9 +130,22 @@ uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x,
 			}
 			Block* neighbor = &chunk->blocks[nx][ny][nz];
 			uint8_t neighbor_type = block_data[neighbor->id][0];
-			if (neighbor->id != block->id || 
-				((block_type != 0 && block_type != 3 && !greedy_leaves) || (neighbor_type != block_type)) ||
-				!is_face_visible(chunk, nx, ny, nz, face)) {
+
+			if (neighbor->id != block->id) {
+				can_extend = false;
+				break;
+			}
+
+			if (block_type != BTYPE_REGULAR && block_type != BTYPE_LIQUID && block_type != BTYPE_LEAF) {
+				can_extend = false;
+				break;
+			}
+			if (neighbor_type != block_type) {
+				can_extend = false;
+				break;
+			}
+			
+			if (!fancy_leaves && !is_face_visible(chunk, nx, ny, nz, face)) {
 				can_extend = false;
 				break;
 			}

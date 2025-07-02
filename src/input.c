@@ -6,12 +6,15 @@
 #include <math.h>
 #include <stdio.h>
 
-float lastX = 0;
-float lastY = 0;
+float last_cursor_x = 0;
+float last_cursor_y = 0;
 
 static double last_break_time = 0;
 static double last_place_time = 0;
 const double block_action_interval = 0.5;
+
+int last_pitch, last_yaw;
+int last_player_pos_x, last_player_pos_y, last_player_pos_z;
 
 //
 // Mouse
@@ -32,17 +35,17 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 }
 
 void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos;
-	lastX = xpos;
-	lastY = ypos;
+	float xoffset = xpos - last_cursor_x;
+	float yoffset = last_cursor_y - ypos;
+	last_cursor_x = xpos;
+	last_cursor_y = ypos;
 
 	if (ui_state == UI_STATE_PAUSED) {
 		// TODO: This could probably be done a little better..
-		if (check_hit(lastX, lastY, 0)) {
+		if (check_hit(xpos, ypos, 0)) {
 			ui_elements[0].tex_y = 86;
 		}
-		else if (check_hit(lastX, lastY, 1)) {
+		else if (check_hit(xpos, ypos, 1)) {
 			ui_elements[1].tex_y = 86;
 		}
 		else {
@@ -74,7 +77,16 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 			global_entities[0].yaw += 360.0f;
 		}
 
-		frustum_changed = true;
+		int pitch = floorl(global_entities[0].pitch);
+		int yaw = floorl(global_entities[0].yaw);
+		if (pitch != last_pitch) {
+			last_pitch = pitch;
+			frustum_changed = true;
+		}
+		if (yaw != last_yaw) {
+			last_yaw = yaw;
+			frustum_changed = true;
+		}
 	}
 }
 
@@ -83,14 +95,14 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		if (action == GLFW_PRESS) return;
 
 		// Resume button
-		if (check_hit(lastX, lastY, 0)) {
+		if (check_hit(last_cursor_x, last_cursor_y, 0)) {
 			ui_state = UI_STATE_RUNNING;
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			update_ui();
 		}
 
 		// Quit button
-		else if (check_hit(lastX, lastY, 1)) {
+		else if (check_hit(last_cursor_x, last_cursor_y, 1)) {
 			glfwSetWindowShouldClose(window, true);
 		}
 	}
@@ -133,16 +145,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 				load_shaders();
 				break;
 			case GLFW_KEY_T:
-				int tex_width, tex_height, tex_depth;
-				
-				// Generate the 3D light texture with only the relevant portion
-				unsigned char* light_texture = generateLightTexture3D(&tex_width, &tex_height, &tex_depth);
-
-				printf("Generated texture dimensions: %dx%dx%d\n", tex_width, tex_height, tex_depth);
-
-				if (!saveTextureSliceAsPNG(light_texture, 5, "/tmp/slice.png")) {
-					fprintf(stderr, "Failed to save PNG slice\n");
-				}
+				unsigned char* light_texture = generate_light_texture();
+				printf("Saved slice /tmp/slice.webp\n");
+				save_light_slice(light_texture, 5, "/tmp/slice.webp");
 				break;
 			case GLFW_KEY_ESCAPE:
 				if (ui_state == UI_STATE_RUNNING) {
@@ -330,7 +335,6 @@ void process_input(GLFWwindow* window, Chunk*** chunks) {
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		dx += cosf(yaw) * move_speed;
 		dz += sinf(yaw) * move_speed;
-		frustum_changed = true;
 	}
 	else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE) {
 		global_entities[0].sprinting = false;
@@ -338,28 +342,33 @@ void process_input(GLFWwindow* window, Chunk*** chunks) {
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 		dx -= cosf(yaw) * move_speed;
 		dz -= sinf(yaw) * move_speed;
-		frustum_changed = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 		dx += sinf(yaw) * move_speed;
 		dz -= cosf(yaw) * move_speed;
-		frustum_changed = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 		dx -= sinf(yaw) * move_speed;
 		dz += cosf(yaw) * move_speed;
-		frustum_changed = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && global_entities[0].is_grounded) {
 		global_entities[0].vertical_velocity = 10.0f;
 		global_entities[0].is_grounded = false;
-		frustum_changed = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
 		dy -= move_speed;
-		frustum_changed = true;
 	}
 
 	move_entity_with_collision(&global_entities[0], dx, dy, dz);
 	update_entity_physics(&global_entities[0], delta_time);
+
+	int x = floor(global_entities[0].pos.x);
+	int y = floor(global_entities[0].pos.y);
+	int z = floor(global_entities[0].pos.z);
+	if (x != last_player_pos_x || y != last_player_pos_y || z != last_player_pos_z) {
+		last_player_pos_x = x;
+		last_player_pos_y = y;
+		last_player_pos_z = z;
+		frustum_changed = true;
+	}
 }

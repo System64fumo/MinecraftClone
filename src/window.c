@@ -9,6 +9,9 @@ float near = 0.1f;
 float far = 500.0f;
 float aspect = 1.7f;
 GLFWwindow* window = NULL;
+mat4 model, view, projection;
+unsigned short screen_center_x = 640;
+unsigned short screen_center_y = 360;
 
 int initialize_window() {
 	if (!glfwInit()) {

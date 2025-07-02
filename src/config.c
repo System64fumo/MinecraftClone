@@ -34,13 +34,21 @@ void parse_config(IniFile* ini) {
 		far = (settings.render_distance * 2) * CHUNK_SIZE;
 	}
 
-	const char* culling = ini_get(ini, "render", "culling");
-	if (culling)
-		settings.frustum_culling = culling[0] == 't' || culling[0] == 'T';
+	const char* frustum_culling = ini_get(ini, "render", "frustum_culling");
+	if (frustum_culling)
+		settings.frustum_culling = frustum_culling[0] == 't' || frustum_culling[0] == 'T';
+
+	const char* face_culling = ini_get(ini, "render", "face_culling");
+	if (face_culling)
+		settings.face_culling = face_culling[0] == 't' || face_culling[0] == 'T';
+
+	const char* occlusion_culling = ini_get(ini, "render", "occlusion_culling");
+	if (occlusion_culling)
+		settings.occlusion_culling = occlusion_culling[0] == 't' || occlusion_culling[0] == 'T';
 
 	const char* fancy = ini_get(ini, "render", "fancy");
 	if (fancy)
-		settings.fancy_graphics = fancy[0] == 't' || culling[0] == 'T';
+		settings.fancy_graphics = fancy[0] == 't' || fancy[0] == 'T';
 
 	settings.sky_brightness = 1.0;
 
@@ -102,6 +110,8 @@ void initialize_config() {
 	settings.fov = settings.fov_desired;
 	settings.render_distance = 16;
 	settings.frustum_culling = true;
+	settings.face_culling = true;
+	settings.occlusion_culling = false;
 	settings.fancy_graphics = true;
 
 	char config_path[1024];
@@ -130,7 +140,9 @@ void initialize_config() {
 		fprintf(config_file, "fov = %.1f\n", settings.fov);
 		fprintf(config_file, "\n[render]\n");
 		fprintf(config_file, "distance = %d\n", settings.render_distance / 2);
-		fprintf(config_file, "culling = true\n");
+		fprintf(config_file, "frustum_culling = true\n");
+		fprintf(config_file, "face_culling = true\n");
+		fprintf(config_file, "occlusion_culling = false\n");
 		fprintf(config_file, "fancy = true\n");
 		fclose(config_file);
 	}

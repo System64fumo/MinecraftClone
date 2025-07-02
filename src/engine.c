@@ -10,12 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-unsigned short screen_center_x = 640;
-unsigned short screen_center_y = 360;
-
 uint8_t hotbar_slot = 0;
-
-mat4 model, view, projection;
 Chunk*** chunks = NULL;
 Entity global_entities[MAX_ENTITIES_PER_CHUNK];
 
@@ -31,6 +26,7 @@ int initialize() {
 	init_gl_buffers();
 	skybox_init();
 	start_world_gen_thread();
+	init_mesh_thread();
 	cache_uniform_locations();
 
 	chunks = allocate_chunks();
