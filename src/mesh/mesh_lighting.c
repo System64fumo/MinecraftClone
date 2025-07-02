@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <png.h>
+#include <webp/encode.h>
 
 #define MAX_LIGHT_LEVEL 15
 
@@ -26,11 +26,7 @@ void set_chunk_lighting(Chunk* chunk) {
 #define WORLD_DEPTH (settings.render_distance * CHUNK_SIZE)
 #define WORLD_HEIGHT_BLOCKS (WORLD_HEIGHT * CHUNK_SIZE)
 
-unsigned char* generateLightTexture3D(int* out_width, int* out_height, int* out_depth) {
-	*out_width = WORLD_WIDTH;
-	*out_height = WORLD_HEIGHT_BLOCKS;
-	*out_depth = WORLD_DEPTH;
-	
+unsigned char* generate_light_texture() {
 	size_t texture_size = WORLD_WIDTH * WORLD_HEIGHT_BLOCKS * WORLD_DEPTH * 4;
 	unsigned char* texture_data = (unsigned char*)malloc(texture_size);
 	if (!texture_data) {
@@ -46,9 +42,9 @@ unsigned char* generateLightTexture3D(int* out_width, int* out_height, int* out_
 				Chunk* chunk = &chunks[cx][cy][cz];
 				if (!chunk->is_loaded) continue;
 				
-				int chunk_world_x = cx * CHUNK_SIZE;  // Use cx instead of chunk->x
-				int chunk_world_y = cy * CHUNK_SIZE;  // Use cy instead of chunk->y
-				int chunk_world_z = cz * CHUNK_SIZE;  // Use cz instead of chunk->z
+				int chunk_world_x = cx * CHUNK_SIZE;
+				int chunk_world_y = cy * CHUNK_SIZE;
+				int chunk_world_z = cz * CHUNK_SIZE;
 				
 				for (int bx = 0; bx < CHUNK_SIZE; bx++) {
 					for (int by = 0; by < CHUNK_SIZE; by++) {
@@ -70,11 +66,10 @@ unsigned char* generateLightTexture3D(int* out_width, int* out_height, int* out_
 							
 							uint8_t light_value = light * 17; // 17 = 255/15
 							
-							// Set RGBA values
-							texture_data[idx]	 = light_value;	 // R
-							texture_data[idx + 1] = light_value;	 // G
-							texture_data[idx + 2] = light_value;	 // B
-							texture_data[idx + 3] = 255;			 // A
+							texture_data[idx]	 = light_value;  // R
+							texture_data[idx + 1] = light_value;  // G
+							texture_data[idx + 2] = light_value;  // B
+							texture_data[idx + 3] = 255;		  // A
 						}
 					}
 				}
@@ -85,7 +80,7 @@ unsigned char* generateLightTexture3D(int* out_width, int* out_height, int* out_
 	return texture_data;
 }
 
-bool saveTextureSliceAsPNG(const unsigned char* texture_data, int y_slice, const char* filename) {
+bool save_light_slice(const unsigned char* texture_data, int y_slice, const char* filename) {
 	const int width = WORLD_WIDTH;
 	const int height = WORLD_HEIGHT_BLOCKS;
 	const int depth = WORLD_DEPTH;
@@ -95,56 +90,47 @@ bool saveTextureSliceAsPNG(const unsigned char* texture_data, int y_slice, const
 		return false;
 	}
 	
+	// Prepare the 2D slice data
+	uint8_t* slice_data = (uint8_t*)malloc(width * depth * 4);
+	if (!slice_data) {
+		fprintf(stderr, "Failed to allocate memory for slice data\n");
+		return false;
+	}
+	
+	// Extract the slice from the 3D texture
+	for (int z = 0; z < depth; z++) {
+		for (int x = 0; x < width; x++) {
+			int src_idx = (z * height * width + y_slice * width + x) * 4;
+			int dst_idx = (z * width + x) * 4;
+			
+			slice_data[dst_idx]	 = texture_data[src_idx];	 // R
+			slice_data[dst_idx + 1] = texture_data[src_idx + 1]; // G
+			slice_data[dst_idx + 2] = texture_data[src_idx + 2]; // B
+			slice_data[dst_idx + 3] = texture_data[src_idx + 3]; // A
+		}
+	}
+	
+	// Encode to WebP
+	uint8_t* output = NULL;
+	size_t output_size = WebPEncodeRGBA(slice_data, width, depth, width * 4, 90, &output);
+	free(slice_data);
+	
+	if (output_size == 0) {
+		fprintf(stderr, "WebP encoding failed\n");
+		return false;
+	}
+	
+	// Write to file
 	FILE* fp = fopen(filename, "wb");
 	if (!fp) {
+		WebPFree(output);
 		fprintf(stderr, "Could not open file %s for writing\n", filename);
 		return false;
 	}
 	
-	png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-	if (!png_ptr) {
-		fclose(fp);
-		return false;
-	}
-	
-	png_infop info_ptr = png_create_info_struct(png_ptr);
-	if (!info_ptr) {
-		png_destroy_write_struct(&png_ptr, NULL);
-		fclose(fp);
-		return false;
-	}
-	
-	if (setjmp(png_jmpbuf(png_ptr))) {
-		png_destroy_write_struct(&png_ptr, &info_ptr);
-		fclose(fp);
-		return false;
-	}
-	
-	png_init_io(png_ptr, fp);
-	
-	png_set_IHDR(png_ptr, info_ptr, width, depth,
-				 8, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE,
-				 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-	
-	png_write_info(png_ptr, info_ptr);
-	
-	png_bytep row = (png_bytep)malloc(width * 4);
-	
-	for (int z = 0; z < depth; z++) {
-		for (int x = 0; x < width; x++) {
-			int idx = (z * height * width + y_slice * width + x) * 4;
-			row[x * 4]	 = texture_data[idx];	 // R
-			row[x * 4 + 1] = texture_data[idx + 1]; // G
-			row[x * 4 + 2] = texture_data[idx + 2]; // B
-			row[x * 4 + 3] = texture_data[idx + 3]; // A
-		}
-		png_write_row(png_ptr, row);
-	}
-	
-	free(row);
-	png_write_end(png_ptr, NULL);
-	png_destroy_write_struct(&png_ptr, &info_ptr);
+	fwrite(output, 1, output_size, fp);
 	fclose(fp);
+	WebPFree(output);
 	
 	return true;
 }

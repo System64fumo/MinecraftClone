@@ -66,7 +66,7 @@ I mainly want to explore different optimization methods here, So gameplay/featur
 <td>
 
 * Single core 1.0GHz CPU<br>
-* Dual core 800Mhz GPU capable of GLES 3.0 (Optional)<br>
+* Single core 800Mhz GPU capable of GLES 3.0 (Optional)<br>
 * 256mb of RAM<br>
 
 </td>

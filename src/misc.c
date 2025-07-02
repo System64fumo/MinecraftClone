@@ -25,6 +25,11 @@ void do_time_stuff() {
 	time_difference = time_current - time_previous;
 	time_counter++;
 
+	if (frustum_changed) {
+		update_frustum();
+		frustum_changed = false;
+	}
+
 	// 20 TPS
 	if (time_difference >= 0.05f) {
 		framerate = (1.0 / time_difference) * time_counter;
@@ -41,15 +46,10 @@ void do_time_stuff() {
 			update_clouds();
 
 		process_chunks();
-		if (frustum_changed) {
-			update_frustum();
-			frustum_changed = false;
-		}
 	}
 
 	// 1 TPS
 	if (fmod(time_current, 1.0f) < delta_time) {
-
 		load_around_entity(&global_entities[0]);
 
 		if (ui_state == UI_STATE_RUNNING)

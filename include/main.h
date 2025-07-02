@@ -20,12 +20,8 @@
 #endif
 
 // Externs
-extern unsigned short screen_center_x;
-extern unsigned short screen_center_y;
-
 extern uint8_t hotbar_slot;
 
-extern double time_difference;
 extern double delta_time;
 extern float framerate;
 extern float frametime;
@@ -57,9 +53,10 @@ void update_adjacent_chunks(Chunk*** chunks, uint8_t render_x, uint8_t render_y,
 void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, FaceMesh faces[6]);
 void clear_face_data(FaceMesh faces[6]);
 
+bool init_mesh_thread();
 void process_chunks();
-unsigned char* generateLightTexture3D(int* out_width, int* out_height, int* out_depth);
-bool saveTextureSliceAsPNG(const unsigned char* texture_data, int y_slice, const char* filename);
+unsigned char* generate_light_texture();
+bool save_light_slice(const unsigned char* texture_data, int y_slice, const char* filename);
 
 bool are_all_neighbors_loaded(uint8_t x, uint8_t y, uint8_t z);
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);

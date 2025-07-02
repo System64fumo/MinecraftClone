@@ -36,6 +36,8 @@ extern uint16_t draw_calls;
 #define ALL_FACES   (0x3F)
 
 extern uint8_t*** visibility_map;
+extern uint32_t opaque_VAO, opaque_VBO, opaque_EBO, opaque_index_count;
+extern uint32_t transparent_VAO, transparent_VBO, transparent_EBO, transparent_index_count;
 
 void init_gl_buffers();
 void update_frustum();
