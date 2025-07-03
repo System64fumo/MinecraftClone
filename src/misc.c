@@ -8,15 +8,46 @@
 #include <string.h>
 #include <math.h>
 
-double lastFrame = 0.0f;
+double lastFrame = -1.0f;
 double delta_time = 0.0f;
 double time_current = 0.0f;
-double time_difference = 0.0f;
+double time_difference = 1.0f;
 double time_previous = 0.0f;
 int time_counter = 0;
 float framerate = 0.0f;
 float frametime = 0.0f;
 float last_fov = false;
+static double frame_start_time = 0.0;
+static double last_frame_time = 0.0;
+static double sleep_adjustment = 0.0;
+
+void limit_fps() {
+	double current_time = glfwGetTime();
+	double target_fps = !game_focused ? 10.0 : (settings.vsync || settings.fps_limit == 0) ? 0.0 : settings.fps_limit;
+	
+	if (target_fps > 0) {
+		double target_frame_time = 1.0 / target_fps;
+		double frame_time = current_time - frame_start_time;
+		double remaining_time = target_frame_time - frame_time - sleep_adjustment;
+		
+		if (remaining_time > 0) {
+			struct timespec sleep_time = {
+				.tv_sec = (time_t)remaining_time,
+				.tv_nsec = (long)((remaining_time - (time_t)remaining_time) * 1e9)
+			};
+			nanosleep(&sleep_time, NULL);
+			
+			double after_sleep = glfwGetTime();
+			sleep_adjustment = (after_sleep - current_time) - remaining_time;
+			current_time = after_sleep;
+		} else {
+			sleep_adjustment = 0.0;
+		}
+	}
+	
+	last_frame_time = lastFrame;
+	frame_start_time = current_time;
+}
 
 void do_time_stuff() {
 	time_current = glfwGetTime();
@@ -185,7 +216,6 @@ const char* load_file(const char* filename) {
 	return buffer;
 }
 
-// Write binary data to a file
 int write_binary_file(const char *filename, const void *data, size_t size) {
 	FILE *file = fopen(filename, "wb");
 	if (!file) return -1;
@@ -196,7 +226,6 @@ int write_binary_file(const char *filename, const void *data, size_t size) {
 	return (written == size) ? 0 : -1;
 }
 
-// Read binary data from a file
 void *read_binary_file(const char *filename, size_t *size) {
 	FILE *file = fopen(filename, "rb");
 	if (!file) return NULL;

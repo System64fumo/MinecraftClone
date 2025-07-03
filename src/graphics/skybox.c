@@ -62,18 +62,13 @@ float cloudsVertices[] = {
 void generate_clouds_texture() {
 	const int width = 16;
 	const int height = 16;
-	uint8_t *data = malloc(width * height * 4); // RGBA
+	uint8_t *data = calloc(width, height);
 
-	// Clear to fully transparent
-	memset(data, 0, width * height * 4);
-
-	// Create big pixel clouds
-	const int CLOUD_PIXEL_SIZE = 1; // Size of each cloud "pixel" in texture pixels
-	const int PIXEL_SPACING = 1;   // Space between cloud pixels
+	const int CLOUD_PIXEL_SIZE = 1;
+	const int PIXEL_SPACING = 1;
 	
 	for (int y = 0; y < height; y += PIXEL_SPACING) {
 		for (int x = 0; x < width; x += PIXEL_SPACING) {
-			// 25% chance to place a cloud pixel
 			if (rand() % 100 < 25) {
 				for (int dy = 0; dy < CLOUD_PIXEL_SIZE; dy++) {
 					for (int dx = 0; dx < CLOUD_PIXEL_SIZE; dx++) {
@@ -81,11 +76,8 @@ void generate_clouds_texture() {
 						int py = y + dy;
 						
 						if (px < width && py < height) {
-							int idx = (py * width + px) * 4;
-							data[idx + 0] = 255; // R
-							data[idx + 1] = 255; // G
-							data[idx + 2] = 255; // B
-							data[idx + 3] = 200; // Fixed semi-transparent alpha
+							int idx = py * width + px;
+							data[idx] = 255;
 						}
 					}
 				}
@@ -100,8 +92,8 @@ void generate_clouds_texture() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, data);
 	
 	free(data);
 }
@@ -118,8 +110,6 @@ void skybox_init() {
 	view_loc = glGetUniformLocation(skybox_shader, "view");
 	proj_loc = glGetUniformLocation(skybox_shader, "projection");
 	time_loc = glGetUniformLocation(skybox_shader, "time");
-
-	// No need to create skybox texture or upload data - shader will generate it procedurally
 
 	// Initialize clouds
 	glGenVertexArrays(1, &cloudsVAO);

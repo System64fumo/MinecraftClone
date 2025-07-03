@@ -30,6 +30,7 @@ extern mat4 model, view, projection;
 extern float near;
 extern float far;
 extern float aspect;
+extern bool game_focused;
 extern GLFWwindow* window;
 
 // Function prototypes
@@ -43,15 +44,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void process_input(GLFWwindow* window, Chunk*** chunks);
 void setup_matrices();
 void set_fov(float fov);
+void limit_fps();
 
 Block* get_block_at(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z);
-void draw_block_highlight(vec3 pos);
+void draw_block_highlight(vec3 pos, uint8_t block_id);
 int is_block_solid(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z);
 void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coord);
 bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);
 void update_adjacent_chunks(Chunk*** chunks, uint8_t render_x, uint8_t render_y, uint8_t render_z, int block_x, int block_y, int block_z);
-void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, FaceMesh faces[6]);
-void clear_face_data(FaceMesh faces[6]);
+void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Mesh faces[6]);
 
 bool init_mesh_thread();
 void process_chunks();

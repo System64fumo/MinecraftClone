@@ -6,9 +6,6 @@
 #include "skybox.h"
 #include "textures.h"
 #include "framebuffer.h"
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
 
 uint8_t hotbar_slot = 0;
 Chunk*** chunks = NULL;
@@ -37,7 +34,7 @@ int initialize() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glLineWidth(2.0f);
-	//glEnable(GL_MULTISAMPLE);
+	glfwSwapInterval(settings.vsync);
 
 	// Initialize player
 	global_entities[0] = create_entity(0);
@@ -49,9 +46,6 @@ int initialize() {
 }
 
 void run() {
-	update_frustum();
-	load_around_entity(&global_entities[0]);
-
 	while (!glfwWindowShouldClose(window)) {
 		do_time_stuff();
 		process_input(window, chunks);
@@ -61,6 +55,7 @@ void run() {
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+		limit_fps();
 	}
 }
 

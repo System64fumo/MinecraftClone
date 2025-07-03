@@ -5,54 +5,43 @@ precision highp sampler2D;
 
 layout (location = 0) out vec4 FragColor;
 
-flat in uint packedID; // Packed faceID and texID
+flat in uint packedID;
 in vec2 size;
+in vec2 textureBase;
+in float texelSize;
 
 uniform sampler2D textureAtlas;
+uniform int highlight;
 
 const vec3 faceShades[6] = vec3[6](
-	vec3(1.0, 1.0, 1.0),	// Front
-	vec3(0.75, 0.75, 0.75),	// Left
-	vec3(1.0, 1.0, 1.0),	// Back
-	vec3(0.75, 0.75, 0.75),	// Right
-	vec3(0.5, 0.5, 0.5),	// Bottom
-	vec3(1.0, 1.0, 1.0)		// Top
+	vec3(1.0),	// Front
+	vec3(0.75),	// Left
+	vec3(1.0),	// Back
+	vec3(0.75),	// Right
+	vec3(0.5),	// Bottom
+	vec3(1.0)	// Top
 );
 
-vec2 getTextureCoords(uint texID) {
-	const float texSize = 16.0 / 256.0;
-	const uint atlasWidth = 16u;
-
-	uint textureIndex = texID - 1u;
-	uint xOffset = textureIndex % atlasWidth;
-	uint yOffset = textureIndex / atlasWidth;
-
-	float x = float(xOffset) * texSize;
-	float y = float(yOffset) * texSize;
-
-	vec2 tiledCoord = mod(size, 1.0);
-
-	return vec2(x + tiledCoord.x * texSize, y + tiledCoord.y * texSize);
-}
+const vec3 BIOME_TINT = vec3(0.569, 0.741, 0.349);
 
 void main() {
 	uint faceID = packedID & 0xFFFFu;
 	uint texID = packedID >> 16;
 
-	// Highlight
-	if (texID == 0u) {
-		FragColor = vec4(0, 0, 0, 1.0);
+	if (highlight == 1) {
+		FragColor = vec4(0.0, 0.0, 0.0, 0.5);
 		return;
 	}
 
-	vec4 textureColor = texture(textureAtlas, getTextureCoords(texID));
+	vec2 finalTexCoords = textureBase + mod(size, 1.0) * texelSize;
+	vec4 textureColor = texture(textureAtlas, finalTexCoords);
+	
 	if (textureColor.a == 0.0) discard;
 
-	vec3 faceShade = faceShades[faceID];
-	vec3 litColor = textureColor.rgb * faceShade;
+	vec3 litColor = textureColor.rgb * faceShades[faceID];
 
-	if (texID == 1u || texID == 53u)
-		litColor *= vec3(0.569, 0.741, 0.349); // Biome tint
+	vec3 tintFactor = mix(vec3(1.0), BIOME_TINT, float(texID == 1u || texID == 53u));
+	litColor *= tintFactor;
 
 	FragColor = vec4(litColor, textureColor.a);
 }

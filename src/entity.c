@@ -35,7 +35,7 @@ vec3 get_direction(float pitch, float yaw) {
 	};
 }
 
-void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_out, char* out_face) {
+void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_out, char* out_face, uint8_t* block_id) {
 	vec3 position = entity.pos;
 	position.y += entity.eye_level;
 
@@ -82,9 +82,9 @@ void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_ou
 
 		Block* block = get_block_at(chunks, block_x, block_y, block_z);
 		if (block == NULL) continue;
-		uint8_t intersecting_block_id = block->id;
+		*block_id  = block->id;
 
-		if (intersecting_block_id != 0 && intersecting_block_id != 8 && intersecting_block_id != 9) {
+		if (*block_id != 0 && *block_id != 8 && *block_id != 9) {
 			pos_out->x = block_x;
 			pos_out->y = block_y;
 			pos_out->z = block_z;
@@ -113,6 +113,7 @@ void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_ou
 	pos_out->x = -1;
 	pos_out->y = -1;
 	pos_out->z = -1;
+	*block_id = 0;
 	*out_face = 'N';
 }
 

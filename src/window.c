@@ -12,6 +12,11 @@ GLFWwindow* window = NULL;
 mat4 model, view, projection;
 unsigned short screen_center_x = 640;
 unsigned short screen_center_y = 360;
+bool game_focused = true;
+
+void window_focus_callback(GLFWwindow* window, int focused) {
+	game_focused = focused;
+}
 
 int initialize_window() {
 	if (!glfwInit()) {
@@ -28,7 +33,11 @@ int initialize_window() {
 	#endif
 	//glfwWindowHint(GLFW_SAMPLES, 8);
 
-	window = glfwCreateWindow(settings.window_width, settings.window_height, "Minecraft Clone", NULL, NULL);
+	GLFWmonitor* monitor = NULL;
+	if (settings.fullscreen)
+		monitor = glfwGetPrimaryMonitor();
+
+	window = glfwCreateWindow(settings.window_width, settings.window_height, "Minecraft Clone", monitor, NULL);
 	if (!window) {
 		printf("Failed to create GLFW window\n");
 		glfwTerminate();
@@ -42,6 +51,7 @@ int initialize_window() {
 	glfwSetCursorPosCallback(window, cursor_position_callback);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetKeyCallback(window, key_callback);
+	glfwSetWindowFocusCallback(window, window_focus_callback);
 
 	glewInit();
 

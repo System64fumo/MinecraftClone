@@ -4,6 +4,7 @@ extern unsigned int model_uniform_location;
 extern unsigned int atlas_uniform_location;
 extern unsigned int view_uniform_location;
 extern unsigned int projection_uniform_location;
+extern unsigned int highlight_uniform_location;
 extern unsigned int ui_projection_uniform_location;
 extern unsigned int ui_state_uniform_location;
 extern unsigned int screen_texture_uniform_location;

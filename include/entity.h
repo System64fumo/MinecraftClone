@@ -29,7 +29,7 @@ typedef struct {
 extern Entity global_entities[MAX_ENTITIES_PER_CHUNK];
 
 vec3 get_direction(float pitch, float yaw);
-void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_out, char* out_face);
+void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_out, char* out_face, uint8_t* block_id);
 void move_entity_with_collision(Entity* entity, float dx, float dy, float dz);
 void update_entity_physics(Entity* player, float delta_time);
 bool check_entity_collision(float x, float y, float z, float width, float height);

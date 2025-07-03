@@ -16,6 +16,11 @@ config settings;
 
 void parse_config(IniFile* ini) {
 	// TODO: Fix hot-reloading..
+
+	//
+	// [main]
+	//
+
 	const char* width = ini_get(ini, "main", "window_width");
 	if (width)
 		settings.window_width = atoi(width);
@@ -24,9 +29,25 @@ void parse_config(IniFile* ini) {
 	if (height)
 		settings.window_height = atoi(height);
 
+	const char* fullscreen = ini_get(ini, "main", "fullscreen");
+	if (fullscreen)
+		settings.fullscreen = fullscreen[0] == 't' || fullscreen[0] == 'T';
+
 	const char* fov = ini_get(ini, "main", "fov");
 	if (fov)
 		settings.fov_desired = atof(fov);
+
+	const char* vsync = ini_get(ini, "main", "vsync");
+	if (vsync)
+		settings.vsync = vsync[0] == 't' || vsync[0] == 'T';
+
+	const char* fps_limit = ini_get(ini, "main", "fps_limit");
+	if (fps_limit)
+		settings.fps_limit = atoi(fps_limit);
+
+	//
+	// [render]
+	//
 
 	const char* distance = ini_get(ini, "render", "distance");
 	if (distance) {
@@ -106,9 +127,12 @@ static void ini_load_file(IniFile* ini) {
 void initialize_config() {
 	settings.window_width = 845;
 	settings.window_height = 480;
+	settings.fullscreen = false;
 	settings.fov_desired = 70.0f;
 	settings.fov = settings.fov_desired;
+	settings.fps_limit = 0;
 	settings.render_distance = 16;
+	settings.vsync = true;
 	settings.frustum_culling = true;
 	settings.face_culling = true;
 	settings.occlusion_culling = false;
@@ -137,7 +161,10 @@ void initialize_config() {
 		fprintf(config_file, "[main]\n");
 		fprintf(config_file, "window_width = %d\n", settings.window_width);
 		fprintf(config_file, "window_height = %d\n", settings.window_height);
+		fprintf(config_file, "fullscreen = false\n");
 		fprintf(config_file, "fov = %.1f\n", settings.fov);
+		fprintf(config_file, "fps_limit = %d\n", settings.fps_limit);
+		fprintf(config_file, "vsync = true\n");
 		fprintf(config_file, "\n[render]\n");
 		fprintf(config_file, "distance = %d\n", settings.render_distance / 2);
 		fprintf(config_file, "frustum_culling = true\n");

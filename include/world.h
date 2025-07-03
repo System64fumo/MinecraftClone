@@ -44,8 +44,8 @@ typedef struct {
 	bool is_loaded;
 	bool lighting_changed;
 
-	FaceMesh faces[6]; // 0:Front, 1:Left, 2:Back, 3:Right, 4:Bottom, 5:Top
-	FaceMesh transparent_faces[6];
+	Mesh faces[6]; // 0:Front, 1:Left, 2:Back, 3:Right, 4:Bottom, 5:Top
+	Mesh transparent_faces[6];
 } Chunk;
 
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
