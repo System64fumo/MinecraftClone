@@ -44,7 +44,7 @@ extern uint8_t ui_active_2d_elements;
 extern uint8_t ui_active_3d_elements;
 extern uint8_t ui_batch_count;
 extern ui_element_t* ui_elements;
-extern cube_element_t cube_elements[MAX_CUBE_ELEMENTS];
+extern cube_element_t* cube_elements;
 
 extern unsigned short screen_center_x;
 extern unsigned short screen_center_y;
@@ -53,10 +53,11 @@ void init_cube_rendering();
 void draw_cube_element(const cube_element_t* cube);
 void render_3d_elements();
 bool add_ui_element(const ui_element_t *element);
+bool add_cube_element(const cube_element_t *element);
+void remove_cube_element(uint8_t index);
 
-uint16_t get_text_length(char* ptr);
-void draw_char(unsigned char chr, uint16_t x, uint16_t y);
-void draw_text(char* ptr, uint16_t x, uint16_t y);
+void draw_text(char* text, uint16_t x, uint16_t y, bool centered);
+void draw_textf(uint16_t x, uint16_t y, bool centered, const char* format, ...);
 
 void init_ui();
 void draw_item(uint8_t id, vec2 pos);

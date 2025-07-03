@@ -11,8 +11,8 @@ uniform sampler2D cloudsTexture;
 uniform vec2 texOffset;
 
 void main() {
-	vec4 color = texture(cloudsTexture, TexCoord + texOffset);
-	if (color.a == 0.0) {
+	float cloud = texture(cloudsTexture, TexCoord + texOffset).r;
+	if (cloud == 0.0) {
 		discard;
 	}
 	FragColor = vec4(1.0, 1.0, 1.0, 0.5);

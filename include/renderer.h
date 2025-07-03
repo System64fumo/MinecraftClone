@@ -5,9 +5,8 @@
 
 typedef struct {
 	float x, y, z;
-	uint8_t normal;
-	uint8_t texture_id;
-	float size_u, size_v;
+	uint16_t packed_data;  // bits 0-7: normal, bits 8-15: texture_id
+	uint32_t packed_size;  // bits 0-8: size_u, bits 9-17: size_v
 } Vertex;
 
 typedef struct {
@@ -20,7 +19,13 @@ typedef struct {
 	uint32_t* indices;
 	uint16_t vertex_count;
 	uint16_t index_count;
-} FaceMesh;
+} Mesh;
+
+#define PACK_VERTEX_DATA(normal, texture_id) \
+	((uint16_t)(normal) | ((uint16_t)(texture_id) << 8))
+
+#define PACK_SIZE_DATA(size_u, size_v) \
+	((uint32_t)(size_u) | ((uint32_t)(size_v) << 9))
 
 extern bool mesh_mode;
 extern bool frustum_changed;

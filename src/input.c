@@ -1,5 +1,6 @@
 #include "main.h"
 #include "world.h"
+#include "views.h"
 #include "gui.h"
 #include "shaders.h"
 #include "config.h"
@@ -41,18 +42,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 	last_cursor_y = ypos;
 
 	if (ui_state == UI_STATE_PAUSED) {
-		// TODO: This could probably be done a little better..
-		if (check_hit(xpos, ypos, 0)) {
-			ui_elements[0].tex_y = 86;
-		}
-		else if (check_hit(xpos, ypos, 1)) {
-			ui_elements[1].tex_y = 86;
-		}
-		else {
-			ui_elements[0].tex_y = 66;
-			ui_elements[1].tex_y = 66;
-		}
-		update_ui_buffer();
+		view_pause_hover(xpos, ypos);
 	}
 	else if (ui_state == UI_STATE_RUNNING) {
 		float sensitivity = 0.1f;
@@ -116,7 +106,8 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			vec3 block_pos;
 			char face;
 			vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
-			get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &face);
+			uint8_t block_id;
+			get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &face, &block_id);
 				
 			if (face == 'N') return;
 				
@@ -197,7 +188,8 @@ void process_input(GLFWwindow* window, Chunk*** chunks) {
 			vec3 block_pos;
 			char face;
 			vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
-			get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &face);
+			uint8_t block_id;
+			get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &face, &block_id);
 			
 			if (face != 'N' && is_valid_block_position(block_pos.x, block_pos.y, block_pos.z)) {
 				Block* block = get_block_at(chunks, block_pos.x, block_pos.y, block_pos.z);
@@ -232,7 +224,8 @@ void process_input(GLFWwindow* window, Chunk*** chunks) {
 			vec3 block_pos;
 			char face;
 			vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
-			get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &face);
+			uint8_t block_id;
+			get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &face, &block_id);
 			
 			if (face != 'N') {
 				// Adjust block coordinates based on face for placement

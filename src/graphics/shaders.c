@@ -12,6 +12,7 @@ unsigned int view_uniform_location = -1;
 unsigned int projection_uniform_location = -1;
 unsigned int ui_projection_uniform_location = -1;
 unsigned int ui_state_uniform_location = -1;
+unsigned int highlight_uniform_location = -1;
 unsigned int screen_texture_uniform_location = -1;
 unsigned int texture_fb_depth_uniform_location = -1;
 unsigned int near_uniform_location = -1;
@@ -83,6 +84,7 @@ void cache_uniform_locations() {
 	atlas_uniform_location = glGetUniformLocation(world_shader, "textureAtlas");
 	view_uniform_location = glGetUniformLocation(world_shader, "view");
 	projection_uniform_location = glGetUniformLocation(world_shader, "projection");
+	highlight_uniform_location = glGetUniformLocation(world_shader, "highlight");
 	ui_projection_uniform_location = glGetUniformLocation(ui_shader, "projection");
 	ui_state_uniform_location = glGetUniformLocation(post_process_shader, "ui_state");
 	screen_texture_uniform_location = glGetUniformLocation(post_process_shader, "screenTexture");

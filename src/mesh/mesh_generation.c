@@ -120,10 +120,8 @@ void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t t
 
 		vertices[(*vertex_count)++] = (Vertex){
 			pos_x, pos_y, pos_z,
-			normal,
-			texture_id,
-			uv_u,
-			uv_v,
+			PACK_VERTEX_DATA(normal, texture_id),
+			(uint32_t)(uv_u * 16) | ((uint32_t)(uv_v * 16) << 9)
 		};
 	}
 
@@ -132,7 +130,7 @@ void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t t
 	}
 }
 
-void clear_face_data(FaceMesh faces[6]) {
+void clear_face_data(Mesh faces[6]) {
 	for (uint8_t face = 0; face < 6; face++) {
 		if(faces[face].vertices != NULL)
 			free(faces[face].vertices);
@@ -147,7 +145,7 @@ void clear_face_data(FaceMesh faces[6]) {
 	}
 }
 
-void store_face_data(FaceMesh* face_mesh, Vertex vertices[], uint32_t indices[], 
+void store_face_data(Mesh* face_mesh, Vertex vertices[], uint32_t indices[], 
 					uint32_t vertex_count, uint32_t index_count) {
 	if (vertex_count == 0) return;
 	
@@ -162,7 +160,7 @@ void store_face_data(FaceMesh* face_mesh, Vertex vertices[], uint32_t indices[],
 	}
 }
 
-void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, FaceMesh faces[6]) {
+void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Mesh faces[6]) {
 	clear_face_data(faces);
 
 	uint8_t block_type = block_data[block_id][0];
@@ -293,7 +291,7 @@ void generate_chunk_mesh(Chunk* chunk) {
 				if (block_type != BTYPE_SLAB && block_type != BTYPE_CROSS) continue;
 
 				bool is_transparent = block_data[block->id][1] != 0;
-				FaceMesh* target_faces = is_transparent ? chunk->transparent_faces : chunk->faces;
+				Mesh* target_faces = is_transparent ? chunk->transparent_faces : chunk->faces;
 
 				int face_count = (block_type == BTYPE_CROSS) ? 4 : 6;
 				for (int face = 0; face < face_count; face++) {

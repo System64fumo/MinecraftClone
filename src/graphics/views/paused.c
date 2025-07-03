@@ -2,7 +2,7 @@
 #include "textures.h"
 #include <stdio.h>
 
-void view_setup_pause() {
+void view_pause_init() {
 	// Resume button
 	add_ui_element(&(ui_element_t) {
 		.x = screen_center_x - ((200 * UI_SCALING) / 2),
@@ -29,11 +29,20 @@ void view_setup_pause() {
 		.texture_id = ui_textures
 	});
 
-	char back_text[13];
-	snprintf(back_text, sizeof(back_text), "Back to Game");
-	draw_text(back_text, screen_center_x - (get_text_length(back_text) / 2), screen_center_y + (11 * UI_SCALING));
+	draw_text("Back to Game", screen_center_x, screen_center_y + (11 * UI_SCALING), true);
+	draw_text("Save and Quit to Title", screen_center_x, screen_center_y - (19 * UI_SCALING), true);
+}
 
-	char quit_text[23];
-	snprintf(quit_text, sizeof(quit_text), "Save and Quit to Title");
-	draw_text(quit_text, screen_center_x - (get_text_length(quit_text) / 2), screen_center_y - (19 * UI_SCALING));
+void view_pause_hover(uint16_t cursor_x, uint16_t cursor_y) {
+	if (check_hit(cursor_x, cursor_y, 0)) {
+		ui_elements[0].tex_y = 86;
+	}
+	else if (check_hit(cursor_x, cursor_y, 1)) {
+		ui_elements[1].tex_y = 86;
+	}
+	else {
+		ui_elements[0].tex_y = 66;
+		ui_elements[1].tex_y = 66;
+	}
+	update_ui_buffer();
 }

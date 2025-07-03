@@ -6,7 +6,6 @@
 #include "views.h"
 #include <math.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -15,87 +14,32 @@ uint8_t ui_active_2d_elements = 0;
 uint8_t ui_active_3d_elements = 0;
 static ui_vertex_t *vertex_buffer = NULL;
 static uint16_t vertex_buffer_capacity = 0;
-static unsigned int highlight_vao, highlight_vbo, highlight_ebo;
 static unsigned int cube_vao, cube_vbo, cube_ebo;
 static unsigned int ui_vao, ui_vbo;
-static mat4 ortho;
-static mat4 cube_projection;
-static mat4 cube_view;
+static mat4 ortho, cube_projection, cube_view, cube_matrix;
 static mat4 highlight_matrix;
-static mat4 cube_matrix;
 static uint16_t ui_center_x, ui_center_y;
 
 ui_element_t* ui_elements = NULL;
-cube_element_t cube_elements[MAX_CUBE_ELEMENTS];
+cube_element_t* cube_elements = NULL;
 static uint8_t ui_elements_capacity = 0;
 static ui_batch_t *ui_batches = NULL;
 uint8_t ui_batch_count = 0;
 static uint8_t ui_batches_capacity = 0;
+static uint8_t cube_elements_capacity = 0;
 
-static const float highlight_vertices[] = {
-	// Front face (Z+)
-	-0.5f, -0.5f,  0.5f,
-	 0.5f, -0.5f,  0.5f,
-	 0.5f,  0.5f,  0.5f,
-	-0.5f,  0.5f,  0.5f,
-	
-	// Back face (Z-)
-	-0.5f, -0.5f, -0.5f,
-	-0.5f,  0.5f, -0.5f,
-	 0.5f,  0.5f, -0.5f,
-	 0.5f, -0.5f, -0.5f,
-	
-	// Left face (X-)
-	-0.5f, -0.5f, -0.5f,
-	-0.5f, -0.5f,  0.5f,
-	-0.5f,  0.5f,  0.5f,
-	-0.5f,  0.5f, -0.5f,
-	
-	// Right face (X+)
-	 0.5f, -0.5f, -0.5f,
-	 0.5f,  0.5f, -0.5f,
-	 0.5f,  0.5f,  0.5f,
-	 0.5f, -0.5f,  0.5f,
-	
-	// Bottom face (Y-)
-	-0.5f, -0.5f, -0.5f,
-	 0.5f, -0.5f, -0.5f,
-	 0.5f, -0.5f,  0.5f,
-	-0.5f, -0.5f,  0.5f,
-	
-	// Top face (Y+)
-	-0.5f,  0.5f, -0.5f,
-	-0.5f,  0.5f,  0.5f,
-	 0.5f,  0.5f,  0.5f,
-	 0.5f,  0.5f, -0.5f
-};
-
-static const uint8_t highlight_indices[] = {
-	// Front face (Z+)
-	0, 1, 2, 3, 0,
-	// Back face (Z-)
-	4, 5, 6, 7, 4,
-	// Left face (X-)
-	8, 9, 10, 11, 8,
-	// Right face (X+)
-	12, 13, 14, 15, 12,
-	// Bottom face (Y-)
-	16, 17, 18, 19, 16,
-	// Top face (Y+)
-	20, 21, 22, 23, 20
-};
+static uint8_t cached_highlight_block_id = 0;
+static Mesh cached_highlight_faces[6] = {0};
 
 static bool resize_ui_elements(uint8_t new_capacity) {
 	ui_element_t *new_elements = realloc(ui_elements, sizeof(ui_element_t) * new_capacity);
 	if (!new_elements) return false;
-	
 	ui_elements = new_elements;
 	ui_elements_capacity = new_capacity;
 
 	uint16_t vertices_needed = new_capacity * 6;
 	ui_vertex_t *new_vertex_buffer = realloc(vertex_buffer, sizeof(ui_vertex_t) * vertices_needed);
 	if (!new_vertex_buffer) return false;
-	
 	vertex_buffer = new_vertex_buffer;
 	vertex_buffer_capacity = vertices_needed;
 	return true;
@@ -104,19 +48,19 @@ static bool resize_ui_elements(uint8_t new_capacity) {
 static bool resize_ui_batches(uint8_t new_capacity) {
 	ui_batch_t *new_batches = realloc(ui_batches, sizeof(ui_batch_t) * new_capacity);
 	if (!new_batches) return false;
-	
 	ui_batches = new_batches;
 	ui_batches_capacity = new_capacity;
 	return true;
 }
 
-void clear_ui_elements() {
-	ui_active_2d_elements = 0;
+static bool resize_cube_elements(uint8_t new_capacity) {
+	cube_element_t *new_elements = realloc(cube_elements, sizeof(cube_element_t) * new_capacity);
+	if (!new_elements) return false;
+	cube_elements = new_elements;
+	cube_elements_capacity = new_capacity;
+	return true;
 }
 
-void clear_ui_batches() {
-	ui_batch_count = 0;
-}
 
 bool add_ui_element(const ui_element_t *element) {
 	if (ui_active_2d_elements >= ui_elements_capacity) {
@@ -136,8 +80,24 @@ void remove_ui_element(uint8_t index) {
 	ui_active_2d_elements--;
 }
 
+bool add_cube_element(const cube_element_t *element) {
+	if (ui_active_3d_elements >= cube_elements_capacity) {
+		uint8_t new_capacity = cube_elements_capacity == 0 ? 16 : cube_elements_capacity * 2;
+		if (!resize_cube_elements(new_capacity)) return false;
+	}
+	cube_elements[ui_active_3d_elements++] = *element;
+	return true;
+}
+
+void remove_cube_element(uint8_t index) {
+	if (index >= ui_active_3d_elements) return;
+	memmove(&cube_elements[index], &cube_elements[index + 1],
+		   (ui_active_3d_elements - index - 1) * sizeof(cube_element_t));
+	ui_active_3d_elements--;
+}
+
 void create_batches() {
-	clear_ui_batches();
+	ui_batch_count = 0;
 	if (ui_active_2d_elements == 0) return;
 
 	if (ui_batches_capacity == 0 && !resize_ui_batches(8)) {
@@ -178,21 +138,6 @@ void update_cube_projection() {
 	matrix4_identity(cube_view);
 }
 
-void init_highlight() {
-	glGenVertexArrays(1, &highlight_vao);
-	glGenBuffers(1, &highlight_vbo);
-	glGenBuffers(1, &highlight_ebo);
-
-	glBindVertexArray(highlight_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, highlight_vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(highlight_vertices), highlight_vertices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, highlight_ebo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(highlight_indices), highlight_indices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glBindVertexArray(0);
-}
-
 void init_cube_rendering() {
 	glGenVertexArrays(1, &cube_vao);
 	glBindVertexArray(cube_vao);
@@ -205,12 +150,10 @@ void init_cube_rendering() {
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
 	glEnableVertexAttribArray(0);
-	glVertexAttribIPointer(1, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_SHORT, sizeof(Vertex), (void*)offsetof(Vertex, packed_data));
 	glEnableVertexAttribArray(1);
-	glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(Vertex), (void*)offsetof(Vertex, texture_id));
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, packed_size));
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, size_u));
-	glEnableVertexAttribArray(3);
 	glBindVertexArray(0);
 }
 
@@ -229,32 +172,90 @@ void init_ui_rendering() {
 }
 
 void init_ui() {
-	init_highlight();
 	init_cube_rendering();
 	init_ui_rendering();
 
-	if (!resize_ui_elements(16)) {
-		printf("Failed to initialize UI elements\n");
-		return;
-	}
-
-	if (!resize_ui_batches(8)) {
-		printf("Failed to initialize UI batches\n");
-		return;
-	}
+	if (!resize_ui_elements(16)) return;
+	if (!resize_ui_batches(8)) return;
 }
 
-void draw_block_highlight(vec3 pos) {
+void free_cached_highlight() {
+	for (uint8_t face = 0; face < 6; face++) {
+		if (cached_highlight_faces[face].vertices) free(cached_highlight_faces[face].vertices);
+		if (cached_highlight_faces[face].indices) free(cached_highlight_faces[face].indices);
+		cached_highlight_faces[face].vertices = NULL;
+		cached_highlight_faces[face].indices = NULL;
+		cached_highlight_faces[face].vertex_count = 0;
+		cached_highlight_faces[face].index_count = 0;
+	}
+	cached_highlight_block_id = 0xFF;
+}
+
+void draw_block_highlight(vec3 pos, uint8_t block_id) {
+	if (block_id != cached_highlight_block_id) {
+		free_cached_highlight();
+		generate_single_block_mesh(0, 0, 0, block_id, cached_highlight_faces);
+		cached_highlight_block_id = block_id;
+	}
+
 	matrix4_identity(highlight_matrix);
-	matrix4_translate(highlight_matrix, pos.x + 0.5, pos.y + 0.5, pos.z + 0.5);
-	matrix4_scale(highlight_matrix, 1.001, 1.001, 1.001);
+	matrix4_translate(highlight_matrix, pos.x, pos.y, pos.z);
+	matrix4_scale(highlight_matrix, 1.005f, 1.005f, 1.005f);
 
-	glUseProgram(world_shader);
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, highlight_matrix);
+	glUniform1i(highlight_uniform_location, 1);
+	glBindVertexArray(cube_vao);
 
-	glBindVertexArray(highlight_vao);
-	glDrawElements(GL_LINE_STRIP, sizeof(highlight_indices), GL_UNSIGNED_BYTE, (void*)0);
-	draw_calls++;
+	uint8_t block_type = block_data[block_id][0];
+	size_t total_line_vertices = 0;
+
+	if (block_type == BTYPE_CROSS) {
+		total_line_vertices = 16;
+	} else {
+		for (uint8_t face = 0; face < 6; face++) {
+			if (cached_highlight_faces[face].vertex_count == 0) continue;
+			total_line_vertices += cached_highlight_faces[face].vertex_count * 2;
+		}
+	}
+
+	if (total_line_vertices > 0) {
+		Vertex* line_vertices = malloc(total_line_vertices * sizeof(Vertex));
+		size_t vertex_offset = 0;
+		if (block_type == BTYPE_CROSS) {
+			for (uint8_t face = 0; face < 4; face++) {
+				if (cached_highlight_faces[face].vertex_count == 0) continue;
+				for (uint8_t i = 0; i < 4; i++) {
+					uint8_t next_i = (i + 1) % 4;
+					memcpy(&line_vertices[vertex_offset++], &cached_highlight_faces[face].vertices[i], sizeof(Vertex));
+					memcpy(&line_vertices[vertex_offset++], &cached_highlight_faces[face].vertices[next_i], sizeof(Vertex));
+				}
+				uint8_t next_face = (face + 1) % 4;
+				if (cached_highlight_faces[next_face].vertex_count > 0) {
+					for (uint8_t i = 0; i < 4; i++) {
+						uint8_t next_i = (i + 1) % 4;
+						memcpy(&line_vertices[vertex_offset++], &cached_highlight_faces[next_face].vertices[i], sizeof(Vertex));
+						memcpy(&line_vertices[vertex_offset++], &cached_highlight_faces[next_face].vertices[next_i], sizeof(Vertex));
+					}
+				}
+				break;
+			}
+		} else {
+			for (uint8_t face = 0; face < 6; face++) {
+				if (cached_highlight_faces[face].vertex_count == 0) continue;
+				for (uint8_t i = 0; i < 4; i++) {
+					uint8_t next_i = (i + 1) % 4;
+					memcpy(&line_vertices[vertex_offset++], &cached_highlight_faces[face].vertices[i], sizeof(Vertex));
+					memcpy(&line_vertices[vertex_offset++], &cached_highlight_faces[face].vertices[next_i], sizeof(Vertex));
+				}
+			}
+		}
+		glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
+		glBufferData(GL_ARRAY_BUFFER, total_line_vertices * sizeof(Vertex), line_vertices, GL_DYNAMIC_DRAW);
+		glDrawArrays(GL_LINES, 0, total_line_vertices);
+		draw_calls++;
+		free(line_vertices);
+	}
+	glUniform1i(highlight_uniform_location, 0);
 }
 
 void draw_cube_element(const cube_element_t* cube) {
@@ -262,30 +263,24 @@ void draw_cube_element(const cube_element_t* cube) {
 
 	mat4 temp, rotation;
 
-	if (cube->rotation_z != 0.0f) {
-		matrix4_rotate_z(rotation, cube->rotation_z);
-		memcpy(temp, cube_matrix, sizeof(float) * 16);
-		matrix4_multiply(cube_matrix, temp, rotation);
-	}
-	
-	if (cube->rotation_y != 0.0f) {
-		matrix4_rotate_y(rotation, cube->rotation_y);
-		memcpy(temp, cube_matrix, sizeof(float) * 16);
-		matrix4_multiply(cube_matrix, temp, rotation);
-	}
-	
-	if (cube->rotation_x != 0.0f) {
-		matrix4_rotate_x(rotation, cube->rotation_x);
-		memcpy(temp, cube_matrix, sizeof(float) * 16);
-		matrix4_multiply(cube_matrix, temp, rotation);
-	}
+	matrix4_rotate_z(rotation, cube->rotation_z);
+	memcpy(temp, cube_matrix, sizeof(float) * 16);
+	matrix4_multiply(cube_matrix, temp, rotation);
+
+	matrix4_rotate_y(rotation, cube->rotation_y);
+	memcpy(temp, cube_matrix, sizeof(float) * 16);
+	matrix4_multiply(cube_matrix, temp, rotation);
+
+	matrix4_rotate_x(rotation, cube->rotation_x);
+	memcpy(temp, cube_matrix, sizeof(float) * 16);
+	matrix4_multiply(cube_matrix, temp, rotation);
 
 	matrix4_translate(cube_matrix, cube->pos.x, cube->pos.y, 0);
 	matrix4_scale(cube_matrix, cube->width, cube->height, cube->depth);
 
 	glUniformMatrix4fv(model_uniform_location, 1, GL_FALSE, cube_matrix);
 
-	FaceMesh faces[6] = {0};
+	Mesh faces[6] = {0};
 	generate_single_block_mesh(0, 0, 0, cube->id, faces);
 
 	glBindVertexArray(cube_vao);
@@ -294,19 +289,16 @@ void draw_cube_element(const cube_element_t* cube) {
 
 	size_t total_vertices = 0;
 	size_t total_indices = 0;
-	
-	// First calculate total sizes needed
+
 	for (uint8_t face = 0; face < 6; face++) {
 		if (faces[face].vertex_count == 0) continue;
 		total_vertices += faces[face].vertex_count;
 		total_indices += faces[face].index_count;
 	}
 
-	// Allocate single buffers
 	Vertex* all_vertices = malloc(total_vertices * sizeof(Vertex));
 	uint32_t* all_indices = malloc(total_indices * sizeof(uint32_t));
-	
-	// Combine all face data
+
 	size_t vertex_offset = 0;
 	size_t index_offset = 0;
 	uint32_t base_index = 0;
@@ -315,8 +307,7 @@ void draw_cube_element(const cube_element_t* cube) {
 		if (faces[face].vertex_count == 0) continue;
 		
 		memcpy(all_vertices + vertex_offset, faces[face].vertices, faces[face].vertex_count * sizeof(Vertex));
-		
-		// Adjust indices for the offset
+
 		for (size_t i = 0; i < faces[face].index_count; i++) {
 			all_indices[index_offset + i] = faces[face].indices[i] + base_index;
 		}
@@ -329,7 +320,6 @@ void draw_cube_element(const cube_element_t* cube) {
 		free(faces[face].indices);
 	}
 
-	// Single buffer upload and draw call
 	glBufferData(GL_ARRAY_BUFFER, total_vertices * sizeof(Vertex), all_vertices, GL_DYNAMIC_DRAW);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, total_indices * sizeof(uint32_t), all_indices, GL_DYNAMIC_DRAW);
 	glDrawElements(GL_TRIANGLES, total_indices, GL_UNSIGNED_INT, 0);
@@ -401,11 +391,11 @@ void draw_item(uint8_t id, vec2 pos) {
 
 	// Anything else
 	else {
-		cube_elements[ui_active_3d_elements] = base_cube;
-		cube_elements[ui_active_3d_elements].id = id;
-		cube_elements[ui_active_3d_elements].pos.x = pos.x + (1 * UI_SCALING);
-		cube_elements[ui_active_3d_elements].pos.y = pos.y + (4 * UI_SCALING) - 1;
-		ui_active_3d_elements++;
+		cube_element_t cube = base_cube;
+		cube.id = id;
+		cube.pos.x = pos.x + (1 * UI_SCALING);
+		cube.pos.y = pos.y + (4 * UI_SCALING) - 1;
+		add_cube_element(&cube);
 	}
 }
 
@@ -432,7 +422,6 @@ void render_ui() {
 		glUseProgram(ui_shader);
 		glUniformMatrix4fv(ui_projection_uniform_location, 1, GL_FALSE, ortho);
 		glBindVertexArray(ui_vao);
-		
 		for (uint8_t i = 0; i < ui_batch_count; i++) {
 			const ui_batch_t *batch = &ui_batches[i];
 			glBindTexture(GL_TEXTURE_2D, batch->texture_id);
@@ -441,10 +430,9 @@ void render_ui() {
 		}
 	}
 
-	if (ui_active_3d_elements) {
+	if (ui_active_3d_elements > 1) {
 		glUseProgram(world_shader);
 		glBindTexture(GL_TEXTURE_2D, block_textures);
-
 		glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, cube_projection);
 		glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, cube_view);
 		for (uint8_t i = 0; i < ui_active_3d_elements - 1; i++) {
@@ -456,17 +444,17 @@ void render_ui() {
 void update_ui() {
 	ui_center_x = settings.window_width / 2;
 	ui_center_y = settings.window_height / 2;
-	clear_ui_elements();
+	ui_active_2d_elements = 0;
 	ui_active_3d_elements = 0;
 	
 	switch (ui_state) {
 		case UI_STATE_RUNNING: {
-			view_setup_game();
+			view_game_init();
 			break;
 		}
 
 		case UI_STATE_PAUSED:
-			view_setup_pause();
+			view_pause_init();
 			break;
 	}
 
@@ -492,17 +480,18 @@ void cleanup_ui() {
 	free(ui_elements);
 	free(vertex_buffer);
 	free(ui_batches);
-	
+	free(cube_elements);
+	free_cached_highlight();
 	ui_elements = NULL;
 	vertex_buffer = NULL;
 	ui_batches = NULL;
-	
+	cube_elements = NULL;
 	ui_elements_capacity = 0;
 	vertex_buffer_capacity = 0;
 	ui_batches_capacity = 0;
+	cube_elements_capacity = 0;
 	ui_active_2d_elements = 0;
 	ui_batch_count = 0;
-	
 	glDeleteVertexArrays(1, &ui_vao);
 	glDeleteBuffers(1, &ui_vbo);
 	glDeleteBuffers(1, &cube_vbo);

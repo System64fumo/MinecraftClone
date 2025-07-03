@@ -1,6 +1,8 @@
 #include "main.h"
 #include "gui.h"
 #include "textures.h"
+#include <stdarg.h>
+#include <stdio.h>
 
 uint8_t font_data[255][2] = {
 	[0 ... 254] = {8, 8},
@@ -54,13 +56,26 @@ void draw_char(unsigned char chr, uint16_t x, uint16_t y) {
 	add_ui_element(&char_element);
 }
 
-void draw_text(char* ptr, uint16_t x, uint16_t y) {
-	uint8_t char_index = 0;
-	uint16_t offset = 9;
-	while (*ptr != '\0') {
-		draw_char(*ptr, x + offset, y);
-		offset += font_data[(unsigned char)*ptr][0] * UI_SCALING;
-		ptr++;
-		char_index++;
+void draw_text(char* text, uint16_t x, uint16_t y, bool centered) {
+	if (centered) {
+		uint16_t length = get_text_length(text);
+		x -= length / 2;
 	}
+	
+	uint16_t offset = 0;
+	while (*text != '\0') {
+		draw_char(*text, x + offset, y);
+		offset += font_data[(unsigned char)*text][0] * UI_SCALING;
+		text++;
+	}
+}
+
+// Variadic version for formatted text
+void draw_textf(uint16_t x, uint16_t y, bool centered, const char* format, ...) {
+	char buffer[128];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(buffer, sizeof(buffer), format, args);
+	va_end(args);
+	draw_text(buffer, x, y, centered);
 }
