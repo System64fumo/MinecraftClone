@@ -2,8 +2,7 @@
 #define GUI_H
 
 #include "misc.h"
-
-#define MAX_CUBE_ELEMENTS 10
+#include <stdbool.h>
 
 #define UI_STATE_RUNNING 0
 #define UI_STATE_PAUSED 1
@@ -56,8 +55,8 @@ bool add_ui_element(const ui_element_t *element);
 bool add_cube_element(const cube_element_t *element);
 void remove_cube_element(uint8_t index);
 
-void draw_text(char* text, uint16_t x, uint16_t y, bool centered);
-void draw_textf(uint16_t x, uint16_t y, bool centered, const char* format, ...);
+void draw_text(char* text, uint16_t x, uint16_t y, char alignment);
+void draw_textf(uint16_t x, uint16_t y, char alignment, const char* format, ...);
 
 void init_ui();
 void draw_item(uint8_t id, vec2 pos);

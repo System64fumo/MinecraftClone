@@ -122,9 +122,18 @@ void render_to_screen() {
 	glDisable(GL_DEPTH_TEST);
 	glUseProgram(post_process_shader);
 
+	float inv_projection[16];
+	float inv_view[16];
+	matrix4_inverse(projection, inv_projection);
+	matrix4_inverse(view, inv_view);
+
 	// Bind all textures
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_fb_color);
+
+	glUniformMatrix4fv(inv_projection_uniform_location, 1, GL_FALSE, inv_projection);
+	glUniformMatrix4fv(inv_view_uniform_location, 1, GL_FALSE, inv_view);
+	glUniform1f(far_uniform_location, far);
 
 	if (last_ui_state != ui_state) {
 		glUniform1i(ui_state_uniform_location, ui_state);

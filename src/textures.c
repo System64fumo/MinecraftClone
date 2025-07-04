@@ -1,13 +1,55 @@
 #include <GL/glew.h>
-#include <webp/decode.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <dlfcn.h>
 
 unsigned int block_textures, ui_textures, font_textures;
 
+// Function pointers for WebP functions
+typedef uint8_t* (*WebPDecodeRGBAPtr)(const uint8_t* data, size_t data_size, int* width, int* height);
+typedef void (*WebPFreePtr)(void* ptr);
+
+static void* webp_handle = NULL;
+static WebPDecodeRGBAPtr WebPDecodeRGBA = NULL;
+static WebPFreePtr WebPFree = NULL;
+
+int load_webp_library() {
+	webp_handle = dlopen("libwebp.so", RTLD_LAZY);
+	if (!webp_handle) {
+		fprintf(stderr, "Failed to load libwebp.so: %s\n", dlerror());
+		return 0;
+	}
+
+	WebPDecodeRGBA = (WebPDecodeRGBAPtr)dlsym(webp_handle, "WebPDecodeRGBA");
+	WebPFree = (WebPFreePtr)dlsym(webp_handle, "WebPFree");
+
+	if (!WebPDecodeRGBA || !WebPFree) {
+		fprintf(stderr, "Failed to load WebP functions: %s\n", dlerror());
+		dlclose(webp_handle);
+		webp_handle = NULL;
+		return 0;
+	}
+
+	return 1;
+}
+
+void unload_webp_library() {
+	if (webp_handle) {
+		dlclose(webp_handle);
+		webp_handle = NULL;
+		WebPDecodeRGBA = NULL;
+		WebPFree = NULL;
+	}
+}
+
 unsigned int load_texture(const char* path) {
+	if (!webp_handle && !load_webp_library()) {
+		printf("WebP library not available\n");
+		return 0;
+	}
+
 	unsigned int textureID;
 	glGenTextures(1, &textureID);
 
@@ -63,6 +105,7 @@ unsigned int load_texture(const char* path) {
 }
 
 void load_textures() {
+	load_webp_library();
 	char exec_path[1024];
 	ssize_t len = readlink("/proc/self/exe", exec_path, sizeof(exec_path) - 1);
 	if (len == -1) {
@@ -95,4 +138,5 @@ void load_textures() {
 		exit(EXIT_FAILURE);
 	}
 	ui_textures = load_texture(gui_path);
+	unload_webp_library();
 }

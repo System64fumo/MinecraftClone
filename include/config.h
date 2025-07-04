@@ -32,12 +32,16 @@ typedef struct {
 	unsigned short window_width;
 	unsigned short window_height;
 	bool fullscreen;
+	float gui_scale;
+
 	uint8_t render_distance;
 	bool vsync;
 	bool frustum_culling;
 	bool face_culling;
 	bool occlusion_culling;
 	bool fancy_graphics;
+
+	bool auto_jump;
 } config;
 
 extern IniFile ini;

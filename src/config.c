@@ -45,6 +45,10 @@ void parse_config(IniFile* ini) {
 	if (fps_limit)
 		settings.fps_limit = atoi(fps_limit);
 
+	const char* gui_scale = ini_get(ini, "main", "gui_scale");
+	if (gui_scale)
+		settings.gui_scale = atof(gui_scale);
+
 	//
 	// [render]
 	//
@@ -70,6 +74,16 @@ void parse_config(IniFile* ini) {
 	const char* fancy = ini_get(ini, "render", "fancy");
 	if (fancy)
 		settings.fancy_graphics = fancy[0] == 't' || fancy[0] == 'T';
+
+
+
+	//
+	// [input]
+	//
+
+	const char* auto_jump = ini_get(ini, "input", "auto_jump");
+	if (auto_jump)
+		settings.auto_jump = auto_jump[0] == 't' || auto_jump[0] == 'T';
 
 	settings.sky_brightness = 1.0;
 
@@ -131,12 +145,16 @@ void initialize_config() {
 	settings.fov_desired = 70.0f;
 	settings.fov = settings.fov_desired;
 	settings.fps_limit = 0;
-	settings.render_distance = 16;
 	settings.vsync = true;
+	settings.gui_scale = 3.0;
+
+	settings.render_distance = 16;
 	settings.frustum_culling = true;
 	settings.face_culling = true;
 	settings.occlusion_culling = false;
 	settings.fancy_graphics = true;
+
+	settings.auto_jump = false;
 
 	char config_path[1024];
 	const char* home_path = getenv("HOME");
@@ -165,12 +183,15 @@ void initialize_config() {
 		fprintf(config_file, "fov = %.1f\n", settings.fov);
 		fprintf(config_file, "fps_limit = %d\n", settings.fps_limit);
 		fprintf(config_file, "vsync = true\n");
+		fprintf(config_file, "gui_scale = %.1f\n", settings.gui_scale);
 		fprintf(config_file, "\n[render]\n");
 		fprintf(config_file, "distance = %d\n", settings.render_distance / 2);
 		fprintf(config_file, "frustum_culling = true\n");
 		fprintf(config_file, "face_culling = true\n");
 		fprintf(config_file, "occlusion_culling = false\n");
 		fprintf(config_file, "fancy = true\n");
+		fprintf(config_file, "\n[input]\n");
+		fprintf(config_file, "auto_jump = false\n");
 		fclose(config_file);
 	}
 	ini.filename = config_path;

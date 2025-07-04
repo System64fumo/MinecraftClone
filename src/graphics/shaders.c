@@ -15,9 +15,9 @@ unsigned int ui_state_uniform_location = -1;
 unsigned int highlight_uniform_location = -1;
 unsigned int screen_texture_uniform_location = -1;
 unsigned int texture_fb_depth_uniform_location = -1;
-unsigned int near_uniform_location = -1;
 unsigned int far_uniform_location = -1;
-unsigned int clouds_offset_uniform_location = -1;
+unsigned int inv_projection_uniform_location = -1;
+unsigned int inv_view_uniform_location = -1;
 
 unsigned int compile_shader(const char* shader_source, int type) {
 	int success;
@@ -74,7 +74,6 @@ void load_shader_constants() {
 	glBindTexture(GL_TEXTURE_2D, texture_fb_depth);
 	glUniform1i(texture_fb_depth_uniform_location, 1);
 
-	glUniform1f(near_uniform_location, near);
 	glUniform1f(far_uniform_location, far);
 	glUniform1i(ui_state_uniform_location, ui_state);
 }
@@ -89,7 +88,7 @@ void cache_uniform_locations() {
 	ui_state_uniform_location = glGetUniformLocation(post_process_shader, "ui_state");
 	screen_texture_uniform_location = glGetUniformLocation(post_process_shader, "screenTexture");
 	texture_fb_depth_uniform_location = glGetUniformLocation(post_process_shader, "u_texture_fb_depth");
-	near_uniform_location = glGetUniformLocation(post_process_shader, "u_near");
+	inv_projection_uniform_location = glGetUniformLocation(post_process_shader, "u_inv_projection");
+	inv_view_uniform_location = glGetUniformLocation(post_process_shader, "u_inv_view");
 	far_uniform_location = glGetUniformLocation(post_process_shader, "u_far");
-	clouds_offset_uniform_location = glGetUniformLocation(clouds_shader, "texOffset");
 }
