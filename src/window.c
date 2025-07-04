@@ -57,10 +57,6 @@ int initialize_window() {
 
 	// Debugging
 	#ifdef DEBUG
-	printf("OpenGL Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
-	printf("OpenGL Renderer: %s\n", (const char*)glGetString(GL_RENDERER));
-	printf("OpenGL Version: %s\n", (const char*)glGetString(GL_VERSION));
-
 	profiler_init();
 	profiler_create("Shaders");
 	profiler_create("Mesh");

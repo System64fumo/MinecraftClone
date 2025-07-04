@@ -120,6 +120,31 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 // Keyboard
 //
 
+bool check_step_up(Entity entity, float dx, float dz) {
+	float length = sqrtf(dx*dx + dz*dz);
+	if (length > 0) {
+		dx /= length;
+		dz /= length;
+	}
+
+	float check_distance = 1.25f;
+	if (entity.sprinting) {
+		check_distance += 0.5f;
+	}
+	float check_x = entity.pos.x + dx * check_distance;
+	float check_z = entity.pos.z + dz * check_distance;
+	int block_y = (int)floorf(entity.pos.y);
+
+	if (is_block_solid(chunks, (int)floorf(check_x), block_y, (int)floorf(check_z))) {
+		if (!is_block_solid(chunks, (int)floorf(check_x), block_y + 1, (int)floorf(check_z))) {
+			if (!is_block_solid(chunks, (int)floorf(check_x), block_y + 2, (int)floorf(check_z))) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS || action == GLFW_REPEAT) {
 		switch (key) {
@@ -129,16 +154,15 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			case GLFW_KEY_F2:
 				mesh_mode = !mesh_mode;
 				break;
+			case GLFW_KEY_F3:
+				debug_view = !debug_view;
+				update_ui();
+				break;
 			case GLFW_KEY_LEFT_CONTROL:
 				global_entities[0].sprinting = true;
 				break;
 			case GLFW_KEY_R:
 				load_shaders();
-				break;
-			case GLFW_KEY_T:
-				unsigned char* light_texture = generate_light_texture();
-				printf("Saved slice /tmp/slice.webp\n");
-				save_light_slice(light_texture, 5, "/tmp/slice.webp");
 				break;
 			case GLFW_KEY_ESCAPE:
 				if (ui_state == UI_STATE_RUNNING) {
@@ -328,6 +352,11 @@ void process_input(GLFWwindow* window, Chunk*** chunks) {
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		dx += cosf(yaw) * move_speed;
 		dz += sinf(yaw) * move_speed;
+		
+		if (settings.auto_jump == true && global_entities[0].is_grounded && check_step_up(global_entities[0], dx, dz)) {
+			global_entities[0].vertical_velocity = 10.0f;
+			global_entities[0].is_grounded = false;
+		}
 	}
 	else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_RELEASE) {
 		global_entities[0].sprinting = false;

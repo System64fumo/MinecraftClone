@@ -8,7 +8,6 @@
 #define MAX_ENTITIES_PER_CHUNK 128
 #define MAX_BLOCK_TYPES 256
 #define MAX_VERTICES 98304 // CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE * 6 * 4;
-#define UI_SCALING 3.0f
 
 #ifndef M_PI
 #define M_PI		3.14159265358979323846
@@ -47,6 +46,7 @@ void matrix4_scale(float* mat, float x, float y, float z);
 void matrix4_rotate_x(float* matrix, float angle);
 void matrix4_rotate_y(float* matrix, float angle);
 void matrix4_rotate_z(float* matrix, float angle);
+void matrix4_inverse(const float src[16], float dst[16]);
 void do_time_stuff();
 const char* load_file(const char* filename);
 unsigned int load_texture(const char* path);

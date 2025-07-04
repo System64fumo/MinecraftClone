@@ -24,7 +24,7 @@ I mainly want to explore different optimization methods here, So gameplay/featur
 * Vignette effect<br>
 * Fog<br>
 * GUI<br>
-* 2D Clouds<br>
+* 3D Clouds<br>
 
 </td>
 <td>

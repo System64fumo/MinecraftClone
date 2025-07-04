@@ -32,14 +32,20 @@ static uint8_t cached_highlight_block_id = 0;
 static Mesh cached_highlight_faces[6] = {0};
 
 static bool resize_ui_elements(uint8_t new_capacity) {
+	if (new_capacity == 0) return false;
+	
 	ui_element_t *new_elements = realloc(ui_elements, sizeof(ui_element_t) * new_capacity);
-	if (!new_elements) return false;
+	if (!new_elements) {
+		return false;
+	}
 	ui_elements = new_elements;
 	ui_elements_capacity = new_capacity;
 
 	uint16_t vertices_needed = new_capacity * 6;
 	ui_vertex_t *new_vertex_buffer = realloc(vertex_buffer, sizeof(ui_vertex_t) * vertices_needed);
-	if (!new_vertex_buffer) return false;
+	if (!new_vertex_buffer) {
+		return false;
+	}
 	vertex_buffer = new_vertex_buffer;
 	vertex_buffer_capacity = vertices_needed;
 	return true;
@@ -362,9 +368,9 @@ void update_ui_buffer() {
 
 void draw_item(uint8_t id, vec2 pos) {
 	const cube_element_t base_cube = {
-		.width = 10 * UI_SCALING,
-		.height = 10 * UI_SCALING,
-		.depth = 10 * UI_SCALING,
+		.width = 10 * settings.gui_scale,
+		.height = 10 * settings.gui_scale,
+		.depth = 10 * settings.gui_scale,
 		.rotation_x = -30 * DEG_TO_RAD,
 		.rotation_y = 45 * DEG_TO_RAD,
 		.id = 0
@@ -379,8 +385,8 @@ void draw_item(uint8_t id, vec2 pos) {
 		add_ui_element(&(ui_element_t) {
 			.x = pos.x,
 			.y = pos.y,
-			.width = 16 * UI_SCALING,
-			.height = 16 * UI_SCALING,
+			.width = 16 * settings.gui_scale,
+			.height = 16 * settings.gui_scale,
 			.tex_x = xOffset * 16,
 			.tex_y = yOffset * 16,
 			.tex_width = 16,
@@ -393,8 +399,8 @@ void draw_item(uint8_t id, vec2 pos) {
 	else {
 		cube_element_t cube = base_cube;
 		cube.id = id;
-		cube.pos.x = pos.x + (1 * UI_SCALING);
-		cube.pos.y = pos.y + (4 * UI_SCALING) - 1;
+		cube.pos.x = pos.x + (1 * settings.gui_scale);
+		cube.pos.y = pos.y + (4 * settings.gui_scale) - 1;
 		add_cube_element(&cube);
 	}
 }

@@ -57,7 +57,6 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Mes
 bool init_mesh_thread();
 void process_chunks();
 unsigned char* generate_light_texture();
-bool save_light_slice(const unsigned char* texture_data, int y_slice, const char* filename);
 
 bool are_all_neighbors_loaded(uint8_t x, uint8_t y, uint8_t z);
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);

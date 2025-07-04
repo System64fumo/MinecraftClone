@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-#include <webp/encode.h>
 
 #define MAX_LIGHT_LEVEL 15
 
@@ -78,59 +77,4 @@ unsigned char* generate_light_texture() {
 	}
 	
 	return texture_data;
-}
-
-bool save_light_slice(const unsigned char* texture_data, int y_slice, const char* filename) {
-	const int width = WORLD_WIDTH;
-	const int height = WORLD_HEIGHT_BLOCKS;
-	const int depth = WORLD_DEPTH;
-	
-	if (y_slice < 0 || y_slice >= height) {
-		fprintf(stderr, "Invalid Y slice: %d (must be 0-%d)\n", y_slice, height-1);
-		return false;
-	}
-	
-	// Prepare the 2D slice data
-	uint8_t* slice_data = (uint8_t*)malloc(width * depth * 4);
-	if (!slice_data) {
-		fprintf(stderr, "Failed to allocate memory for slice data\n");
-		return false;
-	}
-	
-	// Extract the slice from the 3D texture
-	for (int z = 0; z < depth; z++) {
-		for (int x = 0; x < width; x++) {
-			int src_idx = (z * height * width + y_slice * width + x) * 4;
-			int dst_idx = (z * width + x) * 4;
-			
-			slice_data[dst_idx]	 = texture_data[src_idx];	 // R
-			slice_data[dst_idx + 1] = texture_data[src_idx + 1]; // G
-			slice_data[dst_idx + 2] = texture_data[src_idx + 2]; // B
-			slice_data[dst_idx + 3] = texture_data[src_idx + 3]; // A
-		}
-	}
-	
-	// Encode to WebP
-	uint8_t* output = NULL;
-	size_t output_size = WebPEncodeRGBA(slice_data, width, depth, width * 4, 90, &output);
-	free(slice_data);
-	
-	if (output_size == 0) {
-		fprintf(stderr, "WebP encoding failed\n");
-		return false;
-	}
-	
-	// Write to file
-	FILE* fp = fopen(filename, "wb");
-	if (!fp) {
-		WebPFree(output);
-		fprintf(stderr, "Could not open file %s for writing\n", filename);
-		return false;
-	}
-	
-	fwrite(output, 1, output_size, fp);
-	fclose(fp);
-	WebPFree(output);
-	
-	return true;
 }

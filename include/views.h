@@ -1,5 +1,7 @@
 #include "gui.h"
 
+extern bool debug_view;
+
 void view_game_init();
 
 void view_pause_init();

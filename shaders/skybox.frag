@@ -85,6 +85,6 @@ vec3 get_sky_color(vec3 direction, float t) {
 }
 
 void main() {
-	vec3 sky_color = get_sky_color(TexCoords, 0.25);
+	vec3 sky_color = get_sky_color(TexCoords, time);
 	FragColor = vec4(sky_color, 1.0);
 }
