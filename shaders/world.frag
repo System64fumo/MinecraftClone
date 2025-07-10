@@ -25,13 +25,13 @@ const vec3 faceShades[6] = vec3[6](
 const vec3 BIOME_TINT = vec3(0.569, 0.741, 0.349);
 
 void main() {
-	uint faceID = packedID & 0xFFFFu;
-	uint texID = packedID >> 16;
-
 	if (highlight == 1) {
 		FragColor = vec4(0.0, 0.0, 0.0, 0.5);
 		return;
 	}
+
+	uint faceID = packedID & 0xFFFFu;
+	uint texID = packedID >> 16;
 
 	vec2 finalTexCoords = textureBase + mod(size, 1.0) * texelSize;
 	vec4 textureColor = texture(textureAtlas, finalTexCoords);

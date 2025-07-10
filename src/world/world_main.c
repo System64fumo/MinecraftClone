@@ -1,4 +1,5 @@
 #include "main.h"
+#include "entity.h"
 #include "world.h"
 #include "config.h"
 #include <math.h>
@@ -257,6 +258,52 @@ static bool chunk_has_data(Chunk* chunk) {
 		}
 	}
 	return false;
+}
+
+void move_world(int x, int y, int z) {
+	// Calculate the actual movement amounts in world units
+	float move_x = x * CHUNK_SIZE;
+	float move_y = y * CHUNK_SIZE;
+	float move_z = z * CHUNK_SIZE;
+	
+	pthread_mutex_lock(&chunks_mutex);
+	
+	// Iterate through all chunks
+	for (uint8_t ci_x = 0; ci_x < settings.render_distance; ci_x++) {
+		for (uint8_t ci_y = 0; ci_y < WORLD_HEIGHT; ci_y++) {
+			for (uint8_t ci_z = 0; ci_z < settings.render_distance; ci_z++) {
+				Chunk* chunk = &chunks[ci_x][ci_y][ci_z];
+				
+				// Update the chunk's world position
+				chunk->x += x;
+				chunk->y += y;
+				chunk->z += z;
+				
+				// Update all vertices in the chunk's mesh
+				for (uint8_t face = 0; face < 6; face++) {
+					// Update opaque faces
+					if (chunk->faces[face].vertices) {
+						for (uint32_t v = 0; v < chunk->faces[face].vertex_count; v++) {
+							chunk->faces[face].vertices[v].x += move_x;
+							chunk->faces[face].vertices[v].y += move_y;
+							chunk->faces[face].vertices[v].z += move_z;
+						}
+					}
+					
+					// Update transparent faces
+					if (chunk->transparent_faces[face].vertices) {
+						for (uint32_t v = 0; v < chunk->transparent_faces[face].vertex_count; v++) {
+							chunk->transparent_faces[face].vertices[v].x += move_x;
+							chunk->transparent_faces[face].vertices[v].y += move_y;
+							chunk->transparent_faces[face].vertices[v].z += move_z;
+						}
+					}
+				}
+			}
+		}
+	}
+	mesh_needs_rebuild = true;
+	pthread_mutex_unlock(&chunks_mutex);
 }
 
 void load_around_entity(Entity* entity) {

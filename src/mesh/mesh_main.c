@@ -105,7 +105,8 @@ static void* mesh_thread_worker(void* arg) {
 			if (result == ETIMEDOUT) {
 				pthread_mutex_unlock(&mesh_queue_mutex);
 				continue;
-			} else if (result != 0) {
+			}
+			else if (result != 0) {
 				fprintf(stderr, "Mesh thread cond wait failed: %s\n", strerror(result));
 				pthread_mutex_unlock(&mesh_queue_mutex);
 				goto exit_thread;
@@ -130,9 +131,9 @@ static void* mesh_thread_worker(void* arg) {
 			Chunk* chunk = &chunks[job.x][job.y][job.z];
 
 			if (chunk->needs_update && are_all_neighbors_loaded(job.x, job.y, job.z)) {
-				if (job.needs_lighting) {
+				if (job.needs_lighting)
 					set_chunk_lighting(chunk);
-				}
+
 				generate_chunk_mesh(chunk);
 				chunk->needs_update = false;
 

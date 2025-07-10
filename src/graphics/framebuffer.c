@@ -1,4 +1,5 @@
 #include "main.h"
+#include "entity.h"
 #include "shaders.h"
 #include "skybox.h"
 #include "gui.h"
@@ -106,11 +107,9 @@ void render_to_framebuffer() {
 
 	char block_face = 'N';
 	vec3 block_pos = {0};
-	vec3 dir = get_direction(global_entities[0].pitch, global_entities[0].yaw);
-	uint8_t block_id;
-	get_targeted_block(global_entities[0], dir, 5.0f, &block_pos, &block_face, &block_id);
-	if (block_face != 'N')
-		draw_block_highlight(block_pos, block_id);
+	Block* block = get_targeted_block(global_entities[0], &block_pos, &block_face);
+	if (block != NULL)
+		draw_block_highlight(block_pos, block->id);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	#ifdef DEBUG

@@ -1,4 +1,5 @@
 #include "main.h"
+#include "entity.h"
 #include "framebuffer.h"
 #include "skybox.h"
 #include "gui.h"
@@ -22,12 +23,11 @@ static double last_frame_time = 0.0;
 static double sleep_adjustment = 0.0;
 
 void limit_fps() {
-	double current_time = glfwGetTime();
 	double target_fps = !game_focused ? 10.0 : (settings.vsync || settings.fps_limit == 0) ? 0.0 : settings.fps_limit;
 	
 	if (target_fps > 0) {
 		double target_frame_time = 1.0 / target_fps;
-		double frame_time = current_time - frame_start_time;
+		double frame_time = time_current - frame_start_time;
 		double remaining_time = target_frame_time - frame_time - sleep_adjustment;
 		
 		if (remaining_time > 0) {
@@ -38,15 +38,16 @@ void limit_fps() {
 			nanosleep(&sleep_time, NULL);
 			
 			double after_sleep = glfwGetTime();
-			sleep_adjustment = (after_sleep - current_time) - remaining_time;
-			current_time = after_sleep;
-		} else {
+			sleep_adjustment = (after_sleep - time_current) - remaining_time;
+			time_current = after_sleep;
+		}
+		else {
 			sleep_adjustment = 0.0;
 		}
 	}
 	
 	last_frame_time = lastFrame;
-	frame_start_time = current_time;
+	frame_start_time = time_current;
 }
 
 void do_time_stuff() {
