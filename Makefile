@@ -4,7 +4,7 @@ BUILDDIR := build
 INCLUDE_DIR := include
 
 CFLAGS := -I$(INCLUDE_DIR) -MMD -MP
-LDFLAGS := -lGL -lGLEW -lglfw -lm
+LDFLAGS := -lGL -lGLEW -lglfw -lm -lwayland-client
 
 SRCS := $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))
 OBJS := $(patsubst %.c, $(BUILDDIR)/%.o, $(SRCS))

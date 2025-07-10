@@ -1,17 +1,27 @@
 #ifndef WORLD_H
 #define WORLD_H
 
-#include "entity.h"
 #include "renderer.h"
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdint.h>
+
+typedef struct Entity Entity;
 
 #define BTYPE_REGULAR 0
 #define BTYPE_SLAB 1
 #define BTYPE_CROSS 2
 #define BTYPE_LIQUID 3
 #define BTYPE_LEAF 4
+
+// TODO: Replace static definitions with enums
+enum BlockModel {
+	REGULAR,
+	SLAB,
+	CROSS,
+	LIQUID,
+	LEAF
+};
 
 typedef struct {
 	int x;
@@ -31,7 +41,7 @@ typedef struct {
 	uint8_t width, height, depth;
 } structure_t;
 
-typedef struct {
+typedef struct Block {
 	uint8_t id;
 	uint8_t light_level;
 } Block;
@@ -44,7 +54,7 @@ typedef struct {
 	bool is_loaded;
 	bool lighting_changed;
 
-	Mesh faces[6]; // 0:Front, 1:Left, 2:Back, 3:Right, 4:Bottom, 5:Top
+	Mesh faces[6];
 	Mesh transparent_faces[6];
 } Chunk;
 
@@ -68,14 +78,15 @@ extern pthread_mutex_t chunks_mutex;
 extern _Atomic int world_offset_x;
 extern _Atomic int world_offset_z;
 
+void move_world(int x, int y, int z);
 void load_around_entity(Entity* entity);
 void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz);
 void unload_chunk(Chunk* chunk);
 void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z);
 bool can_place_tree(int world_x, int surface_y, int world_z, bool is_grass_surface);
 void generate_structure_in_chunk(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z,
-									   structure_t* structure, int structure_world_x, int structure_world_y, int structure_world_z,
-									   bool* empty_chunk);
+							   structure_t* structure, int structure_world_x, int structure_world_y, int structure_world_z,
+							   bool* empty_chunk);
 void start_world_gen_thread();
 void stop_world_gen_thread();
 

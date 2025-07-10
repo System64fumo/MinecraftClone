@@ -1,4 +1,5 @@
 #include "main.h"
+#include "entity.h"
 #include "world.h"
 #include "gui.h"
 #include <math.h>
@@ -35,9 +36,11 @@ vec3 get_direction(float pitch, float yaw) {
 	};
 }
 
-void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_out, char* out_face, uint8_t* block_id) {
+Block* get_targeted_block(Entity entity, vec3* pos_out, char* out_face) {
 	vec3 position = entity.pos;
 	position.y += entity.eye_level;
+	vec3 direction = get_direction(global_entities[0].pitch, global_entities[0].yaw);
+	float reach = entity.reach;
 
 	// Block coordinates
 	int block_x = (int)floorf(position.x);
@@ -82,9 +85,8 @@ void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_ou
 
 		Block* block = get_block_at(chunks, block_x, block_y, block_z);
 		if (block == NULL) continue;
-		*block_id  = block->id;
 
-		if (*block_id != 0 && *block_id != 8 && *block_id != 9) {
+		if (block->id != 0 && block->id != 8 && block->id != 9) {
 			pos_out->x = block_x;
 			pos_out->y = block_y;
 			pos_out->z = block_z;
@@ -105,16 +107,11 @@ void get_targeted_block(Entity entity, vec3 direction, float reach, vec3* pos_ou
 			} else {
 				*out_face = (dz_intersect > 0) ? 'F' : 'K';
 			}
-			return;
+			return block;
 		}
 	}
 
-	// No block found
-	pos_out->x = -1;
-	pos_out->y = -1;
-	pos_out->z = -1;
-	*block_id = 0;
-	*out_face = 'N';
+	return NULL;
 }
 
 bool check_entity_collision(float x, float y, float z, float width, float height) {
@@ -131,8 +128,9 @@ bool check_entity_collision(float x, float y, float z, float width, float height
 	// Check all blocks in the entity's AABB volume
 	for (int bx = min_x; bx <= max_x; bx++) {
 		for (int by = min_y; by <= max_y; by++) {
-			for (int bz = min_z; bz <= max_z; bz++) {				
-				if (is_block_solid(chunks, bx, by, bz)) {
+			for (int bz = min_z; bz <= max_z; bz++) {
+				int result = is_block_solid(chunks, bx, by, bz);
+				if (result == 1) {
 					AABB block_aabb = {
 						.min_x = bx,
 						.max_x = bx + 1.0f,
@@ -145,6 +143,9 @@ bool check_entity_collision(float x, float y, float z, float width, float height
 					if (aabb_intersect(entity_aabb, block_aabb)) {
 						return false; // Collision detected
 					}
+				}
+				else if (result == -1) {
+					printf("Entity collision error\n");
 				}
 			}
 		}
@@ -190,11 +191,10 @@ void move_entity_with_collision(Entity* entity, float dx, float dy, float dz) {
 				actual_speed = sqrtf(actual_dx*actual_dx + actual_dz*actual_dz);
 			}
 		}
-		
-		// Cancel sprinting if movement is significantly hindered
-		if (actual_speed < intended_speed * 0.5f && entity->sprinting) {
+
+		const bool colliding_with_wall = actual_speed < intended_speed * 0.5f && entity->sprinting;
+		if (colliding_with_wall)
 			entity->sprinting = false;
-		}
 	}
 }
 
@@ -325,6 +325,7 @@ Entity create_entity(uint8_t id) {
 			entity.width = 0.6f;
 			entity.height = 1.8f;
 			entity.eye_level = 1.625f;
+			entity.reach = 5.0f;
 			entity.speed = 5;
 			entity.inventory_size = 39;
 		break;

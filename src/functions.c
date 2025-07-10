@@ -69,6 +69,7 @@ void update_adjacent_chunks(Chunk*** chunks, uint8_t render_x, uint8_t render_y,
 }
 
 Block* get_block_at(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z) {
+	Block* block = NULL;
 	int chunk_x, chunk_z, block_x, block_z;
 	calculate_chunk_and_block(world_block_x, &chunk_x, &block_x);
 	calculate_chunk_and_block(world_block_z, &chunk_z, &block_z);
@@ -81,8 +82,6 @@ Block* get_block_at(Chunk*** chunks, int world_block_x, int world_block_y, int w
 
 	if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
 		Chunk* chunk = &chunks[render_x][chunk_y][render_z];
-		if (chunk->needs_update)
-			return NULL;
 		Block* block = &chunk->blocks[block_x][block_y][block_z];
 		return block;
 	}

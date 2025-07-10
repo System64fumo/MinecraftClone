@@ -22,6 +22,7 @@
 // Externs
 extern uint8_t hotbar_slot;
 
+extern double time_current;
 extern double delta_time;
 extern float framerate;
 extern float frametime;

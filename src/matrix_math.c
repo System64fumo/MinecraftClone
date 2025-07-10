@@ -1,4 +1,5 @@
 #include "main.h"
+#include "entity.h"
 #include <math.h>
 #include <string.h>
 

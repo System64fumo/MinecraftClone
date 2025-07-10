@@ -27,13 +27,14 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 					else if (absolute_y > 0 && absolute_y < 4) {
 						if (absolute_y >= 4 - 2) {
 							chunk->blocks[x][y][z] = (Block){.id = 1};  // Dirt (2 layers)
-						} else {
+						}
+						else {
 							chunk->blocks[x][y][z] = (Block){.id = 3};  // Stone
 						}
 						empty_chunk = false;
 					}
 					else {
-							chunk->blocks[x][y][z] = (Block){.id = 0};  // Air
+						chunk->blocks[x][y][z] = (Block){.id = 0};  // Air
 					}
 				}
 			}
@@ -58,20 +59,12 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 		for (uint8_t z = 0; z < CHUNK_SIZE; z++) {
 			float world_z = world_z_base + z;
 
-			// Continent noise
 			continent_noise[x][z] = (stb_perlin_noise3(world_x * continent_scale, 0.0f, world_z * continent_scale, 0, 0, 0) + 1.0f) * 0.5f;
 			float continent_height = (continent_noise[x][z] - 0.5f) * 128;
-
-			// Flatness
 			flatness[x][z] = powf((stb_perlin_noise3(world_x * flatness_scale, 0.0f, world_z * flatness_scale, 0, 0, 0) + 1.0f) * 0.5f, 2.0f) * 20.0f;
-
-			// Mountain noise
 			mountain_noise[x][z] = powf((stb_perlin_noise3(world_x * mountain_scale, 0.0f, world_z * mountain_scale, 0, 0, 0) + 1.0f) * 0.5f, 2.5f) * 64;
-
-			// Final height
 			height_map[x][z] = (continent_height + mountain_noise[x][z] - flatness[x][z]) + (4 * CHUNK_SIZE);
-			
-			// Ocean/beach flags
+
 			int height = (int)height_map[x][z];
 			is_ocean_map[x][z] = (height < SEA_LEVEL);
 			is_beach_map[x][z] = (height >= SEA_LEVEL - 3 && height <= SEA_LEVEL + 2);
@@ -113,7 +106,8 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 					if (absolute_y <= SEA_LEVEL) {
 						chunk->blocks[x][y][z] = (Block){.id = 9};  // Water
 						empty_chunk = false;
-					} else {
+					}
+					else {
 						chunk->blocks[x][y][z] = (Block){.id = 0};  // Air
 					}
 				}
@@ -126,10 +120,12 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 						if (is_beach) {
 							chunk->blocks[x][y][z] = (Block){.id = 12};  // Sand (Beach)
 							empty_chunk = false;
-						} else if (is_ocean) {
+						}
+						else if (is_ocean) {
 							chunk->blocks[x][y][z] = (Block){.id = 12};  // Sand (Ocean floor)
 							empty_chunk = false;
-						} else {
+						}
+						else {
 							chunk->blocks[x][y][z] = (Block){.id = 2};  // Grass
 							empty_chunk = false;
 						}
@@ -138,7 +134,8 @@ void generate_chunk_terrain(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z)
 						if (is_beach || (is_ocean && absolute_y >= SEA_LEVEL - 3)) {
 							chunk->blocks[x][y][z] = (Block){.id = 12};  // Sand
 							empty_chunk = false;
-						} else {
+						}
+						else {
 							chunk->blocks[x][y][z] = (Block){.id = 1};  // Dirt
 							empty_chunk = false;
 						}
