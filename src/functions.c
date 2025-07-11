@@ -82,11 +82,10 @@ Block* get_block_at(Chunk*** chunks, int world_block_x, int world_block_y, int w
 
 	if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
 		Chunk* chunk = &chunks[render_x][chunk_y][render_z];
-		Block* block = &chunk->blocks[block_x][block_y][block_z];
-		return block;
+		block = &chunk->blocks[block_x][block_y][block_z];
 	}
 
-	return NULL;
+	return block;
 }
 
 int is_block_solid(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z) {

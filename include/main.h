@@ -1,10 +1,12 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+#define GLFW_EXPOSE_NATIVE_WAYLAND
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
+#include <wayland-client.h>
 #include <stdbool.h>
-#include "renderer.h"
 #include "misc.h"
 #include "world.h"
 
@@ -47,6 +49,11 @@ void setup_matrices();
 void set_fov(float fov);
 void limit_fps();
 
+void touch_down(void *data, struct wl_touch *wl_touch, uint32_t serial, uint32_t time, struct wl_surface *surface, int32_t id, wl_fixed_t x, wl_fixed_t y);
+void touch_up(void *data, struct wl_touch *wl_touch, uint32_t serial, uint32_t time, int32_t id);
+void touch_motion(void *data, struct wl_touch *wl_touch, uint32_t time, int32_t id, wl_fixed_t x, wl_fixed_t y);
+void check_touch_hold();
+
 Block* get_block_at(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z);
 void draw_block_highlight(vec3 pos, uint8_t block_id);
 int is_block_solid(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z);
@@ -56,7 +63,6 @@ void update_adjacent_chunks(Chunk*** chunks, uint8_t render_x, uint8_t render_y,
 void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Mesh faces[6]);
 
 bool init_mesh_thread();
-void process_chunks();
 unsigned char* generate_light_texture();
 
 bool are_all_neighbors_loaded(uint8_t x, uint8_t y, uint8_t z);
