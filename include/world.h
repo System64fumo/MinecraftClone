@@ -78,6 +78,7 @@ extern pthread_mutex_t chunks_mutex;
 extern _Atomic int world_offset_x;
 extern _Atomic int world_offset_z;
 
+void process_chunks();
 void move_world(int x, int y, int z);
 void load_around_entity(Entity* entity);
 void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz);

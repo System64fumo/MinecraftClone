@@ -10,22 +10,82 @@
 
 float last_cursor_x = 0;
 float last_cursor_y = 0;
+static float last_touch_x = 0;
+static float last_touch_y = 0;
+static bool touch_active = false;
+static bool touch_held = false;
+
+static float initial_touch_x = 0;
+static float initial_touch_y = 0;
+static double touch_start_time = 0;
+static bool touch_moved = false;
+
+const double touch_tap_threshold = 0.3;
+const double touch_hold_threshold = 0.5;
+const float touch_move_threshold = 10.0f;
 
 static double last_break_time = 0;
 static double last_place_time = 0;
 const double block_action_interval = 0.5;
+const float touch_sensitivity = 0.5f;
 
 int last_pitch, last_yaw;
 int last_player_pos_x, last_player_pos_y, last_player_pos_z;
 
+void check_touch_hold() {
+	if (ui_state != UI_STATE_RUNNING || !touch_active || touch_moved || touch_held) {
+		return;
+	}
+	
+	double touch_duration = time_current - touch_start_time;
+	if (touch_duration >= touch_hold_threshold) {
+		touch_held = true;
+	}
+}
+
 //
-// Mouse
+// Common functions
 //
+
+static void update_view_rotation(float xoffset, float yoffset) {
+	global_entities[0].yaw += xoffset;
+	global_entities[0].pitch += yoffset;
+
+	if (global_entities[0].pitch > 89.0f) {
+		global_entities[0].pitch = 89.0f;
+	}
+	if (global_entities[0].pitch < -89.0f) {
+		global_entities[0].pitch = -89.0f;
+	}
+
+	// Wrap yaw
+	if (global_entities[0].yaw >= 360.0f) {
+		global_entities[0].yaw -= 360.0f;
+	}
+	if (global_entities[0].yaw < 0.0f) {
+		global_entities[0].yaw += 360.0f;
+	}
+
+	int pitch = floorl(global_entities[0].pitch);
+	int yaw = floorl(global_entities[0].yaw);
+	if (pitch != last_pitch) {
+		last_pitch = pitch;
+		frustum_changed = true;
+	}
+	if (yaw != last_yaw) {
+		last_yaw = yaw;
+		frustum_changed = true;
+	}
+}
 
 void set_hotbar_slot(uint8_t slot) {
 	hotbar_slot = slot;
 	update_ui();
 }
+
+//
+// Mouse
+//
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
 	if (ui_state != UI_STATE_RUNNING)
@@ -49,35 +109,7 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 		float sensitivity = 0.1f;
 		xoffset *= sensitivity;
 		yoffset *= sensitivity;
-	
-		global_entities[0].yaw += xoffset;
-		global_entities[0].pitch += yoffset;
-	
-		if (global_entities[0].pitch > 89.0f) {
-			global_entities[0].pitch = 89.0f;
-		}
-		if (global_entities[0].pitch < -89.0f) {
-			global_entities[0].pitch = -89.0f;
-		}
-	
-		// Wrap yaw
-		if (global_entities[0].yaw >= 360.0f) {
-			global_entities[0].yaw -= 360.0f;
-		}
-		if (global_entities[0].yaw < 0.0f) {
-			global_entities[0].yaw += 360.0f;
-		}
-
-		int pitch = floorl(global_entities[0].pitch);
-		int yaw = floorl(global_entities[0].yaw);
-		if (pitch != last_pitch) {
-			last_pitch = pitch;
-			frustum_changed = true;
-		}
-		if (yaw != last_yaw) {
-			last_yaw = yaw;
-			frustum_changed = true;
-		}
+		update_view_rotation(xoffset, yoffset);
 	}
 }
 
@@ -91,7 +123,6 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			update_ui();
 		}
-
 		// Quit button
 		else if (check_hit(last_cursor_x, last_cursor_y, 1)) {
 			glfwSetWindowShouldClose(window, true);
@@ -107,6 +138,11 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 			char face;
 			vec3 pos;
 			Block* block = get_targeted_block(global_entities[0], &pos, &face);
+			if (block == NULL)
+				return;
+
+			hotbar_slot = block->id - 1;
+			update_ui();
 		}
 	}
 }
@@ -193,7 +229,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void set_block(bool directional, uint8_t block_id) {
 	vec3 block_pos;
 	char face;
-	uint8_t out_block_id;
 	get_targeted_block(global_entities[0], &block_pos, &face);
 
 	if (directional) {
@@ -252,14 +287,17 @@ void set_block(bool directional, uint8_t block_id) {
 void process_input(GLFWwindow* window, Chunk*** chunks) {
 	if (ui_state != UI_STATE_RUNNING)
 		return;
+
+	check_touch_hold();
 	
+	// Handle mouse input
 	const bool break_btn_pressed = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
 	const bool place_btn_pressed = (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
 
 	const bool break_interval_passed = (time_current - last_break_time >= block_action_interval);
 	const bool place_interval_passed = (time_current - last_place_time >= block_action_interval);
 
-	if (break_btn_pressed && break_interval_passed) {
+	if ((break_btn_pressed || touch_held) && break_interval_passed) {
 		set_block(false, 0);
 		last_break_time = time_current;
 	}
@@ -349,4 +387,55 @@ void process_input(GLFWwindow* window, Chunk*** chunks) {
 	last_player_pos_y = y;
 	last_player_pos_z = z;
 	frustum_changed = true;
+}
+
+//
+// Touch
+//
+
+void touch_down(void *data, struct wl_touch *wl_touch, uint32_t serial, uint32_t time, struct wl_surface *surface, int32_t id, wl_fixed_t x, wl_fixed_t y) {
+	initial_touch_x = last_touch_x = wl_fixed_to_double(x);
+	initial_touch_y = last_touch_y = wl_fixed_to_double(y);
+	touch_active = true;
+	touch_moved = false;
+	touch_start_time = time_current;
+	touch_held = false;
+}
+
+void touch_up(void *data, struct wl_touch *wl_touch, uint32_t serial, uint32_t time, int32_t id) {
+	if (!touch_moved && !touch_held) {
+		double touch_duration = time_current - touch_start_time;
+
+		if (touch_duration < touch_tap_threshold) {
+			if (time_current - last_place_time >= block_action_interval) {
+				set_block(true, hotbar_slot + 1);
+				last_place_time = time_current;
+			}
+		}
+	}
+	
+	touch_active = false;
+	touch_held = false;
+}
+
+void touch_motion(void *data, struct wl_touch *wl_touch, uint32_t time, int32_t id, wl_fixed_t x, wl_fixed_t y) {
+	float current_x = wl_fixed_to_double(x);
+	float current_y = wl_fixed_to_double(y);
+
+	if (!touch_moved) {
+		float dx = fabs(current_x - initial_touch_x);
+		float dy = fabs(current_y - initial_touch_y);
+		if (dx > touch_move_threshold || dy > touch_move_threshold) {
+			touch_moved = true;
+		}
+	}
+	
+	if (ui_state == UI_STATE_RUNNING && touch_moved) {
+		float xoffset = (current_x - last_touch_x) * touch_sensitivity;
+		float yoffset = (last_touch_y - current_y) * touch_sensitivity;
+		update_view_rotation(xoffset, yoffset);
+	}
+	
+	last_touch_x = current_x;
+	last_touch_y = current_y;
 }

@@ -19,7 +19,7 @@ mat4 cloud_model;
 // Constants
 static const float CLOUDS_HEIGHT = 192.0f;
 static const float CLOUDS_SPEED = 0.025f;
-static const float DAY_CYCLE_SPEED = 0.00025f;
+//static const float DAY_CYCLE_SPEED = 0.00025f;
 static const int TEXTURE_SIZE = 128;
 static const float VOXEL_SIZE = 32.0f;
 static const float VOXEL_HEIGHT_SCALE = 0.5f;
