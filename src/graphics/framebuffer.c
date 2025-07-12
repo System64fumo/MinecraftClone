@@ -10,7 +10,6 @@
 
 // Framebuffer objects
 unsigned int FBO, RBO;
-unsigned int quadVAO, quadVBO;
 uint8_t last_ui_state = 0;
 unsigned int texture_fb_color, texture_fb_depth;
 GLuint depth_loc = 0;
@@ -45,30 +44,6 @@ void setup_framebuffer(int width, int height) {
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void init_fullscreen_quad() {
-	float quadVertices[] = {
-		// positions   // texCoords
-		-1.0f,  1.0f,  0.0f, 1.0f, // Top-left
-		-1.0f, -1.0f,  0.0f, 0.0f, // Bottom-left
-		 1.0f,  1.0f,  1.0f, 1.0f, // Top-right
-		 1.0f, -1.0f,  1.0f, 0.0f  // Bottom-right
-	};
-
-	glGenVertexArrays(1, &quadVAO);
-	glGenBuffers(1, &quadVBO);
-	glBindVertexArray(quadVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
 }
 
 void render_to_framebuffer() {
@@ -139,7 +114,6 @@ void render_to_screen() {
 		last_ui_state = ui_state;
 	}
 
-	glBindVertexArray(quadVAO);
 	glActiveTexture(GL_TEXTURE0);
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	draw_calls++;

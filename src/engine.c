@@ -19,7 +19,6 @@ int initialize() {
 	load_textures();
 	load_shaders();
 	setup_framebuffer(settings.window_width, settings.window_height);
-	init_fullscreen_quad();
 	init_ui();
 	init_gl_buffers();
 	skybox_init();

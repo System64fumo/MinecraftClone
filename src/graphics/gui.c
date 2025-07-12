@@ -154,12 +154,16 @@ void init_cube_rendering() {
 	glGenBuffers(1, &cube_ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_ebo);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, x));
+	glVertexAttribIPointer(0, 1, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, x));	   // X
 	glEnableVertexAttribArray(0);
-	glVertexAttribIPointer(1, 1, GL_UNSIGNED_SHORT, sizeof(Vertex), (void*)offsetof(Vertex, packed_data));
+	glVertexAttribIPointer(1, 1, GL_UNSIGNED_SHORT, sizeof(Vertex), (void*)offsetof(Vertex, y)); // Y
 	glEnableVertexAttribArray(1);
-	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, packed_size));
+	glVertexAttribIPointer(2, 1, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, z));	   // Z
 	glEnableVertexAttribArray(2);
+	glVertexAttribIPointer(3, 1, GL_UNSIGNED_SHORT, sizeof(Vertex), (void*)offsetof(Vertex, packed_data));
+	glEnableVertexAttribArray(3);
+	glVertexAttribIPointer(4, 1, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, packed_size));
+	glEnableVertexAttribArray(4);
 	glBindVertexArray(0);
 }
 

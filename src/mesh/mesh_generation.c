@@ -31,9 +31,9 @@ static const face_vertex_t cross_faces[4][4] = {
 static const uint32_t quad_indices[6] = {0, 1, 2, 0, 2, 3};
 
 void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t texture_id,
-						const face_vertex_t face_data[4], uint8_t width, uint8_t height,
-						Vertex vertices[], uint32_t indices[],
-						uint32_t* vertex_count, uint32_t* index_count) {
+			  const face_vertex_t face_data[4], uint8_t width, uint8_t height,
+			  Vertex vertices[], uint32_t indices[],
+			  uint32_t* vertex_count, uint32_t* index_count) {
 	
 	uint32_t base_vertex = *vertex_count;
 
@@ -118,8 +118,10 @@ void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t t
 			}
 		}
 
-		vertices[(*vertex_count)++] = (Vertex){
-			pos_x, pos_y, pos_z,
+		vertices[(*vertex_count)++] = (Vertex) {
+			(int32_t)(pos_x * 16.0f),	   // X as int32_t
+			(uint16_t)(pos_y * 16.0f),	  // Y as uint16_t
+			(int32_t)(pos_z * 16.0f),	   // Z as int32_t
 			PACK_VERTEX_DATA(normal, texture_id),
 			(uint32_t)(uv_u * 16) | ((uint32_t)(uv_v * 16) << 9)
 		};
