@@ -4,7 +4,9 @@
 #include "misc.h"
 
 typedef struct {
-	float x, y, z;
+	int32_t x;
+	uint16_t y; // This can technically be reduced even more but for padding reasons it can stay
+	int32_t z;
 	uint16_t packed_data;  // bits 0-7: normal, bits 8-15: texture_id
 	uint32_t packed_size;  // bits 0-8: size_u, bits 9-17: size_v
 } Vertex;
