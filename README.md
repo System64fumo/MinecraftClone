@@ -25,6 +25,7 @@ I mainly want to explore different optimization methods here, So gameplay/featur
 * Fog<br>
 * GUI<br>
 * 3D Clouds<br>
+* Lighting (Experimental)<br>
 
 </td>
 <td>
@@ -86,6 +87,8 @@ WASD: Movement<br>
 Space: Jump<br>
 Ctrl: Sprint<br>
 R: Reload shaders<br>
+Minus: Set time to night<br>
+Equals: Set time to day<br>
 
 # Config
 The game stores it's config in ~/.config/ccraft/config.ini<br>

@@ -17,7 +17,6 @@ static _Atomic bool mesh_thread_should_exit = false;
 
 typedef struct {
 	uint8_t x, y, z;
-	bool needs_lighting;
 	uint32_t timestamp;
 } chunk_mesh_job_t;
 
@@ -29,7 +28,7 @@ static int mesh_queue_count = 0;
 static _Atomic bool new_mesh_ready = false;
 static uint32_t job_counter = 0;
 
-static bool enqueue_mesh_job(uint8_t x, uint8_t y, uint8_t z, bool needs_lighting) {
+static bool enqueue_mesh_job(uint8_t x, uint8_t y, uint8_t z) {
 	int result = pthread_mutex_lock(&mesh_queue_mutex);
 	if (result != 0) {
 		fprintf(stderr, "Failed to lock mesh queue mutex: %s\n", strerror(result));
@@ -39,10 +38,7 @@ static bool enqueue_mesh_job(uint8_t x, uint8_t y, uint8_t z, bool needs_lightin
 	for (int i = 0; i < mesh_queue_count; i++) {
 		int idx = (mesh_queue_head + i) % MAX_MESH_QUEUE_SIZE;
 		if (mesh_queue[idx].x == x && mesh_queue[idx].y == y && mesh_queue[idx].z == z) {
-			if (needs_lighting && !mesh_queue[idx].needs_lighting) {
-				mesh_queue[idx].needs_lighting = true;
-				mesh_queue[idx].timestamp = ++job_counter;
-			}
+			mesh_queue[idx].timestamp = ++job_counter;
 			pthread_mutex_unlock(&mesh_queue_mutex);
 			return true;
 		}
@@ -52,7 +48,6 @@ static bool enqueue_mesh_job(uint8_t x, uint8_t y, uint8_t z, bool needs_lightin
 		mesh_queue[mesh_queue_tail].x = x;
 		mesh_queue[mesh_queue_tail].y = y;
 		mesh_queue[mesh_queue_tail].z = z;
-		mesh_queue[mesh_queue_tail].needs_lighting = needs_lighting;
 		mesh_queue[mesh_queue_tail].timestamp = ++job_counter;
 		mesh_queue_tail = (mesh_queue_tail + 1) % MAX_MESH_QUEUE_SIZE;
 		mesh_queue_count++;
@@ -105,8 +100,7 @@ static void* mesh_thread_worker(void* arg) {
 			if (result == ETIMEDOUT) {
 				pthread_mutex_unlock(&mesh_queue_mutex);
 				continue;
-			}
-			else if (result != 0) {
+			} else if (result != 0) {
 				fprintf(stderr, "Mesh thread cond wait failed: %s\n", strerror(result));
 				pthread_mutex_unlock(&mesh_queue_mutex);
 				goto exit_thread;
@@ -127,15 +121,29 @@ static void* mesh_thread_worker(void* arg) {
 				pthread_mutex_unlock(&chunks_mutex);
 				continue;
 			}
-			
+
 			Chunk* chunk = &chunks[job.x][job.y][job.z];
 
-			if (chunk->needs_update && are_all_neighbors_loaded(job.x, job.y, job.z)) {
-				if (job.needs_lighting)
-					set_chunk_lighting(chunk);
-
-				generate_chunk_mesh(chunk);
-				chunk->needs_update = false;
+				if (chunk->needs_update && are_all_neighbors_loaded(job.x, job.y, job.z)) {
+					if (chunk->lighting_changed) {
+						chunk->lighting_changed = false;
+						static const int8_t ndx[] = { 1,-1, 0, 0, 0, 0 };
+						static const int8_t ndy[] = { 0, 0, 1,-1, 0, 0 };
+						static const int8_t ndz[] = { 0, 0, 0, 0, 1,-1 };
+						for (int d = 0; d < 6; d++) {
+							int nx2 = (int)job.x + ndx[d];
+							int ny2 = (int)job.y + ndy[d];
+							int nz2 = (int)job.z + ndz[d];
+							if (nx2 < 0 || nx2 >= settings.render_distance) continue;
+							if (ny2 < 0 || ny2 >= WORLD_HEIGHT) continue;
+							if (nz2 < 0 || nz2 >= settings.render_distance) continue;
+							Chunk* nc = &chunks[nx2][ny2][nz2];
+							if (nc->is_loaded && !nc->needs_update)
+								nc->needs_update = true;
+						}
+					}
+					generate_chunk_mesh(chunk);
+					chunk->needs_update = false;
 
 				pthread_mutex_lock(&mesh_ready_mutex);
 				atomic_store(&new_mesh_ready, true);
@@ -214,7 +222,6 @@ void rebuild_combined_visible_mesh() {
 	static size_t current_opaque_capacity = 0;
 	static size_t current_transparent_capacity = 0;
 
-	// Calculate total vertex/index counts
 	for (uint8_t face = 0; face < 6; face++) {
 		for (uint8_t x = 0; x < settings.render_distance; x++) {
 			for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
@@ -240,49 +247,47 @@ void rebuild_combined_visible_mesh() {
 		return;
 	}
 
-	// Reallocate buffers if needed with safety checks
 	if (total_opaque_vertices > current_opaque_capacity) {
-		Vertex* new_opaque_vertices = realloc(opaque_vertices, total_opaque_vertices * sizeof(Vertex));
-		uint32_t* new_opaque_indices = realloc(opaque_indices, total_opaque_indices * sizeof(uint32_t));
-		
-		if (!new_opaque_vertices || !new_opaque_indices) {
+		Vertex*   nv = realloc(opaque_vertices, total_opaque_vertices * sizeof(Vertex));
+		uint32_t* ni = realloc(opaque_indices,  total_opaque_indices  * sizeof(uint32_t));
+		if (!nv || !ni) {
 			fprintf(stderr, "Failed to allocate memory for opaque mesh\n");
-			free(new_opaque_vertices);
-			free(new_opaque_indices);
+			free(nv);
+			free(ni);
+			opaque_vertices = NULL;
+			opaque_indices  = NULL;
+			current_opaque_capacity = 0;
 			pthread_mutex_unlock(&chunks_mutex);
 			return;
 		}
 		
-		opaque_vertices = new_opaque_vertices;
-		opaque_indices = new_opaque_indices;
+		opaque_vertices = nv;
+		opaque_indices  = ni;
 		current_opaque_capacity = total_opaque_vertices;
 	}
 
 	if (total_transparent_vertices > current_transparent_capacity) {
-		Vertex* new_transparent_vertices = realloc(transparent_vertices, total_transparent_vertices * sizeof(Vertex));
-		uint32_t* new_transparent_indices = realloc(transparent_indices, total_transparent_indices * sizeof(uint32_t));
-		
-		if (!new_transparent_vertices || !new_transparent_indices) {
+		Vertex*   nv = realloc(transparent_vertices, total_transparent_vertices * sizeof(Vertex));
+		uint32_t* ni = realloc(transparent_indices,  total_transparent_indices  * sizeof(uint32_t));
+		if (!nv || !ni) {
 			fprintf(stderr, "Failed to allocate memory for transparent mesh\n");
-			free(new_transparent_vertices);
-			free(new_transparent_indices);
+			free(nv);
+			free(ni);
+			transparent_vertices = NULL;
+			transparent_indices  = NULL;
+			current_transparent_capacity = 0;
 			pthread_mutex_unlock(&chunks_mutex);
 			return;
 		}
 		
-		transparent_vertices = new_transparent_vertices;
-		transparent_indices = new_transparent_indices;
+		transparent_vertices = nv;
+		transparent_indices  = ni;
 		current_transparent_capacity = total_transparent_vertices;
 	}
 
-	uint32_t opaque_vertex_offset = 0;
-	uint32_t opaque_index_offset = 0;
-	uint32_t opaque_base_vertex = 0;
-	uint32_t transparent_vertex_offset = 0;
-	uint32_t transparent_index_offset = 0;
-	uint32_t transparent_base_vertex = 0;
+	uint32_t opaque_vertex_offset = 0, opaque_index_offset = 0, opaque_base_vertex = 0;
+	uint32_t transparent_vertex_offset = 0, transparent_index_offset = 0, transparent_base_vertex = 0;
 
-	// Copy vertex and index data
 	for (uint8_t face = 0; face < 6; face++) {
 		for (uint8_t x = 0; x < settings.render_distance; x++) {
 			for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
@@ -297,16 +302,11 @@ void rebuild_combined_visible_mesh() {
 							fprintf(stderr, "Buffer overflow detected in opaque mesh\n");
 							continue;
 						}
-
-						memcpy(opaque_vertices + opaque_vertex_offset, 
+						memcpy(opaque_vertices + opaque_vertex_offset,
 							chunk->faces[face].vertices,
 							chunk->faces[face].vertex_count * sizeof(Vertex));
-
-						for (uint32_t i = 0; i < chunk->faces[face].index_count; i++) {
-							opaque_indices[opaque_index_offset + i] = 
-								chunk->faces[face].indices[i] + opaque_base_vertex;
-						}
-
+						for (uint32_t i = 0; i < chunk->faces[face].index_count; i++)
+							opaque_indices[opaque_index_offset + i] = chunk->faces[face].indices[i] + opaque_base_vertex;
 						opaque_vertex_offset += chunk->faces[face].vertex_count;
 						opaque_index_offset += chunk->faces[face].index_count;
 						opaque_base_vertex += chunk->faces[face].vertex_count;
@@ -324,11 +324,8 @@ void rebuild_combined_visible_mesh() {
 							chunk->transparent_faces[face].vertices,
 							chunk->transparent_faces[face].vertex_count * sizeof(Vertex));
 
-						for (uint32_t i = 0; i < chunk->transparent_faces[face].index_count; i++) {
-							transparent_indices[transparent_index_offset + i] = 
-								chunk->transparent_faces[face].indices[i] + transparent_base_vertex;
-						}
-
+						for (uint32_t i = 0; i < chunk->transparent_faces[face].index_count; i++)
+							transparent_indices[transparent_index_offset + i] = chunk->transparent_faces[face].indices[i] + transparent_base_vertex;
 						transparent_vertex_offset += chunk->transparent_faces[face].vertex_count;
 						transparent_index_offset += chunk->transparent_faces[face].index_count;
 						transparent_base_vertex += chunk->transparent_faces[face].vertex_count;
@@ -395,7 +392,7 @@ void process_chunks() {
 				Chunk* chunk = &chunks[x][y][z];
 				
 				if (chunk->needs_update && are_all_neighbors_loaded(x, y, z)) {
-					if (!enqueue_mesh_job(x, y, z, true)) {
+					if (!enqueue_mesh_job(x, y, z)) {
 						#ifdef DEBUG
 						printf("Warning: Mesh queue full, dropping job for chunk (%d,%d,%d)\n", x, y, z);
 						#endif

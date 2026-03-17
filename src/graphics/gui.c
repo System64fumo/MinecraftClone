@@ -1,4 +1,5 @@
 #include "main.h"
+#include "entity.h"
 #include "gui.h"
 #include "shaders.h"
 #include "config.h"
@@ -425,7 +426,34 @@ void render_ui() {
 
 		glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, perspective_proj);
 		glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, view);
+
+		float held_brightness = settings.sky_brightness;
+		{
+			int px = (int)floorf(global_entities[0].pos.x);
+			int py = (int)floorf(global_entities[0].pos.y + global_entities[0].eye_level);
+			int pz = (int)floorf(global_entities[0].pos.z);
+			float best_sky = 0.0f, best_blk = 0.0f;
+			for (int ddx = -1; ddx <= 1; ddx++) {
+				for (int ddz = -1; ddz <= 1; ddz++) {
+					Block* pb = get_block_at(chunks, px + ddx, py, pz + ddz);
+					if (!pb) continue;
+					float s = (float)SKY_LIGHT(pb->light_level)   / 15.0f;
+					float b = (float)BLOCK_LIGHT(pb->light_level) / 15.0f;
+					if (s > best_sky) best_sky = s;
+					if (b > best_blk) best_blk = b;
+				}
+			}
+			float sky_contrib   = best_sky * settings.sky_brightness;
+			float block_contrib = best_blk;
+			float ambient = sky_contrib > block_contrib ? sky_contrib : block_contrib;
+			if (ambient < 0.05f) ambient = 0.05f;
+			held_brightness = ambient;
+		}
+		glUniform1f(sky_brightness_uniform_location, held_brightness);
+
 		draw_cube_element(&cube_elements[ui_active_3d_elements - 1]);
+
+		glUniform1f(sky_brightness_uniform_location, settings.sky_brightness);
 	}
 
 	if (ui_active_2d_elements) {
@@ -443,11 +471,13 @@ void render_ui() {
 	if (ui_active_3d_elements > 1) {
 		glUseProgram(world_shader);
 		glBindTexture(GL_TEXTURE_2D, block_textures);
+		glUniform1f(sky_brightness_uniform_location, 1.0f);
 		glUniformMatrix4fv(projection_uniform_location, 1, GL_FALSE, cube_projection);
 		glUniformMatrix4fv(view_uniform_location, 1, GL_FALSE, cube_view);
 		for (uint8_t i = 0; i < ui_active_3d_elements - 1; i++) {
 			draw_cube_element(&cube_elements[i]);
 		}
+		glUniform1f(sky_brightness_uniform_location, settings.sky_brightness);
 	}
 }
 

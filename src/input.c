@@ -195,6 +195,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			case GLFW_KEY_R:
 				load_shaders();
 				break;
+			case GLFW_KEY_MINUS:
+				// Set time to night
+				settings.sky_brightness = 0.05f;
+				break;
+			case GLFW_KEY_EQUAL:
+				// Set time to day
+				settings.sky_brightness = 1.0f;
+				break;
 			case GLFW_KEY_UP:
 				move_world(0, 0, -1);
 				break;
@@ -267,21 +275,30 @@ void set_block(bool directional, uint8_t block_id) {
 	if (block == NULL)
 		return;
 
+	uint8_t old_id = block->id;
+
 	int chunk_x, chunk_z, block_x, block_z;
 	calculate_chunk_and_block(block_pos.x, &chunk_x, &block_x);
 	calculate_chunk_and_block(block_pos.z, &chunk_z, &block_z);
-					
-	int chunk_y = block_pos.y / CHUNK_SIZE;
+
+	int chunk_y = (int)block_pos.y / CHUNK_SIZE;
 	int block_y = (((int)block_pos.y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
-					
+
 	int render_x = chunk_x - world_offset_x;
 	int render_z = chunk_z - world_offset_z;
 
 	Chunk* chunk = &chunks[render_x][chunk_y][render_z];
+
+	pthread_mutex_lock(&chunks_mutex);
 	block->id = block_id;
-	block->light_level = 0;
 	chunk->needs_update = true;
+
+	int wx = (int)block_pos.x;
+	int wy = (int)block_pos.y;
+	int wz = (int)block_pos.z;
+	update_block_lighting(wx, wy, wz, old_id, block_id);
 	update_adjacent_chunks(chunks, render_x, chunk_y, render_z, block_x, block_y, block_z);
+	pthread_mutex_unlock(&chunks_mutex);
 }
 
 void process_input(GLFWwindow* window, Chunk*** chunks) {

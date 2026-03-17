@@ -61,17 +61,25 @@ void calculate_chunk_and_block(int world_coord, int* chunk_coord, int* block_coo
 bool is_chunk_in_bounds(int render_x, int chunk_y, int render_z);
 void update_adjacent_chunks(Chunk*** chunks, uint8_t render_x, uint8_t render_y, uint8_t render_z, int block_x, int block_y, int block_z);
 void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Mesh faces[6]);
+void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t texture_id,
+			  const face_vertex_t face_data[4], uint8_t width, uint8_t height,
+			  uint8_t sky_light, uint8_t block_light,
+			  Vertex vertices[], uint32_t indices[],
+			  uint32_t* vertex_count, uint32_t* index_count);
 
 bool init_mesh_thread();
+void cleanup_mesh_thread();
 unsigned char* generate_light_texture();
 
 bool are_all_neighbors_loaded(uint8_t x, uint8_t y, uint8_t z);
 bool is_face_visible(Chunk* chunk, int8_t x, int8_t y, int8_t z, uint8_t face);
 void map_coordinates(uint8_t face, uint8_t u, uint8_t v, uint8_t d, uint8_t* x, uint8_t* y, uint8_t* z);
+uint8_t get_face_light(Chunk* chunk, int x, int y, int z, uint8_t face);
 uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block);
 uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block, uint8_t width);
 void generate_chunk_mesh(Chunk* chunk);
-void set_chunk_lighting(Chunk* chunk);
+void init_chunk_lighting(Chunk* chunk);
+void update_block_lighting(int wx, int wy, int wz, uint8_t old_id, uint8_t new_id);
 
 Chunk*** allocate_chunks();
 void free_chunks(Chunk*** chunks);

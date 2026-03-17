@@ -2,6 +2,7 @@
 #include "entity.h"
 #include "world.h"
 #include "config.h"
+#include "shaders.h"
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
@@ -13,6 +14,10 @@ _Atomic int world_offset_z = 0;
 int last_cx = -1;
 int last_cy = -1;
 int last_cz = -1;
+
+static float world_scroll_x = 0.0f;
+static float world_scroll_y = 0.0f;
+static float world_scroll_z = 0.0f;
 
 typedef struct {
 	uint8_t ci_x, ci_y, ci_z;
@@ -171,8 +176,11 @@ void* world_gen_thread_func(void* arg) {
 		load_chunk_data(&temp_chunk, req.ci_x, req.ci_y, req.ci_z, req.cx, req.cy, req.cz);
 
 		pthread_mutex_lock(&chunks_mutex);
+		unload_chunk(&chunks[req.ci_x][req.ci_y][req.ci_z]);
 		chunks[req.ci_x][req.ci_y][req.ci_z] = temp_chunk;
 		chunks[req.ci_x][req.ci_y][req.ci_z].is_loaded = true;
+
+		init_chunk_lighting(&chunks[req.ci_x][req.ci_y][req.ci_z]);
 
 		const int neighbors[][3] = {{-1,0,0}, {1,0,0}, {0,0,-1}, {0,0,1}};
 		for (int n = 0; n < 4; n++) {
@@ -261,51 +269,26 @@ static bool chunk_has_data(Chunk* chunk) {
 }
 
 void move_world(int x, int y, int z) {
-	// Calculate the actual movement amounts in world units
-	float move_x = x * CHUNK_SIZE;
-	float move_y = y * CHUNK_SIZE;
-	float move_z = z * CHUNK_SIZE;
-	
+	world_scroll_x += (float)(x * CHUNK_SIZE);
+	world_scroll_y += (float)(y * CHUNK_SIZE);
+	world_scroll_z += (float)(z * CHUNK_SIZE);
+	glUseProgram(world_shader);
+	glUniform3f(world_offset_uniform_location, world_scroll_x, world_scroll_y, world_scroll_z);
+
 	pthread_mutex_lock(&chunks_mutex);
-	
-	// Iterate through all chunks
 	for (uint8_t ci_x = 0; ci_x < settings.render_distance; ci_x++) {
 		for (uint8_t ci_y = 0; ci_y < WORLD_HEIGHT; ci_y++) {
 			for (uint8_t ci_z = 0; ci_z < settings.render_distance; ci_z++) {
 				Chunk* chunk = &chunks[ci_x][ci_y][ci_z];
-				
-				// Update the chunk's world position
 				chunk->x += x;
 				chunk->y += y;
 				chunk->z += z;
-				
-				// Update all vertices in the chunk's mesh
-				for (uint8_t face = 0; face < 6; face++) {
-					// Update opaque faces
-					if (chunk->faces[face].vertices) {
-						for (uint32_t v = 0; v < chunk->faces[face].vertex_count; v++) {
-							chunk->faces[face].vertices[v].x += move_x;
-							chunk->faces[face].vertices[v].y += move_y;
-							chunk->faces[face].vertices[v].z += move_z;
-						}
-					}
-					
-					// Update transparent faces
-					if (chunk->transparent_faces[face].vertices) {
-						for (uint32_t v = 0; v < chunk->transparent_faces[face].vertex_count; v++) {
-							chunk->transparent_faces[face].vertices[v].x += move_x;
-							chunk->transparent_faces[face].vertices[v].y += move_y;
-							chunk->transparent_faces[face].vertices[v].z += move_z;
-						}
-					}
-				}
 			}
 		}
 	}
 	mesh_needs_rebuild = true;
 	pthread_mutex_unlock(&chunks_mutex);
 }
-
 void load_around_entity(Entity* entity) {
 	int center_cx = floorf(entity->pos.x / CHUNK_SIZE) - (settings.render_distance / 2);
 	int center_cz = floorf(entity->pos.z / CHUNK_SIZE) - (settings.render_distance / 2);
@@ -313,7 +296,7 @@ void load_around_entity(Entity* entity) {
 	int dx = center_cx - last_cx;
 	int dz = center_cz - last_cz;
 
-	if (last_cx == center_cx || last_cz == center_cz)
+	if (last_cx == center_cx && last_cz == center_cz)
 		return;
 
 	#ifdef DEBUG
@@ -334,87 +317,98 @@ void load_around_entity(Entity* entity) {
 		return;
 	}
 
-	Chunk*** temp_chunks = allocate_chunks();
-	if (!temp_chunks) {
-		#ifdef DEBUG
-		profiler_stop(PROFILER_ID_WORLD_GEN, false);
-		#endif
-		return;
-	}
-
 	pthread_mutex_lock(&chunks_mutex);
-	for (uint8_t x = 0; x < settings.render_distance; x++) {
-		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-			memcpy(temp_chunks[x][y], chunks[x][y], settings.render_distance * sizeof(Chunk));
-		}
-	}
-	pthread_mutex_unlock(&chunks_mutex);
 
-	// Process old chunks (east/west movement)
-	if (dx != 0) {
-		int start_x = (dx > 0) ? 0 : settings.render_distance + dx;
-		int end_x = (dx > 0) ? dx : settings.render_distance;
-		
-		for (uint8_t x = start_x; x < end_x; x++) {
-			for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-				for (uint8_t z = 0; z < settings.render_distance; z++) {
-					if (chunk_has_data(&temp_chunks[x][y][z])) {
-						if ((dx > 0 && x == dx - 1 && x + 1 < settings.render_distance) ||
-							(dx < 0 && x == settings.render_distance + dx && x - 1 >= 0)) {
-							temp_chunks[x + (dx > 0 ? 1 : -1)][y][z].needs_update = true;
-						}
-						unload_chunk(&temp_chunks[x][y][z]);
-					}
-				}
-			}
-		}
-	}
-
-	// Process old chunks (north/south movement)
-	if (dz != 0) {
-		int start_z = (dz > 0) ? 0 : settings.render_distance + dz;
-		int end_z = (dz > 0) ? dz : settings.render_distance;
-		
-		for (int x = 0; x < settings.render_distance; x++) {
-			for (int y = 0; y < WORLD_HEIGHT; y++) {
-				for (int z = start_z; z < end_z; z++) {
-					if (chunk_has_data(&temp_chunks[x][y][z])) {
-						if ((dz > 0 && z == dz - 1 && z + 1 < settings.render_distance) ||
-							(dz < 0 && z == settings.render_distance + dz && z - 1 >= 0)) {
-							temp_chunks[x][y][z + (dz > 0 ? 1 : -1)].needs_update = true;
-						}
-						unload_chunk(&temp_chunks[x][y][z]);
-					}
-				}
-			}
-		}
-	}
-
-	// Clear and move surviving chunks
-	pthread_mutex_lock(&chunks_mutex);
-	for (uint8_t x = 0; x < settings.render_distance; x++) {
-		for (uint8_t y = 0; y < WORLD_HEIGHT; y++) {
-			memset(chunks[x][y], 0, settings.render_distance * sizeof(Chunk));
-		}
-	}
-
+	// Unload chunks that are scrolling off the edge.
 	for (int x = 0; x < settings.render_distance; x++) {
 		for (int y = 0; y < WORLD_HEIGHT; y++) {
 			for (int z = 0; z < settings.render_distance; z++) {
-				int old_x = x + dx;
-				int old_z = z + dz;
-				
-				if (old_x >= 0 && old_x < settings.render_distance && 
-					old_z >= 0 && old_z < settings.render_distance) {
-					if (chunk_has_data(&temp_chunks[old_x][y][old_z])) {
-						chunks[x][y][z] = temp_chunks[old_x][y][old_z];
+				// A chunk scrolls off if its new grid position would be out of bounds.
+				int new_x = x - dx;
+				int new_z = z - dz;
+				bool scrolls_off = (new_x < 0 || new_x >= settings.render_distance ||
+									new_z < 0 || new_z >= settings.render_distance);
+				if (scrolls_off && chunk_has_data(&chunks[x][y][z])) {
+					// Mark border neighbour for update before unloading
+					int bx = x + (dx > 0 ? -1 : (dx < 0 ? 1 : 0));
+					int bz = z + (dz > 0 ? -1 : (dz < 0 ? 1 : 0));
+					if (dx != 0 && bx >= 0 && bx < settings.render_distance)
+						chunks[bx][y][z].needs_update = true;
+					if (dz != 0 && bz >= 0 && bz < settings.render_distance)
+						chunks[x][y][bz].needs_update = true;
+					unload_chunk(&chunks[x][y][z]);
+				}
+			}
+		}
+	}
+
+	// Shift surviving chunks to their new grid positions.
+	// We process in the direction opposite to the scroll so we don't overwrite
+	// a source before reading it.
+	if (dx > 0) {
+		// Scrolling right: move chunks toward lower x indices
+		for (int x = 0; x < settings.render_distance; x++) {
+			int src_x = x + dx;
+			for (int y = 0; y < WORLD_HEIGHT; y++) {
+				for (int z = 0; z < settings.render_distance; z++) {
+					if (src_x >= 0 && src_x < settings.render_distance) {
+						chunks[x][y][z] = chunks[src_x][y][z];
 						chunks[x][y][z].ci_x = x;
-						chunks[x][y][z].ci_z = z;
+					} else {
+						memset(&chunks[x][y][z], 0, sizeof(Chunk));
+					}
+				}
+			}
+		}
+	} else if (dx < 0) {
+		// Scrolling left: move chunks toward higher x indices
+		for (int x = settings.render_distance - 1; x >= 0; x--) {
+			int src_x = x + dx;
+			for (int y = 0; y < WORLD_HEIGHT; y++) {
+				for (int z = 0; z < settings.render_distance; z++) {
+					if (src_x >= 0 && src_x < settings.render_distance) {
+						chunks[x][y][z] = chunks[src_x][y][z];
+						chunks[x][y][z].ci_x = x;
+					} else {
+						memset(&chunks[x][y][z], 0, sizeof(Chunk));
 					}
 				}
 			}
 		}
 	}
+
+	if (dz > 0) {
+		// Scrolling forward: move chunks toward lower z indices
+		for (int x = 0; x < settings.render_distance; x++) {
+			for (int y = 0; y < WORLD_HEIGHT; y++) {
+				for (int z = 0; z < settings.render_distance; z++) {
+					int src_z = z + dz;
+					if (src_z >= 0 && src_z < settings.render_distance) {
+						chunks[x][y][z] = chunks[x][y][src_z];
+						chunks[x][y][z].ci_z = z;
+					} else {
+						memset(&chunks[x][y][z], 0, sizeof(Chunk));
+					}
+				}
+			}
+		}
+	} else if (dz < 0) {
+		// Scrolling backward: move chunks toward higher z indices
+		for (int x = 0; x < settings.render_distance; x++) {
+			for (int y = 0; y < WORLD_HEIGHT; y++) {
+				for (int z = settings.render_distance - 1; z >= 0; z--) {
+					int src_z = z + dz;
+					if (src_z >= 0 && src_z < settings.render_distance) {
+						chunks[x][y][z] = chunks[x][y][src_z];
+						chunks[x][y][z].ci_z = z;
+					} else {
+						memset(&chunks[x][y][z], 0, sizeof(Chunk));
+					}
+				}
+			}
+		}
+	}
+
 	pthread_mutex_unlock(&chunks_mutex);
 
 	float entity_chunk_x = entity->pos.x / CHUNK_SIZE;
@@ -488,7 +482,6 @@ void load_around_entity(Entity* entity) {
 		#endif
 	}
 	pthread_mutex_unlock(&world_gen_tracker.mutex);
-	free_chunks(temp_chunks);
 }
 
 void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz) {
@@ -499,12 +492,13 @@ void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsig
 	chunk->y = cy;
 	chunk->z = cz;
 	chunk->needs_update = true;
+	chunk->lighting_changed = true;
 
 	generate_chunk_terrain(chunk, cx, cy, cz);
 }
 
 void unload_chunk(Chunk* chunk) {
-	if (chunk != NULL) return;
+	if (chunk == NULL) return;
 
 	for (uint8_t face = 0; face < 6; face++) {
 		free(chunk->faces[face].vertices);

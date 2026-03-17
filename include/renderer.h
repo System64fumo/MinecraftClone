@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include "misc.h"
+#include <stdatomic.h>
 
 typedef struct {
 	int32_t x;
@@ -31,7 +32,7 @@ typedef struct {
 
 extern bool mesh_mode;
 extern bool frustum_changed;
-extern bool mesh_needs_rebuild;
+extern _Atomic bool mesh_needs_rebuild;
 extern uint16_t draw_calls;
 
 #define FACE_BACK   (1 << 0)

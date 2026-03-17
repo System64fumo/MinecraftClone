@@ -12,6 +12,8 @@ extern unsigned int texture_fb_depth_uniform_location;
 extern unsigned int far_uniform_location;
 extern unsigned int inv_projection_uniform_location;
 extern unsigned int inv_view_uniform_location;
+extern unsigned int sky_brightness_uniform_location;
+extern unsigned int world_offset_uniform_location;
 
 
 void load_shaders();

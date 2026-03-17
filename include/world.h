@@ -46,6 +46,12 @@ typedef struct Block {
 	uint8_t light_level;
 } Block;
 
+// Light level helpers — shared by all files that read/write block light data.
+// Layout: bits 4-7 = sky light (0-15), bits 0-3 = block light (0-15)
+#define SKY_LIGHT(b)		 (((b) >> 4) & 0xF)
+#define BLOCK_LIGHT(b)	   ((b) & 0xF)
+#define PACK_LIGHT(sky, blk) ((uint8_t)(((sky) << 4) | ((blk) & 0xF)))
+
 typedef struct {
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
 	int32_t x, y, z;

@@ -276,12 +276,17 @@ void update_frustum() {
 	};
 	float fov_angle = cosf(settings.fov * DEG_TO_RAD);
 
+	static uint8_t* prev_visibility = NULL;
+	static int	  prev_vis_rd = 0;
+	static bool	 first_run = true;
 
-	static uint8_t prev_visibility[32][WORLD_HEIGHT][32];
-	static bool first_run = true;
-	
-	if (!first_run) memcpy(prev_visibility, visibility_map, sizeof(prev_visibility));
-	
+	if (prev_vis_rd != settings.render_distance) {
+		free(prev_visibility);
+		prev_visibility = calloc((size_t)settings.render_distance * WORLD_HEIGHT * settings.render_distance, 1);
+		prev_vis_rd = settings.render_distance;
+		first_run = true;
+	}
+
 	frustum_changed = false;
 
 	for (uint8_t x = 0; x < settings.render_distance; x++) {
@@ -293,7 +298,8 @@ void update_frustum() {
 				
 				visibility_map[x][y][z] = visible_faces;
 				
-				if (!first_run && !frustum_changed && prev_visibility[x][y][z] != visible_faces) {
+				if (!first_run && !frustum_changed && prev_visibility &&
+					prev_visibility[x * WORLD_HEIGHT * settings.render_distance + y * settings.render_distance + z] != visible_faces) {
 					frustum_changed = true;
 				}
 			}
@@ -305,7 +311,13 @@ void update_frustum() {
 		first_run = false;
 	}
 
-	memcpy(prev_visibility, visibility_map, sizeof(prev_visibility));
+	if (prev_visibility) {
+		for (int x = 0; x < settings.render_distance; x++)
+			for (int y = 0; y < WORLD_HEIGHT; y++)
+				memcpy(&prev_visibility[x * WORLD_HEIGHT * settings.render_distance + y * settings.render_distance],
+					   visibility_map[x][y],
+					   settings.render_distance);
+	}
 	if (frustum_changed) mesh_needs_rebuild = true;
 
 	#ifdef DEBUG

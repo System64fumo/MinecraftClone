@@ -11,7 +11,7 @@ uint32_t transparent_VAO, transparent_VBO, transparent_EBO, transparent_index_co
 
 bool mesh_mode = false;
 uint16_t draw_calls = 0;
-bool mesh_needs_rebuild = false;
+_Atomic bool mesh_needs_rebuild = false;
 uint8_t ***visibility_map = NULL;
 
 void init_gl_buffers() {

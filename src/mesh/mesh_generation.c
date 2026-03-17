@@ -32,6 +32,7 @@ static const uint32_t quad_indices[6] = {0, 1, 2, 0, 2, 3};
 
 void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t texture_id,
 			  const face_vertex_t face_data[4], uint8_t width, uint8_t height,
+			  uint8_t sky_light, uint8_t block_light,
 			  Vertex vertices[], uint32_t indices[],
 			  uint32_t* vertex_count, uint32_t* index_count) {
 	
@@ -119,11 +120,13 @@ void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t t
 		}
 
 		vertices[(*vertex_count)++] = (Vertex) {
-			(int32_t)(pos_x * 16.0f),	   // X as int32_t
-			(uint16_t)(pos_y * 16.0f),	  // Y as uint16_t
-			(int32_t)(pos_z * 16.0f),	   // Z as int32_t
+			(int32_t)(pos_x * 16.0f),
+			(uint16_t)(pos_y * 16.0f),
+			(int32_t)(pos_z * 16.0f),
 			PACK_VERTEX_DATA(normal, texture_id),
 			(uint32_t)(uv_u * 16) | ((uint32_t)(uv_v * 16) << 9)
+			| ((uint32_t)(sky_light   & 0xF) << 18)
+			| ((uint32_t)(block_light & 0xF) << 22)
 		};
 	}
 
@@ -150,16 +153,23 @@ void clear_face_data(Mesh faces[6]) {
 void store_face_data(Mesh* face_mesh, Vertex vertices[], uint32_t indices[], 
 					uint32_t vertex_count, uint32_t index_count) {
 	if (vertex_count == 0) return;
-	
-	face_mesh->vertices = malloc(vertex_count * sizeof(Vertex));
-	face_mesh->indices = malloc(index_count * sizeof(uint32_t));
-	
-	if (face_mesh->vertices && face_mesh->indices) {
-		memcpy(face_mesh->vertices, vertices, vertex_count * sizeof(Vertex));
-		memcpy(face_mesh->indices, indices, index_count * sizeof(uint32_t));
-		face_mesh->vertex_count = vertex_count;
-		face_mesh->index_count = index_count;
+
+	Vertex*   vbuf = malloc(vertex_count * sizeof(Vertex));
+	uint32_t* ibuf = malloc(index_count  * sizeof(uint32_t));
+
+	if (!vbuf || !ibuf) {
+		// Partial allocation — free whichever succeeded and leave mesh zeroed.
+		free(vbuf);
+		free(ibuf);
+		return;
 	}
+
+	memcpy(vbuf, vertices, vertex_count * sizeof(Vertex));
+	memcpy(ibuf, indices,  index_count  * sizeof(uint32_t));
+	face_mesh->vertices	 = vbuf;
+	face_mesh->indices	  = ibuf;
+	face_mesh->vertex_count = vertex_count;
+	face_mesh->index_count  = index_count;
 }
 
 void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Mesh faces[6]) {
@@ -178,6 +188,7 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Mes
 
 			uint8_t texture_id = block_data[block_id][2 + face];
 			add_quad(NULL, x, y, z, face, texture_id, face_data[face], 1, 1,
+					15, 0,
 					vertices, indices, &vertex_count, &index_count);
 
 			store_face_data(&faces[face], vertices, indices, vertex_count, index_count);
@@ -192,6 +203,7 @@ void generate_single_block_mesh(float x, float y, float z, uint8_t block_id, Mes
 
 			uint8_t texture_id = block_data[block_id][2 + face];
 			add_quad(NULL, x, y, z, face, texture_id, cross_faces[face], 1, 1,
+					15, 0,
 					vertices, indices, &vertex_count, &index_count);
 
 			store_face_data(&faces[face], vertices, indices, vertex_count, index_count);
@@ -259,16 +271,23 @@ void generate_chunk_mesh(Chunk* chunk) {
 						memset(&mask[v + dy][u], true, (end_u - u) * sizeof(bool));
 					}
 
+					// Sample light for this face using the shared helper
+					uint8_t packed_light = get_face_light(chunk, x, y, z, face);
+					uint8_t sky_light   = (packed_light >> 4) & 0xF;
+					uint8_t block_light = packed_light & 0xF;
+
 					bool is_transparent = block_data[block->id][1] != 0;
 					uint8_t texture_id = block_data[block->id][2 + face];
 					if (is_transparent) {
-						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, 
+						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id,
 							cube_faces[face], width, height,
+							sky_light, block_light,
 							transparent_face_vertices, transparent_face_indices,
 							&transparent_face_vertex_count, &transparent_face_index_count);
 					} else {
-						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, 
+						add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id,
 							cube_faces[face], width, height,
+							sky_light, block_light,
 							face_vertices, face_indices,
 							&face_vertex_count, &face_index_count);
 					}
@@ -300,8 +319,21 @@ void generate_chunk_mesh(Chunk* chunk) {
 					uint8_t texture_id = block_data[block->id][2 + face];
 					uint32_t base_vertex = target_faces[face].vertex_count;
 					uint32_t base_index = target_faces[face].index_count;
-					target_faces[face].vertices = realloc(target_faces[face].vertices, (base_vertex + 4) * sizeof(Vertex));
-					target_faces[face].indices = realloc(target_faces[face].indices, (base_index + 6) * sizeof(uint32_t));
+					Vertex* new_verts = realloc(target_faces[face].vertices, (base_vertex + 4) * sizeof(Vertex));
+					uint32_t* new_idxs = realloc(target_faces[face].indices, (base_index + 6) * sizeof(uint32_t));
+					if (!new_verts || !new_idxs) {
+						// realloc failed — if one succeeded the other was orphaned,
+						// so free both and zero the mesh to avoid a later double-free.
+						free(new_verts);
+						free(new_idxs);
+						target_faces[face].vertices = NULL;
+						target_faces[face].indices = NULL;
+						target_faces[face].vertex_count = 0;
+						target_faces[face].index_count = 0;
+						continue;
+					}
+					target_faces[face].vertices = new_verts;
+					target_faces[face].indices = new_idxs;
 					const face_vertex_t* face_data;
 					if (block_type == BTYPE_CROSS) {
 						face_data = cross_faces[face];
@@ -314,7 +346,10 @@ void generate_chunk_mesh(Chunk* chunk) {
 					uint32_t temp_indices[6];
 					uint32_t temp_vertex_count = 0;
 					uint32_t temp_index_count = 0;
-					add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, face_data, 1, 1, temp_vertices, temp_indices, &temp_vertex_count, &temp_index_count);
+					uint8_t packed_light = block->light_level;
+					uint8_t sky_light   = (packed_light >> 4) & 0xF;
+					uint8_t block_light = packed_light & 0xF;
+					add_quad(chunk, x + world_x, y + world_y, z + world_z, face, texture_id, face_data, 1, 1, sky_light, block_light, temp_vertices, temp_indices, &temp_vertex_count, &temp_index_count);
 					memcpy(&target_faces[face].vertices[base_vertex], temp_vertices, temp_vertex_count * sizeof(Vertex));
 					for (uint8_t i = 0; i < temp_index_count; i++) {
 						target_faces[face].indices[base_index + i] = temp_indices[i] + base_vertex;

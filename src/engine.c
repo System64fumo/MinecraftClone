@@ -60,9 +60,25 @@ void run() {
 }
 
 void shutdown() {
+	// Stop background threads before freeing any shared data.
+	cleanup_mesh_thread();
+	stop_world_gen_thread();
+
+	// Free all chunk mesh memory, then the chunk grid itself.
+	if (chunks) {
+		for (int x = 0; x < settings.render_distance; x++) {
+			for (int y = 0; y < WORLD_HEIGHT; y++) {
+				for (int z = 0; z < settings.render_distance; z++) {
+					unload_chunk(&chunks[x][y][z]);
+				}
+			}
+		}
+		free_chunks(chunks);
+		chunks = NULL;
+	}
+
 	cleanup_framebuffer();
 	cleanup_ui();
 	cleanup_renderer();
-	stop_world_gen_thread();
 	glDeleteProgram(world_shader);
 }

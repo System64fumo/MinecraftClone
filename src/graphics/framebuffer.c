@@ -63,6 +63,7 @@ void render_to_framebuffer() {
 	glUseProgram(world_shader);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, block_textures);
+	glUniform1f(sky_brightness_uniform_location, settings.sky_brightness);
 
 	#ifdef DEBUG
 	profiler_stop(PROFILER_ID_FRAMEBUFFER, true);

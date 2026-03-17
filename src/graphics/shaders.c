@@ -18,6 +18,8 @@ unsigned int texture_fb_depth_uniform_location = -1;
 unsigned int far_uniform_location = -1;
 unsigned int inv_projection_uniform_location = -1;
 unsigned int inv_view_uniform_location = -1;
+unsigned int sky_brightness_uniform_location = -1;
+unsigned int world_offset_uniform_location	= -1;
 
 unsigned int compile_shader(const char* shader_source, int type) {
 	int success;
@@ -91,4 +93,6 @@ void cache_uniform_locations() {
 	inv_projection_uniform_location = glGetUniformLocation(post_process_shader, "u_inv_projection");
 	inv_view_uniform_location = glGetUniformLocation(post_process_shader, "u_inv_view");
 	far_uniform_location = glGetUniformLocation(post_process_shader, "u_far");
+	sky_brightness_uniform_location = glGetUniformLocation(world_shader, "sky_brightness");
+	world_offset_uniform_location   = glGetUniformLocation(world_shader, "world_offset");
 }
