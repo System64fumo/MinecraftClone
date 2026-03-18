@@ -199,6 +199,13 @@ void move_entity_with_collision(Entity* entity, float dx, float dy, float dz) {
 }
 
 void update_entity_physics(Entity* entity, float delta_time) {
+	if (entity->flying) {
+		// No gravity, no collision for vertical — movement handled entirely in process_input.
+		entity->vertical_velocity = 0.0f;
+		entity->is_grounded = false;
+		return;
+	}
+
 	if (!entity->is_grounded) {
 		entity->vertical_velocity -= GRAVITY * delta_time;
 		entity->vertical_velocity = fmaxf(-MAX_FALL_SPEED, entity->vertical_velocity);

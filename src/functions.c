@@ -77,8 +77,8 @@ Block* get_block_at(Chunk*** chunks, int world_block_x, int world_block_y, int w
 	int chunk_y = world_block_y / CHUNK_SIZE;
 	int block_y = ((world_block_y % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE;
 
-	int render_x = chunk_x - world_offset_x;
-	int render_z = chunk_z - world_offset_z;
+	int render_x = chunk_x - (int)atomic_load(&world_offset_x);
+	int render_z = chunk_z - (int)atomic_load(&world_offset_z);
 
 	if (is_chunk_in_bounds(render_x, chunk_y, render_z)) {
 		Chunk* chunk = &chunks[render_x][chunk_y][render_z];
@@ -91,7 +91,7 @@ Block* get_block_at(Chunk*** chunks, int world_block_x, int world_block_y, int w
 int is_block_solid(Chunk*** chunks, int world_block_x, int world_block_y, int world_block_z) {
 	Block* block = get_block_at(chunks, world_block_x, world_block_y, world_block_z);
 	if (block == NULL)
-		return 1;
+		return 0; // unloaded = air, prevents phantom walls at chunk borders
 	return !(block->id == 0 || block->id == 6 || block->id == 37 || block->id == 38 ||
 			 block->id == 39 || block->id == 40 || block->id == 8 || block->id == 9 ||
 			 block->id == 10 || block->id == 11);

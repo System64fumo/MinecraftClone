@@ -139,6 +139,10 @@ int initialize_window() {
 	profiler_create("Culling");
 	profiler_create("Framebuffer");
 	profiler_create("World");
+	profiler_create("Upload");
+	profiler_create("Terrain");
+	profiler_create("Lighting");
+	profiler_create("Relight");
 	#endif
 
 	return 0;

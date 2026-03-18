@@ -5,9 +5,16 @@
 
 static ProfilerInstance timers[MAX_TIMERS];
 static int num_timers = 0;
+static bool gpu_timing_supported = false;
 
 void profiler_init() {
 	memset(timers, 0, sizeof(timers));
+	// Check whether GL_TIMESTAMP queries are supported on this platform.
+	// GLES drivers (e.g. Panfrost/Gallium) may advertise the extension but
+	// crash when actually polling the result.
+	GLint bits = 0;
+	glGetQueryiv(GL_TIMESTAMP, GL_QUERY_COUNTER_BITS, &bits);
+	gpu_timing_supported = (bits > 0);
 }
 
 int profiler_create(const char* name) {
@@ -16,8 +23,10 @@ int profiler_create(const char* name) {
 	int idx = num_timers++;
 	strncpy(timers[idx].name, name, MAX_NAME_LENGTH-1);
 	timers[idx].active = 1;
-	glGenQueries(1, &timers[idx].gpu_query_start);
-	glGenQueries(1, &timers[idx].gpu_query_end);
+	if (gpu_timing_supported) {
+		glGenQueries(1, &timers[idx].gpu_query_start);
+		glGenQueries(1, &timers[idx].gpu_query_end);
+	}
 	return idx;
 }
 
@@ -28,7 +37,7 @@ void profiler_start(int timer_id, bool time_gpu) {
 	clock_gettime(CLOCK_MONOTONIC, &timers[timer_id].cpu_start_time);
 	
 	// Start GPU timing
-	if (time_gpu)
+	if (time_gpu && gpu_timing_supported)
 		glQueryCounter(timers[timer_id].gpu_query_start, GL_TIMESTAMP);
 }
 
@@ -39,20 +48,19 @@ void profiler_stop(int timer_id, bool time_gpu) {
 	clock_gettime(CLOCK_MONOTONIC, &timers[timer_id].cpu_end_time);
 	
 	// Stop GPU timing
-	if (time_gpu)
+	GLuint64 start_time = 0, end_time = 0;
+	if (time_gpu && gpu_timing_supported) {
 		glQueryCounter(timers[timer_id].gpu_query_end, GL_TIMESTAMP);
-	
-	// Wait for GPU queries to be available
-	GLuint64 start_time, end_time;
-	if (time_gpu) {
 		GLint gpu_available = 0;
-		while (!gpu_available) {
+		int attempts = 0;
+		while (!gpu_available && attempts < 100000) {
 			glGetQueryObjectiv(timers[timer_id].gpu_query_end, GL_QUERY_RESULT_AVAILABLE, &gpu_available);
+			attempts++;
 		}
-
-		// Get GPU timing results
-		glGetQueryObjectui64v(timers[timer_id].gpu_query_start, GL_QUERY_RESULT, &start_time);
-		glGetQueryObjectui64v(timers[timer_id].gpu_query_end, GL_QUERY_RESULT, &end_time);
+		if (gpu_available) {
+			glGetQueryObjectui64v(timers[timer_id].gpu_query_start, GL_QUERY_RESULT, &start_time);
+			glGetQueryObjectui64v(timers[timer_id].gpu_query_end, GL_QUERY_RESULT, &end_time);
+		}
 	}
 
 	// Calculate CPU time in milliseconds
@@ -61,7 +69,7 @@ void profiler_stop(int timer_id, bool time_gpu) {
 		(timers[timer_id].cpu_end_time.tv_nsec - timers[timer_id].cpu_start_time.tv_nsec) / 1000000.0;
 	
 	// Calculate GPU time in milliseconds
-	if (time_gpu)
+	if (time_gpu && gpu_timing_supported)
 		timers[timer_id].gpu_time = (end_time - start_time) / 1000000.0;
 }
 
@@ -82,7 +90,7 @@ void profiler_print_all() {
 
 void profiler_cleanup() {
 	for (int i = 0; i < num_timers; i++) {
-		if (timers[i].active) {
+		if (timers[i].active && gpu_timing_supported) {
 			glDeleteQueries(1, &timers[i].gpu_query_start);
 			glDeleteQueries(1, &timers[i].gpu_query_end);
 		}

@@ -103,14 +103,14 @@ void init_debug_info_cache() {
 void view_game_debug() {
 	init_debug_info_cache();
 
-	char debug_info[256];
+	char debug_info[512];
 	if (debug_cache.core_count > 0) {
-		snprintf(debug_info, sizeof(debug_info), "%s %dx %s",
+		snprintf(debug_info, sizeof(debug_info), "%.240s %dx %.240s",
 				debug_cache.compatible,
 				debug_cache.core_count,
 				debug_cache.cpuinfo);
 	} else {
-		snprintf(debug_info, sizeof(debug_info), "%s (unknown cores)",
+		snprintf(debug_info, sizeof(debug_info), "%.490s (unknown cores)",
 				debug_cache.compatible);
 	}
 

@@ -69,6 +69,7 @@ void add_quad(Chunk* chunk, float x, float y, float z, uint8_t normal, uint8_t t
 
 bool init_mesh_thread();
 void cleanup_mesh_thread();
+void enqueue_chunk_update_priority(uint8_t x, uint8_t y, uint8_t z);
 unsigned char* generate_light_texture();
 
 bool are_all_neighbors_loaded(uint8_t x, uint8_t y, uint8_t z);
@@ -79,6 +80,7 @@ uint8_t find_width(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, 
 uint8_t find_height(Chunk* chunk, uint8_t face, uint8_t u, uint8_t v, uint8_t x, uint8_t y, uint8_t z, bool mask[CHUNK_SIZE][CHUNK_SIZE], Block* block, uint8_t width);
 void generate_chunk_mesh(Chunk* chunk);
 void init_chunk_lighting(Chunk* chunk);
+void init_column_lighting(Chunk column[WORLD_HEIGHT]);
 void update_block_lighting(int wx, int wy, int wz, uint8_t old_id, uint8_t new_id);
 
 Chunk*** allocate_chunks();

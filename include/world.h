@@ -52,7 +52,7 @@ typedef struct Block {
 #define BLOCK_LIGHT(b)	   ((b) & 0xF)
 #define PACK_LIGHT(sky, blk) ((uint8_t)(((sky) << 4) | ((blk) & 0xF)))
 
-typedef struct {
+typedef struct Chunk {
 	Block blocks[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
 	int32_t x, y, z;
 	uint8_t ci_x, ci_y, ci_z;
@@ -62,6 +62,15 @@ typedef struct {
 
 	Mesh faces[6];
 	Mesh transparent_faces[6];
+
+	// Per-chunk GPU buffers — uploaded once when mesh is built,
+	// drawn directly without any CPU-side merge pass.
+	uint32_t opaque_vao, opaque_vbo, opaque_ebo;
+	uint32_t transparent_vao, transparent_vbo, transparent_ebo;
+	uint32_t opaque_index_count;
+	uint32_t transparent_index_count;
+	bool gpu_buffers_valid;
+	bool mesh_dirty;  // set by mesh thread after building, cleared by main thread after upload
 } Chunk;
 
 extern uint8_t block_data[MAX_BLOCK_TYPES][8];
@@ -85,7 +94,6 @@ extern _Atomic int world_offset_x;
 extern _Atomic int world_offset_z;
 
 void process_chunks();
-void move_world(int x, int y, int z);
 void load_around_entity(Entity* entity);
 void load_chunk_data(Chunk* chunk, unsigned char ci_x, unsigned char ci_y, unsigned char ci_z, int cx, int cy, int cz);
 void unload_chunk(Chunk* chunk);

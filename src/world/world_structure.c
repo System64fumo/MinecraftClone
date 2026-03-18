@@ -1,123 +1,77 @@
 #include "world.h"
-#define STB_PERLIN_IMPLEMENTATION
 #include "stb_perlin.h"
 
 structure_block_t tree_blocks[] = {
-	// Trunk
-	{0, 0, 0, 17},
-	{0, 1, 0, 17},
-	{0, 2, 0, 17},
-	{0, 3, 0, 17},
-	{0, 4, 0, 17},
+	{0,0,0,17},{0,1,0,17},{0,2,0,17},{0,3,0,17},{0,4,0,17},
 
-	// Leaves
-	{-2, 3, -2, 18}, {-2, 3, -1, 18}, {-2, 3, 0, 18}, {-2, 3, 1, 18}, {-2, 3, 2, 18},
-	{-1, 3, -2, 18}, {-1, 3, -1, 18}, {-1, 3, 0, 18}, {-1, 3, 1, 18}, {-1, 3, 2, 18},
-	{0, 3, -2, 18}, {0, 3, -1, 18}, {0, 3, 1, 18}, {0, 3, 2, 18},
-	{1, 3, -2, 18}, {1, 3, -1, 18}, {1, 3, 0, 18}, {1, 3, 1, 18}, {1, 3, 2, 18},
-	{2, 3, -2, 18}, {2, 3, -1, 18}, {2, 3, 0, 18}, {2, 3, 1, 18}, {2, 3, 2, 18},
+	{-2,3,-2,18},{-2,3,-1,18},{-2,3,0,18},{-2,3,1,18},{-2,3,2,18},
+	{-1,3,-2,18},{-1,3,-1,18},{-1,3,0,18},{-1,3,1,18},{-1,3,2,18},
+	{ 0,3,-2,18},{ 0,3,-1,18},            { 0,3,1,18},{ 0,3,2,18},
+	{ 1,3,-2,18},{ 1,3,-1,18},{ 1,3,0,18},{ 1,3,1,18},{ 1,3,2,18},
+	{ 2,3,-2,18},{ 2,3,-1,18},{ 2,3,0,18},{ 2,3,1,18},{ 2,3,2,18},
 
-	{-2, 4, -2, 18}, {-2, 4, -1, 18}, {-2, 4, 0, 18}, {-2, 4, 1, 18}, {-2, 4, 2, 18},
-	{-1, 4, -2, 18}, {-1, 4, -1, 18}, {-1, 4, 0, 18}, {-1, 4, 1, 18}, {-1, 4, 2, 18},
-	{0, 4, -2, 18}, {0, 4, -1, 18}, {0, 4, 1, 18}, {0, 4, 2, 18},
-	{1, 4, -2, 18}, {1, 4, -1, 18}, {1, 4, 0, 18}, {1, 4, 1, 18}, {1, 4, 2, 18},
-	{2, 4, -2, 18}, {2, 4, -1, 18}, {2, 4, 0, 18}, {2, 4, 1, 18}, {2, 4, 2, 18},
+	{-2,4,-2,18},{-2,4,-1,18},{-2,4,0,18},{-2,4,1,18},{-2,4,2,18},
+	{-1,4,-2,18},{-1,4,-1,18},{-1,4,0,18},{-1,4,1,18},{-1,4,2,18},
+	{ 0,4,-2,18},{ 0,4,-1,18},            { 0,4,1,18},{ 0,4,2,18},
+	{ 1,4,-2,18},{ 1,4,-1,18},{ 1,4,0,18},{ 1,4,1,18},{ 1,4,2,18},
+	{ 2,4,-2,18},{ 2,4,-1,18},{ 2,4,0,18},{ 2,4,1,18},{ 2,4,2,18},
 
-	{-1, 5, -1, 18},{-1, 5, 0, 18}, {-1, 5, 1, 18},
-	{0, 5, -1, 18}, {0, 5, 0, 18}, {0, 5, 1, 18},
-	{1, 5, -1, 18},	{1, 5, 0, 18}, {1, 5, 1, 18},
+	{-1,5,-1,18},{-1,5,0,18},{-1,5,1,18},
+	{ 0,5,-1,18},{ 0,5,0,18},{ 0,5,1,18},
+	{ 1,5,-1,18},{ 1,5,0,18},{ 1,5,1,18},
 
-					{-1, 6, 0, 18},
-	{0, 6, -1, 18}, {0, 6, 0, 18}, {0, 6, 1, 18},
-					{1, 6, 0, 18},
+	           {-1,6,0,18},
+	{0,6,-1,18},{ 0,6,0,18},{0,6,1,18},
+	            { 1,6,0,18},
 };
 
 structure_t tree_structure = {
-	.blocks = tree_blocks,
+	.blocks      = tree_blocks,
 	.block_count = sizeof(tree_blocks) / sizeof(structure_block_t),
-	.width = 5,
+	.width  = 5,
 	.height = 7,
-	.depth = 5
+	.depth  = 5
 };
 
-bool should_generate_structure(int world_x, int world_z, float threshold) {
-	float noise = stb_perlin_noise3(world_x * structure_scale, 0.0f, world_z * structure_scale, 0, 0, 0);
-	return noise > threshold;
-}
-
 bool can_place_tree(int world_x, int surface_y, int world_z, bool is_grass_surface) {
-	// Trees only generate on grass surfaces above sea level
-	if (!is_grass_surface || surface_y <= SEA_LEVEL) {
-		return false;
-	}
-	
-	// Use a grid-based approach to ensure minimum spacing
-	int grid_size = 8;
-	int grid_x = ((world_x % grid_size) + grid_size) % grid_size;
-	int grid_z = ((world_z % grid_size) + grid_size) % grid_size;
-
-	if (grid_x != 0 || grid_z != 0)
-		return false;
-
-	return should_generate_structure(world_x, world_z, 0.05f);
+	if (!is_grass_surface || surface_y <= SEA_LEVEL) return false;
+	int grid = 8;
+	if (((world_x % grid) + grid) % grid != 0) return false;
+	if (((world_z % grid) + grid) % grid != 0) return false;
+	float n = stb_perlin_noise3(world_x * structure_scale, 0.f, world_z * structure_scale, 0,0,0);
+	return n > 0.05f;
 }
 
-void place_structure_block(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z, 
-								 int local_x, int local_y, int local_z, uint8_t block_id, bool* empty_chunk) {
-	// Check if the block position is within this chunk
-	if (local_x >= 0 && local_x < CHUNK_SIZE && 
-		local_y >= 0 && local_y < CHUNK_SIZE && 
-		local_z >= 0 && local_z < CHUNK_SIZE) {
-		
-		// Only place if current block is air or can be replaced
-		if (chunk->blocks[local_x][local_y][local_z].id == 0) {
-			chunk->blocks[local_x][local_y][local_z] = (Block){.id = block_id};
-			*empty_chunk = false;
-		}
+static void place_block(Chunk *chunk, int lx, int ly, int lz,
+                         uint8_t id, bool *empty) {
+	if (lx < 0 || lx >= CHUNK_SIZE || ly < 0 || ly >= CHUNK_SIZE || lz < 0 || lz >= CHUNK_SIZE)
+		return;
+	if (chunk->blocks[lx][ly][lz].id == 0) {
+		chunk->blocks[lx][ly][lz] = (Block){.id = id};
+		*empty = false;
 	}
 }
 
-void generate_structure_in_chunk(Chunk* chunk, int chunk_x, int chunk_y, int chunk_z,
-									   structure_t* structure, int structure_world_x, int structure_world_y, int structure_world_z,
-									   bool* empty_chunk) {
-	int chunk_world_x_base = chunk_x * CHUNK_SIZE;
-	int chunk_world_y_base = chunk_y * CHUNK_SIZE;
-	int chunk_world_z_base = chunk_z * CHUNK_SIZE;
+void generate_structure_in_chunk(Chunk *chunk, int chunk_x, int chunk_y, int chunk_z,
+                                 structure_t *s, int sx, int sy, int sz, bool *empty) {
+	int bx0 = chunk_x * CHUNK_SIZE;
+	int by0 = chunk_y * CHUNK_SIZE;
+	int bz0 = chunk_z * CHUNK_SIZE;
 
-	// Check if structure intersects with this chunk
-	int struct_min_x = structure_world_x - structure->width / 2;
-	int struct_max_x = structure_world_x + structure->width / 2;
-	int struct_min_y = structure_world_y;
-	int struct_max_y = structure_world_y + structure->height;
-	int struct_min_z = structure_world_z - structure->depth / 2;
-	int struct_max_z = structure_world_z + structure->depth / 2;
-	
-	int chunk_min_x = chunk_world_x_base;
-	int chunk_max_x = chunk_world_x_base + CHUNK_SIZE - 1;
-	int chunk_min_y = chunk_world_y_base;
-	int chunk_max_y = chunk_world_y_base + CHUNK_SIZE - 1;
-	int chunk_min_z = chunk_world_z_base;
-	int chunk_max_z = chunk_world_z_base + CHUNK_SIZE - 1;
-	
-	// Check if structure overlaps with chunk
-	if (struct_max_x < chunk_min_x || struct_min_x > chunk_max_x ||
-		struct_max_y < chunk_min_y || struct_min_y > chunk_max_y ||
-		struct_max_z < chunk_min_z || struct_min_z > chunk_max_z) {
-		return; // No overlap
-	}
-	
-	// Place structure blocks that fall within this chunk
-	for (uint8_t i = 0; i < structure->block_count; i++) {
-		structure_block_t* block = &structure->blocks[i];
-		
-		int world_x = structure_world_x + block->x;
-		int world_y = structure_world_y + block->y;
-		int world_z = structure_world_z + block->z;
-		
-		int local_x = world_x - chunk_world_x_base;
-		int local_y = world_y - chunk_world_y_base;
-		int local_z = world_z - chunk_world_z_base;
-		
-		place_structure_block(chunk, chunk_x, chunk_y, chunk_z, local_x, local_y, local_z, block->block_id, empty_chunk);
+	int smn_x = sx - s->width  / 2, smx_x = sx + s->width  / 2;
+	int smn_y = sy,                  smx_y = sy + s->height;
+	int smn_z = sz - s->depth  / 2, smx_z = sz + s->depth  / 2;
+
+	if (smx_x < bx0 || smn_x > bx0 + CHUNK_SIZE - 1 ||
+	    smx_y < by0 || smn_y > by0 + CHUNK_SIZE - 1 ||
+	    smx_z < bz0 || smn_z > bz0 + CHUNK_SIZE - 1) return;
+
+	for (int i = 0; i < s->block_count; i++) {
+		structure_block_t *b = &s->blocks[i];
+		place_block(chunk,
+		            sx + b->x - bx0,
+		            sy + b->y - by0,
+		            sz + b->z - bz0,
+		            b->block_id, empty);
 	}
 }

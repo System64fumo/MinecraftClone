@@ -19,6 +19,7 @@ typedef struct Entity {
 	uint8_t speed;
 	bool is_grounded;
 	bool sprinting;
+	bool flying;
 	float vertical_velocity;
 	uint8_t inventory_size;
 	Item* inventory_data;
